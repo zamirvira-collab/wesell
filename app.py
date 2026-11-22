@@ -245,6 +245,12 @@ def how_it_works():return render_template('how.html')
 @app.get('/dealers')
 def dealers_page():return render_template('dealers_info.html')
 
-if __name__=='__main__':
-    init_db()
-    app.run(host='127.0.0.1',port=int(os.environ.get('PORT',5000)),debug=os.environ.get('FLASK_DEBUG')=='1')
+
+init_db()
+
+if __name__ == '__main__':
+    app.run(
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 5000)),
+        debug=os.environ.get('FLASK_DEBUG') == '1'
+    )
