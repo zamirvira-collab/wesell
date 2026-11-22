@@ -138,6 +138,115 @@
 }
 </style>
 
+/* WE-SELL premium search bar */
+.ws-search-panel {
+  max-width: 100%;
+  padding: 14px;
+  background: #041d38;
+  border: 2px solid #ffc400;
+  border-radius: 30px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+
+.ws-tabs {
+  display: flex;
+  gap: 0;
+  margin: 0 0 14px 18px;
+}
+
+.ws-tab {
+  flex: none;
+  min-width: 200px;
+  padding: 15px 25px;
+  border: 2px solid #ffc400;
+  border-radius: 25px 25px 0 0;
+  background: #041d38;
+  color: white;
+  font-size: 19px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ws-tab.active {
+  background: linear-gradient(#ffe477, #ffbb00);
+  color: #071b31;
+}
+
+.ws-search-form {
+  display: grid;
+  grid-template-columns: minmax(0,2fr) minmax(0,1fr) auto;
+  gap: 0;
+  align-items: center;
+  background: white;
+  border-radius: 50px;
+  padding: 7px;
+}
+
+.ws-search-form input,
+.ws-search-form select {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #102b45;
+  padding: 17px;
+  font-size: 16px;
+  min-width: 0;
+}
+
+.ws-search-form input {
+  border-right: 1px solid #b8c5d2;
+}
+
+.ws-search-button {
+  border: 0;
+  border-radius: 50px;
+  padding: 18px 26px;
+  background: linear-gradient(#ffe477, #ffb900);
+  color: #071b31;
+  font-size: 17px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ws-benefits {
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 0;
+  margin-top: 24px;
+}
+
+.ws-benefit {
+  justify-content: center;
+  padding: 8px 15px;
+}
+
+.ws-benefit + .ws-benefit {
+  border-left: 1px solid rgba(255,255,255,.7);
+}
+
+@media(max-width:700px) {
+  .ws-tabs { margin-left: 0; }
+  .ws-tab {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    padding: 12px 8px;
+  }
+  .ws-search-form {
+    grid-template-columns: 1fr;
+    border-radius: 18px;
+  }
+  .ws-search-form input {
+    border-right: 0;
+    border-bottom: 1px solid #d8e0e8;
+  }
+  .ws-search-button { width: 100%; }
+  .ws-benefits { grid-template-columns: 1fr; }
+  .ws-benefit + .ws-benefit { border-left: 0; }
+}
+
 <section class="ws-hero">
   <div class="ws-inner">
     <div class="ws-eyebrow">A Smarter Way to Shop for Cars</div>
