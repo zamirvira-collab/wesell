@@ -1,1 +1,535 @@
-{% extends 'base.html' %}{% block title %}{{'Create Account' if mode=='register' else 'Log In'}}{% endblock %}{% block content %}<section class="authsection"><div class="panel authbox"><div class="eyebrow blue">WELCOME TO WE-SELL</div><h1>{{'Create your account' if mode=='register' else 'Welcome back'}}</h1><p>{{'Start finding your next vehicle.' if mode=='register' else 'Sign in to manage your requests.'}}</p><form method="post"><input type="hidden" name="csrf" value="{{csrf}}">{% if mode=='register' %}<label>Full name</label><input required name="name" maxlength="100" autocomplete="name"><label>Phone</label><input name="phone" type="tel" autocomplete="tel">{% endif %}<label>Email</label><input required type="email" name="email" autocomplete="email"><label>Password</label><input required type="password" name="password" minlength="10" autocomplete="{{'new-password' if mode=='register' else 'current-password'}}"><button class="btn gold full">{{'Create Account' if mode=='register' else 'Log In'}} →</button></form><p class="muted tiny">{% if mode=='register' %}Already registered? <a href="{{url_for('login')}}">Log in</a>{% else %}New to WE-SELL? <a href="{{url_for('register')}}">Create an account</a>{% endif %}</p></div></section>{% endblock %}
+
+{% extends 'base.html' %}
+
+{% block title %}
+{{ 'Sign Up' if mode == 'register' else 'Log In' }} | WE-SELL
+{% endblock %}
+
+{% block content %}
+
+<style>
+/* WE-SELL AUTHENTICATION PAGE */
+
+.ws-auth-page {
+    min-height: 85vh;
+    background: #f3f6fa;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 55px 20px 80px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.ws-auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: #ffffff;
+    border: 1px solid #e3eaf1;
+    border-radius: 20px;
+    padding: 35px;
+    box-shadow: 0 12px 45px rgba(7, 29, 52, 0.10);
+    box-sizing: border-box;
+}
+
+/* LOGO */
+
+.ws-auth-logo {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.ws-auth-logo img {
+    max-width: 190px;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+/* HEADINGS */
+
+.ws-auth-title {
+    font-size: 27px;
+    font-weight: 800;
+    color: #08243f;
+    text-align: center;
+    margin: 0 0 10px;
+}
+
+.ws-auth-subtitle {
+    font-size: 14px;
+    color: #657589;
+    text-align: center;
+    line-height: 1.6;
+    margin: 0 0 28px;
+}
+
+/* INPUT FIELDS */
+
+.ws-auth-field {
+    margin-bottom: 18px;
+}
+
+.ws-auth-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #102b46;
+    margin-bottom: 8px;
+}
+
+.ws-auth-field input {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    border: 1px solid #d3dfe9;
+    border-radius: 10px;
+    background: white;
+    color: #102b46;
+    box-sizing: border-box;
+}
+
+.ws-auth-field input:focus {
+    outline: 2px solid #ffcc43;
+    border-color: #ffcc43;
+}
+
+/* PASSWORD VISIBILITY */
+
+.ws-password-wrap {
+    position: relative;
+}
+
+.ws-password-wrap input {
+    padding-right: 75px;
+}
+
+.ws-password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: #087f91;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* PRIMARY BUTTON */
+
+.ws-auth-submit {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #ffdc74, #ffb900);
+    color: #09243f;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.ws-auth-submit:hover {
+    background: #f2ae00;
+    transform: translateY(-1px);
+}
+
+/* DIVIDER */
+
+.ws-auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 22px;
+    color: #8190a1;
+    font-size: 12px;
+    text-align: center;
+}
+
+.ws-auth-divider::before,
+.ws-auth-divider::after {
+    content: "";
+    height: 1px;
+    background: #e0e7ef;
+    flex: 1;
+}
+
+/* SOCIAL LOGIN */
+
+.ws-social-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.ws-social-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 6px;
+    background: #ffffff;
+    border: 1px solid #dce4ec;
+    border-radius: 12px;
+    color: #102b46;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.ws-social-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.ws-social-icon {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.ws-google {
+    color: #4285f4;
+}
+
+.ws-facebook {
+    color: #1877f2;
+}
+
+.ws-apple {
+    color: #111111;
+}
+
+/* SWITCH LOGIN / SIGNUP */
+
+.ws-auth-switch {
+    margin-top: 27px;
+    padding-top: 22px;
+    border-top: 1px solid #e5eaf0;
+    text-align: center;
+    font-size: 14px;
+    color: #657589;
+}
+
+.ws-auth-switch a {
+    color: #087f91;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.ws-auth-switch a:hover {
+    text-decoration: underline;
+}
+
+/* LEGAL */
+
+.ws-auth-legal {
+    margin-top: 22px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: #8793a1;
+    text-align: center;
+}
+
+/* MOBILE */
+
+@media (max-width: 500px) {
+    .ws-auth-page {
+        padding: 25px 14px 55px;
+    }
+
+    .ws-auth-card {
+        padding: 25px 20px;
+    }
+
+    .ws-auth-title {
+        font-size: 24px;
+    }
+}
+</style>
+
+<section class="ws-auth-page">
+
+    <div class="ws-auth-card">
+
+        <!-- ORIGINAL WE-SELL LOGO -->
+
+        <div class="ws-auth-logo">
+            <a href="{{ url_for('home') }}">
+                <img
+                    src="{{ url_for('static', filename='WE-SELL connected arrow logo.png') }}"
+                    alt="WE-SELL Advertising & Connections">
+            </a>
+        </div>
+
+        <!-- PAGE TITLE -->
+
+        {% if mode == 'register' %}
+
+            <h1 class="ws-auth-title">
+                Join WE-SELL
+            </h1>
+
+            <p class="ws-auth-subtitle">
+                Create your free account to manage
+                your vehicle searches, offers,
+                and appointments.
+            </p>
+
+        {% else %}
+
+            <h1 class="ws-auth-title">
+                Welcome to WE-SELL
+            </h1>
+
+            <p class="ws-auth-subtitle">
+                Sign in to manage your vehicle
+                requests and appointments.
+            </p>
+
+        {% endif %}
+
+
+        <!-- LOGIN / REGISTRATION FORM -->
+
+        <form
+            method="POST"
+            action="{{ url_for('register') if mode == 'register' else url_for('login') }}">
+
+            <!-- CSRF SECURITY -->
+
+            <input
+                type="hidden"
+                name="csrf"
+                value="{{ csrf }}">
+
+            {% if mode == 'register' %}
+
+            <!-- FULL NAME -->
+
+            <div class="ws-auth-field">
+                <label for="ws-name">
+                    Full Name
+                </label>
+
+                <input
+                    id="ws-name"
+                    type="text"
+                    name="name"
+                    placeholder="Enter your full name"
+                    autocomplete="name"
+                    maxlength="100"
+                    required>
+            </div>
+
+            <!-- PHONE NUMBER -->
+
+            <div class="ws-auth-field">
+                <label for="ws-phone">
+                    Phone Number
+                </label>
+
+                <input
+                    id="ws-phone"
+                    type="tel"
+                    name="phone"
+                    placeholder="Enter your phone number"
+                    autocomplete="tel"
+                    maxlength="30">
+            </div>
+
+            {% endif %}
+
+
+            <!-- EMAIL ADDRESS -->
+
+            <div class="ws-auth-field">
+
+                <label for="ws-email">
+                    Email Address
+                </label>
+
+                <input
+                    id="ws-email"
+                    type="email"
+                    name="email"
+                    placeholder="Enter your email address"
+                    autocomplete="email"
+                    maxlength="254"
+                    required>
+
+            </div>
+
+
+            <!-- PASSWORD -->
+
+            <div class="ws-auth-field">
+
+                <label for="ws-password">
+                    {{ 'Create Password' if mode == 'register' else 'Password' }}
+                </label>
+
+                <div class="ws-password-wrap">
+
+                    <input
+                        id="ws-password"
+                        type="password"
+                        name="password"
+                        placeholder="{{ 'At least 10 characters' if mode == 'register' else 'Enter your password' }}"
+                        autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}"
+                        {% if mode == 'register' %}
+                        minlength="10"
+                        {% endif %}
+                        required>
+
+                    <button
+                        class="ws-password-toggle"
+                        type="button"
+                        onclick="toggleWsPassword()">
+                        Show
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- SUBMIT BUTTON -->
+
+            <button
+                class="ws-auth-submit"
+                type="submit">
+
+                {% if mode == 'register' %}
+                    Create My Free Account →
+                {% else %}
+                    Sign In →
+                {% endif %}
+
+            </button>
+
+        </form>
+
+
+        <!-- SOCIAL LOGIN -->
+
+        <div class="ws-auth-divider">
+            Social sign-in coming soon
+        </div>
+
+        <div class="ws-social-grid">
+
+            <!-- GOOGLE -->
+
+            <button
+                type="button"
+                class="ws-social-btn"
+                disabled
+                title="Google sign-in coming soon">
+
+                <span class="ws-social-icon ws-google">
+                    G
+                </span>
+
+                Google
+
+            </button>
+
+
+            <!-- FACEBOOK -->
+
+            <button
+                type="button"
+                class="ws-social-btn"
+                disabled
+                title="Facebook sign-in coming soon">
+
+                <span class="ws-social-icon ws-facebook">
+                    f
+                </span>
+
+                Facebook
+
+            </button>
+
+
+            <!-- APPLE -->
+
+            <button
+                type="button"
+                class="ws-social-btn"
+                disabled
+                title="Apple sign-in coming soon">
+
+                <span class="ws-social-icon ws-apple">
+                    ●
+                </span>
+
+                Apple
+
+            </button>
+
+        </div>
+
+
+        <!-- SWITCH BETWEEN LOGIN AND SIGNUP -->
+
+        <div class="ws-auth-switch">
+
+            {% if mode == 'register' %}
+
+                Already have an account?
+
+                <a href="{{ url_for('login') }}">
+                    Sign In
+                </a>
+
+            {% else %}
+
+                New to WE-SELL?
+
+                <a href="{{ url_for('register') }}">
+                    Create a Free Account
+                </a>
+
+            {% endif %}
+
+        </div>
+
+
+        <!-- PRIVACY INFORMATION -->
+
+        <p class="ws-auth-legal">
+            By continuing, you agree to use
+            WE-SELL responsibly. Your information
+            is used to provide WE-SELL services.
+        </p>
+
+    </div>
+
+</section>
+
+
+<script>
+function toggleWsPassword() {
+
+    const password =
+        document.getElementById('ws-password');
+
+    const button =
+        document.querySelector('.ws-password-toggle');
+
+    if (password.type === 'password') {
+        password.type = 'text';
+        button.textContent = 'Hide';
+    } else {
+        password.type = 'password';
+        button.textContent = 'Show';
+    }
+
+}
+</script>
+
+{% endblock %}
