@@ -1,0 +1,418 @@
+
+{% extends 'base.html' %}
+{% block title %}Sell Your Car | WE-SELL{% endblock %}
+{% block content %}
+
+<style>
+.sc-page {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #102b46;
+}
+
+.sc-hero {
+  background:
+    linear-gradient(90deg, rgba(4,22,43,.95) 0%,
+      rgba(4,22,43,.86) 45%, rgba(4,22,43,.4) 100%),
+    url("{{ url_for('static', filename='Luxury SUV Sunset Skyline Reflections.png') }}");
+  background-size: cover;
+  background-position: center;
+  padding: 65px 24px 80px;
+  color: #fff;
+}
+
+.sc-container {
+  max-width: 1180px;
+  margin: auto;
+}
+
+.sc-label {
+  color: #ffca36;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.sc-hero h1 {
+  max-width: 790px;
+  font-size: clamp(35px, 4.7vw, 62px);
+  font-weight: 850;
+  line-height: 1.12;
+  letter-spacing: -1.5px;
+  margin: 18px 0;
+  color: white;
+}
+
+.sc-hero h1 span {
+  color: #ffca36;
+}
+
+.sc-intro {
+  max-width: 720px;
+  color: #e6edf5;
+  font-size: 18px;
+  line-height: 1.65;
+  margin-bottom: 32px;
+}
+
+.sc-form-card {
+  max-width: 760px;
+  background: white;
+  color: #102b46;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 18px 45px rgba(0,0,0,.28);
+}
+
+.sc-form-card h2 {
+  font-size: 25px;
+  margin: 0 0 8px;
+}
+
+.sc-form-card > p {
+  color: #64748b;
+  margin: 0 0 22px;
+}
+
+.sc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 16px;
+}
+
+.sc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.sc-field label {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sc-field input,
+.sc-field select,
+.sc-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ccd7e2;
+  background: #f9fbfd;
+  border-radius: 9px;
+  padding: 13px;
+  font: inherit;
+  color: #102b46;
+}
+
+.sc-field input:focus,
+.sc-field select:focus,
+.sc-field textarea:focus {
+  outline: 2px solid #ffca36;
+  border-color: #ffca36;
+}
+
+.sc-full {
+  grid-column: 1 / -1;
+}
+
+.sc-submit {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(#ffe16a,#ffbb00);
+  color: #102b46;
+  padding: 17px 20px;
+  font-size: 17px;
+  font-weight: 850;
+  cursor: pointer;
+  margin-top: 22px;
+}
+
+.sc-note {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+.sc-how {
+  padding: 65px 24px 75px;
+  background: #f4f7fb;
+}
+
+.sc-center {
+  text-align: center;
+}
+
+.sc-center h2 {
+  font-size: clamp(28px, 3vw, 40px);
+  margin: 12px 0 36px;
+}
+
+.sc-steps {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 24px;
+}
+
+.sc-step {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 30px 24px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0,0,0,.04);
+}
+
+.sc-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #ffca36;
+  color: #102b46;
+  font-weight: 900;
+  font-size: 20px;
+}
+
+.sc-step h3 {
+  font-size: 19px;
+  margin: 20px 0 10px;
+}
+
+.sc-step p {
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media(max-width:700px) {
+  .sc-hero {
+    padding: 45px 18px 60px;
+    background-position: 65% center;
+  }
+
+  .sc-hero h1 {
+    letter-spacing: -.5px;
+  }
+
+  .sc-intro {
+    font-size: 16px;
+  }
+
+  .sc-form-card {
+    padding: 20px;
+  }
+
+  .sc-form-grid,
+  .sc-steps {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<div class="sc-page">
+
+  <section class="sc-hero">
+    <div class="sc-container">
+
+      <div class="sc-label">
+        SELL SMARTER WITH WE-SELL
+      </div>
+
+      <h1>
+        WE-SELL Your Car for You<br>
+        for a <span>Great Price.</span>
+      </h1>
+
+      <p class="sc-intro">
+        Get competitive offers from trusted buyers through WE-SELL.
+        Compare offers, avoid negotiating with multiple buyers,
+        and sell your car at the price you choose—without the
+        hassle of private listings.
+      </p>
+
+      <div class="sc-form-card">
+
+        <h2>Tell Us About Your Car</h2>
+
+        <p>
+          Enter your vehicle details to request offers
+          from participating buyers.
+        </p>
+
+        <!-- This form is a preview until the Flask submission route is added. -->
+        <form id="sell-car-form" onsubmit="return handleSellPreview(event)">
+
+          <div class="sc-form-grid">
+
+            <div class="sc-field">
+              <label for="sc-year">Year *</label>
+              <select id="sc-year" name="year" required>
+                <option value="">Select Year</option>
+                {% for year in range(2027, 1989, -1) %}
+                <option value="{{ year }}">{{ year }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="sc-field">
+              <label for="sc-make">Make *</label>
+              <input id="sc-make" name="make"
+                     placeholder="e.g. Toyota" maxlength="50" required>
+            </div>
+
+            <div class="sc-field">
+              <label for="sc-model">Model *</label>
+              <input id="sc-model" name="model"
+                     placeholder="e.g. Camry" maxlength="50" required>
+            </div>
+
+            <div class="sc-field">
+              <label for="sc-trim">Trim</label>
+              <input id="sc-trim" name="trim"
+                     placeholder="e.g. XLE" maxlength="60">
+            </div>
+
+            <div class="sc-field">
+              <label for="sc-mileage">Mileage *</label>
+              <input id="sc-mileage" name="mileage" type="number"
+                     min="0" max="9999999"
+                     placeholder="e.g. 85000" required>
+            </div>
+
+            <div class="sc-field">
+              <label for="sc-zip">ZIP Code *</label>
+              <input id="sc-zip" name="zip_code"
+                     inputmode="numeric" pattern="[0-9]{5}"
+                     maxlength="5" placeholder="e.g. 92101" required>
+            </div>
+
+            <div class="sc-field sc-full">
+              <label for="sc-vin">VIN (Optional)</label>
+              <input id="sc-vin" name="vin"
+                     minlength="17" maxlength="17"
+                     placeholder="17-character Vehicle Identification Number">
+            </div>
+
+            <div class="sc-field sc-full">
+              <label for="sc-condition">Vehicle Condition *</label>
+              <select id="sc-condition" name="condition" required>
+                <option value="">Select Condition</option>
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+                <option value="needs_repairs">Needs Repairs</option>
+              </select>
+            </div>
+
+            <div class="sc-field sc-full">
+              <label for="sc-price">Your Asking Price (Optional)</label>
+              <input id="sc-price" name="asking_price"
+                     type="number" min="0"
+                     placeholder="e.g. 15000">
+            </div>
+
+            <div class="sc-field sc-full">
+              <label for="sc-name">Full Name *</label>
+              <input id="sc-name" name="full_name"
+                     autocomplete="name" maxlength="100" required>
+            </div>
+
+            <div class="sc-field">
+              <label for="sc-email">Email *</label>
+              <input id="sc-email" name="email" type="email"
+                     autocomplete="email" required>
+            </div>
+
+            <div class="sc-field">
+              <label for="sc-phone">Phone Number *</label>
+              <input id="sc-phone" name="phone" type="tel"
+                     autocomplete="tel" maxlength="25" required>
+            </div>
+
+            <div class="sc-field sc-full">
+              <label for="sc-notes">Additional Details</label>
+              <textarea id="sc-notes" name="notes" rows="3"
+                        maxlength="2000"
+                        placeholder="Tell us about any damage, repairs, or special features."></textarea>
+            </div>
+
+          </div>
+
+          <button class="sc-submit" type="submit">
+            Request My Offers →
+          </button>
+
+          <p class="sc-note">
+            Submitting a request does not guarantee an offer or sale.
+            WE-SELL will help connect sellers with interested buyers
+            when the submission service becomes available.
+          </p>
+
+          <p id="sc-message" class="sc-note" role="status"
+             aria-live="polite"></p>
+
+        </form>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="sc-how">
+    <div class="sc-container">
+
+      <div class="sc-center">
+        <div class="sc-label">SIMPLE AND CONVENIENT</div>
+        <h2>How It Works</h2>
+      </div>
+
+      <div class="sc-steps">
+
+        <div class="sc-step">
+          <span class="sc-number">1</span>
+          <h3>Tell Us About Your Car</h3>
+          <p>
+            Enter your vehicle details and
+            your preferred selling price.
+          </p>
+        </div>
+
+        <div class="sc-step">
+          <span class="sc-number">2</span>
+          <h3>Compare Buyer Offers</h3>
+          <p>
+            WE-SELL helps connect you with interested
+            participating buyers so you can review offers.
+          </p>
+        </div>
+
+        <div class="sc-step">
+          <span class="sc-number">3</span>
+          <h3>Choose Your Best Offer</h3>
+          <p>
+            Decide whether to accept an offer
+            and arrange the next steps with the buyer.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+function handleSellPreview(event) {
+  event.preventDefault();
+  document.getElementById('sc-message').textContent =
+    'The Sell Your Car form is not accepting submissions yet. ' +
+    'Please check back when the WE-SELL submission service launches.';
+  return false;
+}
+</script>
+
+{% endblock %}
