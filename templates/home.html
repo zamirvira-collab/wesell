@@ -43,6 +43,66 @@
   .car-option { font-size: 18px; padding: 16px 8px; }
 }
 </style>
+.wesell-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  gap: 0;
+  margin: 28px 0 12px;
+  padding: 16px 0;
+  max-width: 1200px;
+  color: white;
+}
+
+.wesell-benefit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 8px 20px;
+  font-size: 17px;
+}
+
+.wesell-benefit + .wesell-benefit {
+  border-left: 1px solid rgba(255,255,255,.55);
+}
+
+.benefit-icon {
+  font-size: 34px;
+  flex-shrink: 0;
+}
+
+.wesell-benefit strong {
+  font-weight: 750;
+}
+
+.wesell-benefit small {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: white;
+}
+
+.reward-title {
+  color: #ffbd38;
+  font-size: 20px;
+}
+
+@media (max-width: 700px) {
+  .wesell-benefits {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .wesell-benefit {
+    justify-content: flex-start;
+  }
+
+  .wesell-benefit + .wesell-benefit {
+    border-left: 0;
+  }
+}
+
 
 <div class="car-options">
   <button type="button" class="car-option selected"
@@ -67,4 +127,24 @@ function chooseCarType(button, type) {
 <form class="search" method="get" action="{{ url_for('home') }}">
 <input type="hidden" name="condition" id="car-condition" value="new">
 
-<input name="q" aria-label="Search vehicles" value="{{q}}" placeholder="Search make, model, or year"><select name="make" aria-label="Make"><option value="">All makes</option>{% for m in makes %}<option value="{{m.make}}" {% if selected_make==m.make %}selected{% endif %}>{{m.make}}</option>{% endfor %}</select><button class="btn gold">Search Vehicles →</button></form><div class="herochecks"><span>✓ Trusted connections</span><span>✓ Convenient appointments</span><span>✓ $25 gas reward after verified purchase</span></div></div></section><section class="section"><div class="sectionhead"><div><div class="eyebrow blue">DISCOVER YOUR NEXT RIDE</div><h2>Featured vehicles</h2><p>Explore cars, SUVs, and more.</p></div><span class="count">{{vehicles|length}} vehicles</span></div><div class="cards">{% for v in vehicles %}<article class="vehiclecard"><a href="{{url_for('vehicle',vid=v.id)}}"><div class="carimage" {% if v.image_url %}style="background-image:url('{{v.image_url}}')"{% endif %}><span class="pill">Available to inquire</span></div></a><div class="carbody"><span class="muted">{{v.mileage|int}} miles · {{v.city}}</span><h3>{{v.year}} {{v.make}} {{v.model}}</h3><p>{{v.trim}}</p><div class="cardbottom"><strong>${{ '{:,}'.format(v.price) }}</strong><a class="btn navy" href="{{url_for('vehicle',vid=v.id)}}">View Details →</a></div></div></article>{% else %}<div class="empty">No vehicles match your search. Try a different make or model.</div>{% endfor %}</div></section><section class="steps section"><div class="center"><div class="eyebrow blue">SIMPLE FROM START TO FINISH</div><h2>How WE-SELL works</h2></div><div class="stepgrid"><div class="step"><span>01</span><h3>Find your car</h3><p>Explore participating dealerships' listings and choose a vehicle you like.</p></div><div class="step"><span>02</span><h3>WE-SELL coordinates</h3><p>We send your request to the dealership and relay its proposed appointment.</p></div><div class="step"><span>03</span><h3>Buy and get rewarded</h3><p>After a completed purchase is verified, qualify for a $25 gas gift card.</p></div></div></section><section class="cta"><div><h2>Dealership owner?</h2><p>Manage inventory and customer inquiries in your own portal.</p></div><a class="btn gold" href="{{url_for('dealers_page')}}">Explore Dealer Partnership →</a></section>{% endblock %}
+<input name="q" aria-label="Search vehicles" value="{{q}}" placeholder="Search make, model, or year"><select name="make" aria-label="Make"><option value="">All makes</option>{% for m in makes %}<option value="{{m.make}}" {% if selected_make==m.make %}selected{% endif %}>{{m.make}}</option>{% endfor %}</select><button class="btn gold">Search Vehicles →</button></form>
+<div class="herochecks wesell-benefits">
+  <div class="wesell-benefit">
+    <span class="benefit-icon">🤝</span>
+    <strong>Trusted connections</strong>
+  </div>
+
+  <div class="wesell-benefit">
+    <span class="benefit-icon">▦</span>
+    <strong>Convenient appointments</strong>
+  </div>
+
+  <div class="wesell-benefit">
+    <span class="benefit-icon">⛽</span>
+    <div>
+      <strong class="reward-title">$25 Gas Reward</strong>
+      <small>After a Verified Purchase</small>
+    </div>
+  </div>
+</div>
+</div></div></section><section class="section"><div class="sectionhead"><div><div class="eyebrow blue">DISCOVER YOUR NEXT RIDE</div><h2>Featured vehicles</h2><p>Explore cars, SUVs, and more.</p></div><span class="count">{{vehicles|length}} vehicles</span></div><div class="cards">{% for v in vehicles %}<article class="vehiclecard"><a href="{{url_for('vehicle',vid=v.id)}}"><div class="carimage" {% if v.image_url %}style="background-image:url('{{v.image_url}}')"{% endif %}><span class="pill">Available to inquire</span></div></a><div class="carbody"><span class="muted">{{v.mileage|int}} miles · {{v.city}}</span><h3>{{v.year}} {{v.make}} {{v.model}}</h3><p>{{v.trim}}</p><div class="cardbottom"><strong>${{ '{:,}'.format(v.price) }}</strong><a class="btn navy" href="{{url_for('vehicle',vid=v.id)}}">View Details →</a></div></div></article>{% else %}<div class="empty">No vehicles match your search. Try a different make or model.</div>{% endfor %}</div></section><section class="steps section"><div class="center"><div class="eyebrow blue">SIMPLE FROM START TO FINISH</div><h2>How WE-SELL works</h2></div><div class="stepgrid"><div class="step"><span>01</span><h3>Find your car</h3><p>Explore participating dealerships' listings and choose a vehicle you like.</p></div><div class="step"><span>02</span><h3>WE-SELL coordinates</h3><p>We send your request to the dealership and relay its proposed appointment.</p></div><div class="step"><span>03</span><h3>Buy and get rewarded</h3><p>After a completed purchase is verified, qualify for a $25 gas gift card.</p></div></div></section><section class="cta"><div><h2>Dealership owner?</h2><p>Manage inventory and customer inquiries in your own portal.</p></div><a class="btn gold" href="{{url_for('dealers_page')}}">Explore Dealer Partnership →</a></section>{% endblock %}
