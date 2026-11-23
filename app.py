@@ -101,6 +101,12 @@ def init_db():
     conn.executescript("""
         PRAGMA foreign_keys=ON;
 
+        CREATE TABLE IF NOT EXISTS dealer_google_identities (
+            google_sub TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL UNIQUE,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
         CREATE TABLE IF NOT EXISTS users(
             id INTEGER PRIMARY KEY,
             email TEXT UNIQUE NOT NULL,
@@ -920,6 +926,50 @@ def buyer_dashboard():
         "buyer.html",
         leads=leads
     )
+
+
+# ==========================================
+# DEALER GOOGLE ACCOUNT CONNECTION
+# ==========================================
+
+@app.get("/dealer/connect-google")
+@login_required("dealer")
+def dealer_connect_google():
+    from flask import render_template_string
+    linked = db().execute(
+        "SELECT 1 FROM dealer_google_identities WHERE user_id=?",
+        (g.user["id"],),
+    ).fetchone() is not None
+    return render_template_string("""
+    <!doctype html><html lang="en"><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Connect Google | WE-SELL Dealer</title>
+    <style>
+    body{font-family:Arial,sans-serif;background:#f3f6fa;color:#09223d;margin:0}
+    header{background:#041b34;color:white;padding:22px 6%;font-size:23px;font-weight:800}
+    header span{color:#ffc400}main{max-width:530px;margin:70px auto;padding:30px;
+    background:white;border-radius:18px;box-shadow:0 12px 35px #09223d19}
+    p{line-height:1.7;color:#52657b}.btn{display:block;text-align:center;
+    background:#ffc400;color:#041b34;padding:16px;border-radius:10px;
+    text-decoration:none;font-weight:800;margin:20px 0}
+    .back{color:#075ba8;text-decoration:none}
+    </style></head><body><header><span>WE-SELL</span> | Dealer Portal</header>
+    <main><h1>Google account connection</h1>
+    {% with messages=get_flashed_messages() %}{% for m in messages %}<p>{{m}}</p>{% endfor %}{% endwith %}
+    {% if linked %}<p>Your dealership user account is already connected to Google.</p>
+    {% else %}<p>Connect your Google account while signed in with your dealership
+    email and password. Future Google logins will open your dealer dashboard.</p>
+    <a class="btn" href="{{link_url}}">Connect Google securely</a>{% endif %}
+    <a class="back" href="{{dashboard_url}}">← Back to Dealer Dashboard</a>
+    </main></body></html>
+    """, linked=linked,
+    link_url=url_for("social_auth.start_link", portal="dealer"),
+    dashboard_url=url_for("dealer_dashboard"))
+
+
+@app.get("/dealer/google-login")
+def dealer_google_login():
+    return redirect(url_for("social_auth.start_login", provider="google", portal="dealer"))
 
 
 # ==========================================
@@ -1872,7 +1922,7 @@ def dealer_inventory(dealer_id):
 
 app.register_blueprint(rental_portal)
 
-# Google OAuth routes (account linking is not enabled yet)
+# Google OAuth routes for securely linked rental and dealer accounts
 app.register_blueprint(social_auth)
 init_social_auth(app)
 
