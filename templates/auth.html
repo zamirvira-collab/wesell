@@ -8,27 +8,16 @@
 {% block content %}
 
 <style>
-/* ==========================================
-   WE-SELL DEALERSHIP PORTAL
-   COMPLETE LOGIN & REGISTRATION DESIGN
-   ========================================== */
-
 .ws-dealer-page,
 .ws-dealer-page * {
     box-sizing: border-box;
 }
-
-/* HIDE MAIN WEBSITE NAVIGATION */
 
 body:has(.ws-dealer-page) .nav,
 body:has(.ws-dealer-page) header.nav,
 body:has(.ws-dealer-page) .navbar {
     display: none !important;
 }
-
-/* ==========================================
-   SIMPLE BUSINESS PORTAL HEADER
-   ========================================== */
 
 .ws-dealer-topbar {
     width: 100%;
@@ -74,10 +63,6 @@ body:has(.ws-dealer-page) .navbar {
     background: #123b5b;
 }
 
-/* ==========================================
-   PAGE LAYOUT
-   ========================================== */
-
 .ws-dealer-page {
     min-height: calc(100vh - 82px);
     padding: 44px 20px 65px;
@@ -98,10 +83,6 @@ body:has(.ws-dealer-page) .navbar {
     overflow: hidden;
     box-shadow: 0 22px 65px rgba(6,29,53,.12);
 }
-
-/* ==========================================
-   LEFT BUSINESS PANEL
-   ========================================== */
 
 .ws-dealer-left {
     background:
@@ -200,10 +181,6 @@ body:has(.ws-dealer-page) .navbar {
     color: #a9c5d8;
     font-size: 12px;
 }
-
-/* ==========================================
-   RIGHT LOGIN PANEL
-   ========================================== */
 
 .ws-dealer-right {
     padding: 48px 52px;
@@ -310,10 +287,6 @@ body:has(.ws-dealer-page) .navbar {
     background: #f6b900;
 }
 
-/* ==========================================
-   SOCIAL SIGN IN
-   ========================================== */
-
 .ws-dealer-divider {
     display: flex;
     align-items: center;
@@ -337,7 +310,8 @@ body:has(.ws-dealer-page) .navbar {
     gap: 11px;
 }
 
-.ws-dealer-social button {
+.ws-dealer-social button,
+.ws-dealer-social a {
     min-height: 48px;
     border: 1px solid #dce5ee;
     border-radius: 10px;
@@ -349,6 +323,8 @@ body:has(.ws-dealer-page) .navbar {
     align-items: center;
     justify-content: center;
     gap: 10px;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .ws-dealer-social button:disabled {
@@ -381,11 +357,8 @@ body:has(.ws-dealer-page) .navbar {
     color: #94a3b8;
     font-size: 11px;
     margin-top: 13px;
+    line-height: 1.6;
 }
-
-/* ==========================================
-   FOOTER
-   ========================================== */
 
 .ws-dealer-switch {
     margin-top: 25px;
@@ -414,12 +387,7 @@ body:has(.ws-dealer-page) .navbar {
     font-weight: 700;
 }
 
-/* ==========================================
-   MOBILE RESPONSIVE
-   ========================================== */
-
 @media (max-width: 850px) {
-
     .ws-dealer-shell {
         grid-template-columns: 1fr;
         max-width: 560px;
@@ -441,7 +409,6 @@ body:has(.ws-dealer-page) .navbar {
 }
 
 @media (max-width: 500px) {
-
     .ws-dealer-topbar {
         padding: 14px;
     }
@@ -472,29 +439,21 @@ body:has(.ws-dealer-page) .navbar {
         font-size: 26px;
     }
 
-    .ws-dealer-social button {
+    .ws-dealer-social button,
+    .ws-dealer-social a {
         font-size: 12px;
     }
 }
 </style>
 
-
-<!-- ==========================================
-     DEALERSHIP PORTAL HEADER
-     ========================================== -->
-
 <div class="ws-dealer-topbar">
-
     <div class="ws-dealer-topbar-brand">
-
         <span class="ws-dealer-topbar-logo">
             WE-SELL
         </span>
-
         <span class="ws-dealer-topbar-name">
             Dealership Portal
         </span>
-
     </div>
 
     <a
@@ -502,29 +461,18 @@ body:has(.ws-dealer-page) .navbar {
         href="{{ url_for('home') }}">
         ← Main Website
     </a>
-
 </div>
 
-
-<!-- ==========================================
-     DEALERSHIP LOGIN / REGISTRATION
-     ========================================== -->
-
 <section class="ws-dealer-page">
-
     <div class="ws-dealer-shell">
 
-        <!-- LEFT PANEL -->
-
         <aside class="ws-dealer-left">
-
             <div class="ws-dealer-brand">
                 WE-SELL
                 <small>DEALERSHIP BUSINESS PORTAL</small>
             </div>
 
             <div>
-
                 <div class="ws-dealer-eyebrow">
                     BUILT FOR AUTO DEALERSHIPS
                 </div>
@@ -542,7 +490,6 @@ body:has(.ws-dealer-page) .navbar {
                 </p>
 
                 <div class="ws-dealer-benefits">
-
                     <div class="ws-dealer-benefit">
                         <span class="ws-dealer-check">✓</span>
                         Advertise your dealership inventory
@@ -562,19 +509,13 @@ body:has(.ws-dealer-page) .navbar {
                         <span class="ws-dealer-check">✓</span>
                         Manage your dealership profile
                     </div>
-
                 </div>
-
             </div>
 
             <div class="ws-dealer-bottom">
                 WE-SELL | Connecting Dealerships With Buyers
             </div>
-
         </aside>
-
-
-        <!-- RIGHT PANEL -->
 
         <div class="ws-dealer-right">
 
@@ -583,31 +524,22 @@ body:has(.ws-dealer-page) .navbar {
             </div>
 
             {% if mode == 'register' %}
-
                 <h2 class="ws-dealer-title">
                     Register Your Dealership
                 </h2>
-
                 <p class="ws-dealer-subtitle">
                     Create your dealership account
                     to get started with WE-SELL.
                 </p>
-
             {% else %}
-
                 <h2 class="ws-dealer-title">
                     Welcome Back, Dealer!
                 </h2>
-
                 <p class="ws-dealer-subtitle">
                     Sign in to access your WE-SELL
                     dealership account.
                 </p>
-
             {% endif %}
-
-
-            <!-- LOGIN / REGISTER FORM -->
 
             <form
                 method="POST"
@@ -619,12 +551,10 @@ body:has(.ws-dealer-page) .navbar {
                     value="{{ csrf }}">
 
                 {% if mode == 'register' %}
-
                 <div class="ws-dealer-field">
                     <label for="ws-name">
                         Dealer / Contact Name
                     </label>
-
                     <input
                         id="ws-name"
                         type="text"
@@ -639,7 +569,6 @@ body:has(.ws-dealer-page) .navbar {
                     <label for="ws-phone">
                         Business Phone Number
                     </label>
-
                     <input
                         id="ws-phone"
                         type="tel"
@@ -648,18 +577,12 @@ body:has(.ws-dealer-page) .navbar {
                         autocomplete="tel"
                         maxlength="30">
                 </div>
-
                 {% endif %}
 
-
-                <!-- EMAIL -->
-
                 <div class="ws-dealer-field">
-
                     <label for="ws-email">
                         Business Email Address
                     </label>
-
                     <input
                         id="ws-email"
                         type="email"
@@ -668,20 +591,14 @@ body:has(.ws-dealer-page) .navbar {
                         autocomplete="email"
                         maxlength="254"
                         required>
-
                 </div>
 
-
-                <!-- PASSWORD -->
-
                 <div class="ws-dealer-field">
-
                     <label for="ws-password">
                         {{ 'Create Password' if mode == 'register' else 'Password' }}
                     </label>
 
                     <div class="ws-dealer-password">
-
                         <input
                             id="ws-password"
                             type="password"
@@ -699,30 +616,19 @@ body:has(.ws-dealer-page) .navbar {
                             onclick="toggleDealerPassword()">
                             Show
                         </button>
-
                     </div>
-
                 </div>
-
-
-                <!-- SUBMIT -->
 
                 <button
                     type="submit"
                     class="ws-dealer-submit">
-
                     {% if mode == 'register' %}
                         Create Dealership Account →
                     {% else %}
                         Sign In to Dealer Portal →
                     {% endif %}
-
                 </button>
-
             </form>
-
-
-            <!-- SOCIAL SIGN IN -->
 
             <div class="ws-dealer-divider">
                 Or continue with
@@ -730,13 +636,21 @@ body:has(.ws-dealer-page) .navbar {
 
             <div class="ws-dealer-social">
 
-                <button
-                    type="button"
-                    disabled
-                    title="Google sign-in coming soon">
+                {% if mode == 'login' %}
+                <a
+                    href="{{ url_for('dealer_google_login') }}"
+                    aria-label="Continue with Google">
                     <strong class="google">G</strong>
-                    Google / Gmail
-                </button>
+                    Continue with Google
+                </a>
+                {% else %}
+                <a
+                    href="{{ url_for('login') }}"
+                    title="Create an account first, then connect Google">
+                    <strong class="google">G</strong>
+                    Google (after signup)
+                </a>
+                {% endif %}
 
                 <button
                     type="button"
@@ -761,66 +675,42 @@ body:has(.ws-dealer-page) .navbar {
                     <strong class="apple">&#63743;</strong>
                     Apple
                 </button>
-
             </div>
 
             <p class="ws-dealer-social-note">
-                Social sign-in coming soon
+                Google Sign-In requires a dealership account
+                already linked to Google. Facebook, LinkedIn,
+                and Apple are coming later.
             </p>
 
-
-            <!-- LOGIN / REGISTER SWITCH -->
-
             <div class="ws-dealer-switch">
-
                 {% if mode == 'register' %}
-
                     Already registered your dealership?
-
                     <a href="{{ url_for('login') }}">
                         Sign In
                     </a>
-
                 {% else %}
-
                     New dealership?
-
                     <a href="{{ url_for('register') }}">
                         Register Your Dealership
                     </a>
-
                 {% endif %}
-
             </div>
 
-
-            <!-- HOME LINK -->
-
             <div class="ws-dealer-home">
-
                 <a href="{{ url_for('home') }}">
                     ← Return to WE-SELL Main Website
                 </a>
-
             </div>
 
         </div>
-
     </div>
-
 </section>
-
 
 <script>
 function toggleDealerPassword() {
-
-    const password = document.getElementById(
-        'ws-password'
-    );
-
-    const button = document.querySelector(
-        '.ws-dealer-toggle'
-    );
+    const password = document.getElementById('ws-password');
+    const button = document.querySelector('.ws-dealer-toggle');
 
     if (!password || !button) {
         return;
