@@ -1,217 +1,667 @@
+
 import os
 import sqlite3
 import logging
+import secrets
 
-from flask import Blueprint, current_app, redirect, url_for, flash, session
+from flask import (
+    Blueprint,
+    current_app,
+    redirect,
+    url_for,
+    flash,
+    session,
+    g,
+)
 from authlib.integrations.flask_client import OAuth
+from authlib.common.security import generate_token
 
 social_auth = Blueprint("social_auth", __name__)
 oauth = OAuth()
 logger = logging.getLogger(__name__)
 
+PROVIDERS = ("google", "facebook")
+PORTALS = ("dealer", "rental")
+
+
+# --------------------------------------------------
+# INITIALIZE GOOGLE AND FACEBOOK
+# --------------------------------------------------
 
 def init_social_auth(app):
-    """Initialize Google's OpenID Connect client."""
     oauth.init_app(app)
-    client_id = os.environ.get("GOOGLE_CLIENT_ID")
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
-    if client_id and client_secret:
+
+    google_id = os.environ.get("GOOGLE_CLIENT_ID")
+    google_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+
+    if google_id and google_secret:
         oauth.register(
             name="google",
-            client_id=client_id,
-            client_secret=client_secret,
+            client_id=google_id,
+            client_secret=google_secret,
             server_metadata_url=(
-                "https://accounts.google.com/.well-known/openid-configuration"
+                "https://accounts.google.com/"
+                ".well-known/openid-configuration"
             ),
-            client_kwargs={"scope": "openid email profile"},
+            client_kwargs={
+                "scope": "openid email profile"
+            },
         )
+
+    facebook_id = os.environ.get("FACEBOOK_CLIENT_ID")
+    facebook_secret = os.environ.get("FACEBOOK_CLIENT_SECRET")
+
+    if facebook_id and facebook_secret:
+        oauth.register(
+            name="facebook",
+            client_id=facebook_id,
+            client_secret=facebook_secret,
+            access_token_url=(
+                "https://graph.facebook.com/"
+                "v24.0/oauth/access_token"
+            ),
+            authorize_url=(
+                "https://www.facebook.com/"
+                "v24.0/dialog/oauth"
+            ),
+            api_base_url=(
+                "https://graph.facebook.com/v24.0/"
+            ),
+            client_kwargs={
+                "scope": "public_profile,email"
+            },
+        )
+
+    # Create identity tables without altering existing users.
+    with app.app_context():
+        try:
+            initialize_identity_tables()
+        except sqlite3.Error:
+            logger.exception(
+                "Could not initialize social identity tables"
+            )
+
+
+# --------------------------------------------------
+# DATABASE CONNECTIONS
+# --------------------------------------------------
+
+def dealer_db():
+    path = os.environ.get(
+        "WESELL_DB",
+        os.path.join(current_app.root_path, "wesell.db"),
+    )
+
+    conn = sqlite3.connect(path, timeout=15)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
 
 
 def rental_db():
     from rental_portal import DB
+
     conn = sqlite3.connect(DB, timeout=15)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
 
-def google_client():
-    return oauth.create_client("google")
+def initialize_identity_tables():
+    conn = dealer_db()
+
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS dealer_google_identities (
+                google_sub TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL UNIQUE
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS dealer_facebook_identities (
+                facebook_id TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL UNIQUE
+            )
+        """)
+
+        conn.commit()
+    finally:
+        conn.close()
+
+    conn = rental_db()
+
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS rental_google_identities (
+                google_sub TEXT PRIMARY KEY,
+                company_id INTEGER NOT NULL UNIQUE
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS rental_facebook_identities (
+                facebook_id TEXT PRIMARY KEY,
+                company_id INTEGER NOT NULL UNIQUE
+            )
+        """)
+
+        conn.commit()
+    finally:
+        conn.close()
 
 
-def callback_url():
-    # This EXACT URL must be registered in Google Cloud.
-    return url_for("social_auth.google_callback", _external=True, _scheme="https")
+# --------------------------------------------------
+# HELPERS
+# --------------------------------------------------
+
+def provider_client(provider):
+    return oauth.create_client(provider)
 
 
-def begin_google(portal, intent):
-    if portal not in ("rental", "dealer"):
-        return "Invalid portal", 400
-    client = google_client()
-    if client is None:
-        flash("Google Sign-In is not configured.")
-        return redirect(url_for("rental_portal.login") if portal == "rental" else url_for("login"))
-    session["google_portal"] = portal
-    session["google_intent"] = intent
-    if intent == "link":
-        if portal == "rental":
-            session["google_link_company_id"] = session.get("rental_company_id")
-        else:
-            session["google_link_user_id"] = session.get("uid")
+def portal_login_url(portal):
+    if portal == "rental":
+        return url_for("rental_portal.login")
+
+    return url_for("login")
+
+
+def portal_dashboard_url(portal):
+    if portal == "rental":
+        return url_for("rental_portal.dashboard")
+
+    return url_for("dealer_dashboard")
+
+
+def callback_url(provider="google"):
+    if provider == "google":
+        endpoint = "social_auth.google_callback"
+    elif provider == "facebook":
+        endpoint = "social_auth.facebook_callback"
     else:
-        session.pop("google_link_company_id", None)
-        session.pop("google_link_user_id", None)
-    return client.authorize_redirect(callback_url())
+        raise ValueError("Unsupported provider")
 
+    return url_for(
+        endpoint,
+        _external=True,
+        _scheme="https",
+    )
+
+
+def identity_table(portal, provider):
+    if portal not in PORTALS or provider not in PROVIDERS:
+        raise ValueError("Invalid social identity")
+
+    return f"{portal}_{provider}_identities"
+
+
+def identity_column(provider):
+    if provider == "google":
+        return "google_sub"
+
+    if provider == "facebook":
+        return "facebook_id"
+
+    raise ValueError("Invalid provider")
+
+
+def account_column(portal):
+    return "company_id" if portal == "rental" else "user_id"
+
+
+def clear_oauth_session():
+    for key in (
+        "social_provider",
+        "social_portal",
+        "social_intent",
+        "social_link_id",
+        "social_nonce",
+        "google_portal",
+        "google_intent",
+        "google_link_company_id",
+        "google_link_user_id",
+    ):
+        session.pop(key, None)
+
+
+def current_account_id(portal):
+    if portal == "rental":
+        return session.get("rental_company_id")
+
+    return session.get("uid")
+
+
+def verify_link_session(portal, account_id):
+    if not account_id:
+        return False
+
+    if current_account_id(portal) != account_id:
+        return False
+
+    if portal == "dealer":
+        user = getattr(g, "user", None)
+
+        if not user:
+            return False
+
+        return (
+            user["role"] == "dealer"
+            and user["id"] == account_id
+        )
+
+    return True
+
+
+# --------------------------------------------------
+# BEGIN SOCIAL LOGIN
+# --------------------------------------------------
+
+def begin_social(provider, portal, intent):
+    if provider not in PROVIDERS:
+        return "Unsupported provider", 404
+
+    if portal not in PORTALS:
+        return "Invalid portal", 400
+
+    if intent not in ("login", "link"):
+        return "Invalid action", 400
+
+    client = provider_client(provider)
+
+    if client is None:
+        flash(
+            f"{provider.title()} Login is not configured.",
+            "error",
+        )
+        return redirect(portal_login_url(portal))
+
+    if intent == "link":
+        account_id = current_account_id(portal)
+
+        if not verify_link_session(portal, account_id):
+            flash(
+                "Sign in with your password before "
+                "connecting a social account.",
+                "error",
+            )
+            return redirect(portal_login_url(portal))
+    else:
+        account_id = None
+
+    clear_oauth_session()
+
+    session["social_provider"] = provider
+    session["social_portal"] = portal
+    session["social_intent"] = intent
+
+    if intent == "link":
+        session["social_link_id"] = account_id
+
+    try:
+        if provider == "google":
+            return client.authorize_redirect(
+                callback_url(provider),
+                nonce=generate_token(32),
+            )
+
+        return client.authorize_redirect(
+            callback_url(provider)
+        )
+
+    except Exception:
+        logger.exception("Unable to begin social login")
+        clear_oauth_session()
+        flash(
+            "Unable to start social login. Please try again.",
+            "error",
+        )
+        return redirect(portal_login_url(portal))
+
+
+# --------------------------------------------------
+# LOGIN ROUTES
+# --------------------------------------------------
 
 @social_auth.get("/auth/<provider>/<portal>")
 def start_login(provider, portal):
-    if provider != "google":
-        return "Provider not configured", 404
-    if portal not in ("dealer", "rental"):
-        return "Invalid portal", 400
-    return begin_google(portal, "login")
+    return begin_social(provider, portal, "login")
 
 
-@social_auth.get("/auth/google/link/<portal>")
+@social_auth.get("/auth/<provider>/link/<portal>")
+def start_social_link(provider, portal):
+    return begin_social(provider, portal, "link")
+
+
+# Preserve the original Google link endpoint.
+@social_auth.get("/auth/google/connect/<portal>")
 def start_link(portal):
-    if portal not in ("rental", "dealer"):
-        return "Unsupported portal", 400
-    if portal == "rental" and not session.get("rental_company_id"):
-        flash("Sign in with your rental-company password first.")
-        return redirect(url_for("rental_portal.login"))
-    if portal == "dealer":
-        from flask import g
-        if not session.get("uid") or not g.get("user") or g.user["role"] != "dealer":
-            flash("Sign in to your dealer account with your password first.")
-            return redirect(url_for("login"))
-    return begin_google(portal, "link")
+    return begin_social("google", portal, "link")
 
+
+# --------------------------------------------------
+# RETRIEVE VERIFIED PROVIDER IDENTITY
+# --------------------------------------------------
+
+def get_google_identity(client):
+    token = client.authorize_access_token()
+
+    userinfo = token.get("userinfo")
+
+    if not userinfo:
+        userinfo = client.parse_id_token(token)
+
+    if not userinfo:
+        raise ValueError("Google identity unavailable")
+
+    sub = userinfo.get("sub")
+    verified = userinfo.get("email_verified", False)
+
+    if not sub or verified not in (
+        True,
+        "true",
+        1,
+    ):
+        raise ValueError("Google identity not verified")
+
+    return str(sub)
+
+
+def get_facebook_identity(client):
+    token = client.authorize_access_token()
+
+    response = client.get(
+        "me",
+        params={"fields": "id,name,email"},
+        token=token,
+    )
+
+    response.raise_for_status()
+
+    profile = response.json()
+
+    facebook_id = profile.get("id")
+
+    if not facebook_id:
+        raise ValueError("Facebook identity unavailable")
+
+    # Facebook does not guarantee an email address.
+    # Never identify accounts by email alone.
+    return str(facebook_id)
+
+
+# --------------------------------------------------
+# VERIFY BUSINESS ACCOUNT
+# --------------------------------------------------
+
+def valid_dealer_account(conn, user_id):
+    row = conn.execute(
+        """
+        SELECT u.id
+        FROM users u
+        JOIN dealers d ON d.id = u.dealer_id
+        WHERE u.id = ?
+          AND u.role = 'dealer'
+          AND d.approved = 1
+        """,
+        (user_id,),
+    ).fetchone()
+
+    return row is not None
+
+
+def valid_rental_account(conn, company_id):
+    row = conn.execute(
+        """
+        SELECT id
+        FROM rental_companies
+        WHERE id = ?
+        """,
+        (company_id,),
+    ).fetchone()
+
+    return row is not None
+
+
+def valid_business_account(conn, portal, account_id):
+    if portal == "dealer":
+        return valid_dealer_account(conn, account_id)
+
+    return valid_rental_account(conn, account_id)
+
+
+# --------------------------------------------------
+# LINK SOCIAL ACCOUNT
+# --------------------------------------------------
+
+def link_social_identity(
+    conn,
+    provider,
+    portal,
+    provider_id,
+    account_id,
+):
+    if not valid_business_account(
+        conn, portal, account_id
+    ):
+        return (
+            "Business account not found or not approved.",
+            403,
+        )
+
+    table = identity_table(portal, provider)
+    identity_field = identity_column(provider)
+    account_field = account_column(portal)
+
+    other = conn.execute(
+        f"""
+        SELECT {account_field}
+        FROM {table}
+        WHERE {identity_field} = ?
+        """,
+        (provider_id,),
+    ).fetchone()
+
+    if other and other[account_field] != account_id:
+        return (
+            "This social account is already linked "
+            "to another business.",
+            409,
+        )
+
+    existing = conn.execute(
+        f"""
+        SELECT {identity_field}
+        FROM {table}
+        WHERE {account_field} = ?
+        """,
+        (account_id,),
+    ).fetchone()
+
+    if existing and existing[identity_field] != provider_id:
+        return (
+            "This business already has a different "
+            f"{provider.title()} account connected.",
+            409,
+        )
+
+    conn.execute(
+        f"""
+        INSERT OR IGNORE INTO {table}
+        ({identity_field}, {account_field})
+        VALUES (?, ?)
+        """,
+        (provider_id, account_id),
+    )
+
+    conn.commit()
+
+    flash(
+        f"{provider.title()} account connected successfully.",
+        "success",
+    )
+
+    return redirect(portal_dashboard_url(portal))
+
+
+# --------------------------------------------------
+# FIND EXISTING SOCIAL ACCOUNT
+# --------------------------------------------------
+
+def find_social_account(
+    conn,
+    provider,
+    portal,
+    provider_id,
+):
+    table = identity_table(portal, provider)
+    identity_field = identity_column(provider)
+    account_field = account_column(portal)
+
+    row = conn.execute(
+        f"""
+        SELECT {account_field}
+        FROM {table}
+        WHERE {identity_field} = ?
+        """,
+        (provider_id,),
+    ).fetchone()
+
+    if not row:
+        return None
+
+    account_id = row[account_field]
+
+    if not valid_business_account(
+        conn, portal, account_id
+    ):
+        return None
+
+    return account_id
+
+
+# --------------------------------------------------
+# COMPLETE LOGIN OR LINKING
+# --------------------------------------------------
+
+def complete_social_login(provider):
+    expected_provider = session.get("social_provider")
+    portal = session.get("social_portal")
+    intent = session.get("social_intent")
+    linking_id = session.get("social_link_id")
+
+    if (
+        expected_provider != provider
+        or portal not in PORTALS
+        or intent not in ("login", "link")
+    ):
+        clear_oauth_session()
+        return "Invalid login session. Please try again.", 400
+
+    client = provider_client(provider)
+
+    if client is None:
+        clear_oauth_session()
+        return "Social Login is not configured.", 503
+
+    try:
+        if provider == "google":
+            provider_id = get_google_identity(client)
+        else:
+            provider_id = get_facebook_identity(client)
+
+    except Exception:
+        logger.exception("%s callback failed", provider)
+        clear_oauth_session()
+
+        flash(
+            f"{provider.title()} Login failed. "
+            "Please try again.",
+            "error",
+        )
+        return redirect(portal_login_url(portal))
+
+    try:
+        conn = (
+            dealer_db()
+            if portal == "dealer"
+            else rental_db()
+        )
+
+        try:
+            if intent == "link":
+                if not verify_link_session(portal, linking_id):
+                    return (
+                        "Please sign in with your business "
+                        "password before connecting this account.",
+                        403,
+                    )
+
+                return link_social_identity(
+                    conn,
+                    provider,
+                    portal,
+                    provider_id,
+                    linking_id,
+                )
+
+            account_id = find_social_account(
+                conn,
+                provider,
+                portal,
+                provider_id,
+            )
+
+        finally:
+            conn.close()
+
+    except sqlite3.Error:
+        logger.exception("Social login database error")
+        return "Social Login is temporarily unavailable.", 503
+
+    finally:
+        clear_oauth_session()
+
+    if not account_id:
+        flash(
+            "No approved business account is connected "
+            f"to this {provider.title()} account. "
+            "Sign in with your password first, then "
+            "connect your social account.",
+            "error",
+        )
+        return redirect(portal_login_url(portal))
+
+    # Do not retain authentication from another portal.
+    session.clear()
+
+    if portal == "dealer":
+        session["uid"] = account_id
+    else:
+        session["rental_company_id"] = account_id
+
+    session.permanent = True
+
+    flash(
+        f"Signed in with {provider.title()} successfully.",
+        "success",
+    )
+
+    return redirect(portal_dashboard_url(portal))
+
+
+# --------------------------------------------------
+# GOOGLE CALLBACK
+# --------------------------------------------------
 
 @social_auth.get("/auth/google/callback")
 def google_callback():
-    portal = session.pop("google_portal", None)
-    intent = session.pop("google_intent", None)
-    linking_company_id = session.pop("google_link_company_id", None)
-    linking_user_id = session.pop("google_link_user_id", None)
-    if portal not in ("rental", "dealer") or intent not in ("login", "link"):
-        return "Invalid Google login session. Please try again.", 400
-    client = google_client()
-    if client is None:
-        return "Google login is not configured", 503
+    return complete_social_login("google")
 
-    try:
-        token = client.authorize_access_token()
-        # Authlib validates the OIDC ID token including signature, nonce,
-        # audience, issuer, and expiration when userinfo is populated.
-        userinfo = token.get("userinfo")
-        if not userinfo:
-            userinfo = client.parse_id_token(token)
-        sub = userinfo.get("sub") if userinfo else None
-        verified = userinfo.get("email_verified") if userinfo else False
-        if not sub or verified not in (True, "true", 1):
-            return "Google account verification failed", 403
-    except Exception:
-        logger.exception("Google callback error")
-        flash("Google Sign-In failed. Please try again.")
-        return redirect(url_for("rental_portal.login") if portal == "rental" else url_for("login"))
 
-    if portal == "dealer":
-        db_path = os.environ.get("WESELL_DB", os.path.join(current_app.root_path, "wesell.db"))
-        conn = sqlite3.connect(db_path, timeout=15)
-        conn.row_factory = sqlite3.Row
-        try:
-            if intent == "link":
-                if not linking_user_id or session.get("uid") != linking_user_id:
-                    return "Sign in with your dealer password before connecting Google", 403
-                user = conn.execute(
-                    "SELECT id FROM users WHERE id=? AND role='dealer' AND dealer_id IS NOT NULL",
-                    (linking_user_id,),
-                ).fetchone()
-                if not user:
-                    return "Dealer account not found", 403
-                other = conn.execute(
-                    "SELECT user_id FROM dealer_google_identities WHERE google_sub=?", (sub,)
-                ).fetchone()
-                if other and other["user_id"] != linking_user_id:
-                    return "This Google account is already linked to another dealer", 409
-                existing = conn.execute(
-                    "SELECT google_sub FROM dealer_google_identities WHERE user_id=?", (linking_user_id,)
-                ).fetchone()
-                if existing and existing["google_sub"] != sub:
-                    return "This dealer account already has another Google account linked", 409
-                conn.execute(
-                    "INSERT OR IGNORE INTO dealer_google_identities(google_sub,user_id) VALUES (?,?)",
-                    (sub, linking_user_id),
-                )
-                conn.commit()
-                flash("Google account connected to your dealership.", "success")
-                return redirect(url_for("dealer_dashboard"))
+# --------------------------------------------------
+# FACEBOOK CALLBACK
+# --------------------------------------------------
 
-            row = conn.execute(
-                """SELECT u.id FROM dealer_google_identities gi
-                   JOIN users u ON u.id=gi.user_id
-                   JOIN dealers d ON d.id=u.dealer_id
-                   WHERE gi.google_sub=? AND u.role='dealer' AND d.approved=1""",
-                (sub,),
-            ).fetchone()
-            if not row:
-                flash("Sign in with your dealer password first, then connect Google from your dealer dashboard.", "error")
-                return redirect(url_for("login"))
-            user_id = row["id"]
-        except sqlite3.Error:
-            logger.exception("Dealer Google account database error")
-            return "Dealer login is temporarily unavailable", 503
-        finally:
-            conn.close()
-        session.clear()
-        session["uid"] = user_id
-        flash("Signed in to your dealership with Google.", "success")
-        return redirect(url_for("dealer_dashboard"))
-
-    conn = rental_db()
-    try:
-        if intent == "link":
-            if not linking_company_id or session.get("rental_company_id") != linking_company_id:
-                return "Sign in with your rental password before connecting Google", 403
-            company = conn.execute(
-                "SELECT id FROM rental_companies WHERE id=?", (linking_company_id,)
-            ).fetchone()
-            if not company:
-                return "Rental company not found", 404
-            other = conn.execute(
-                "SELECT company_id FROM rental_google_identities WHERE google_sub=?", (sub,)
-            ).fetchone()
-            if other and other["company_id"] != linking_company_id:
-                return "This Google account is already linked to another rental company", 409
-            existing = conn.execute(
-                "SELECT google_sub FROM rental_google_identities WHERE company_id=?", (linking_company_id,)
-            ).fetchone()
-            if existing and existing["google_sub"] != sub:
-                return "This company already has another Google account linked", 409
-            conn.execute(
-                "INSERT OR IGNORE INTO rental_google_identities(google_sub,company_id) VALUES (?,?)",
-                (sub, linking_company_id),
-            )
-            conn.commit()
-            flash("Your Google account is now connected.", "success")
-            return redirect(url_for("rental_portal.dashboard"))
-
-        row = conn.execute(
-            """SELECT c.id FROM rental_google_identities gi
-               JOIN rental_companies c ON c.id=gi.company_id
-               WHERE gi.google_sub=?""", (sub,)
-        ).fetchone()
-        if not row:
-            flash("Sign in with your rental password first, then connect Google.", "error")
-            return redirect(url_for("rental_portal.login"))
-        company_id = row["id"]
-    except sqlite3.Error:
-        logger.exception("Rental Google account database error")
-        return "Rental login is temporarily unavailable", 503
-    finally:
-        conn.close()
-    session.clear()
-    session["rental_company_id"] = company_id
-    flash("Signed in with Google successfully.", "success")
-    return redirect(url_for("rental_portal.dashboard"))
+@social_auth.get("/auth/facebook/callback")
+def facebook_callback():
+    return complete_social_login("facebook")
