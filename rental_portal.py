@@ -4,6 +4,7 @@ import re
 import sqlite3
 import secrets
 
+from decimal import Decimal, InvalidOperation
 from contextlib import contextmanager
 from functools import wraps
 
@@ -15,6 +16,7 @@ from flask import (
     url_for,
     flash,
     abort,
+    render_template,
     render_template_string
 )
 
@@ -109,7 +111,54 @@ def init_rental_portal():
 
 
 # ==========================================
-# HTML PAGE DESIGN
+# LOGIN AND SECURITY HELPERS
+# ==========================================
+
+def csrf_token():
+
+    if "csrf" not in session:
+        session["csrf"] = secrets.token_urlsafe(32)
+
+    return session["csrf"]
+
+
+def rental_login_required(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        if not session.get("rental_company_id"):
+            return redirect(
+                url_for("rental_portal.login")
+            )
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def current_company():
+
+    company_id = session.get("rental_company_id")
+
+    if not company_id:
+        return None
+
+    with db() as conn:
+        company = conn.execute(
+            """
+            SELECT *
+            FROM rental_companies
+            WHERE id=?
+            """,
+            (company_id,)
+        ).fetchone()
+
+    return company
+
+
+# ==========================================
+# SHARED LOGIN / REGISTRATION PAGE
 # ==========================================
 
 PAGE = """
@@ -124,7 +173,6 @@ PAGE = """
 <title>{{ title }} | WE-SELL</title>
 
 <style>
-
 * {
     box-sizing: border-box;
 }
@@ -221,19 +269,11 @@ a {
     border-radius: 8px;
 }
 
-.vehicle {
-    border: 1px solid #e2e8f0;
-    padding: 18px;
-    margin-top: 12px;
-    border-radius: 10px;
-}
-
 @media(max-width: 650px) {
     .grid {
         grid-template-columns: 1fr;
     }
 }
-
 </style>
 </head>
 
@@ -255,13 +295,13 @@ a {
 {{ content | safe }}
 
 </main>
+
 </body>
 </html>
 """
 
 
 def page(title, content, **kwargs):
-    from flask import render_template_string
 
     inner = render_template_string(
         content,
@@ -273,51 +313,6 @@ def page(title, content, **kwargs):
         title=title,
         content=inner
     )
-
-
-def csrf_token():
-    if "csrf" not in session:
-        session["csrf"] = secrets.token_urlsafe(32)
-
-    return session["csrf"]
-
-
-# ==========================================
-# LOGIN PROTECTION
-# ==========================================
-
-def rental_login_required(func):
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-
-        if not session.get("rental_company_id"):
-            return redirect(
-                url_for("rental_portal.login")
-            )
-
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-def current_company():
-
-    company_id = session.get(
-        "rental_company_id"
-    )
-
-    if not company_id:
-        return None
-
-    with db() as conn:
-        company = conn.execute("""
-            SELECT *
-            FROM rental_companies
-            WHERE id=?
-        """, (company_id,)).fetchone()
-
-    return company
 
 
 # ==========================================
@@ -369,6 +364,7 @@ def register():
             )
             or len(password) < 10
         ):
+
             flash(
                 "Please complete all required fields. "
                 "Password must contain at least 10 characters."
@@ -380,7 +376,8 @@ def register():
 
                 with db() as conn:
 
-                    conn.execute("""
+                    conn.execute(
+                        """
                         INSERT INTO rental_companies
                         (
                             company_name,
@@ -393,15 +390,17 @@ def register():
                             approved
                         )
                         VALUES (?,?,?,?,?,?,?,0)
-                    """, (
-                        company_name,
-                        contact_name,
-                        email,
-                        generate_password_hash(password),
-                        phone,
-                        city,
-                        website
-                    ))
+                        """,
+                        (
+                            company_name,
+                            contact_name,
+                            email,
+                            generate_password_hash(password),
+                            phone,
+                            city,
+                            website
+                        )
+                    )
 
                 flash(
                     "Registration received. "
@@ -504,11 +503,14 @@ def login():
 
         with db() as conn:
 
-            company = conn.execute("""
+            company = conn.execute(
+                """
                 SELECT *
                 FROM rental_companies
                 WHERE email=?
-            """, (email,)).fetchone()
+                """,
+                (email,)
+            ).fetchone()
 
         if (
             company
@@ -520,9 +522,7 @@ def login():
 
             session.clear()
 
-            session["rental_company_id"] = (
-                company["id"]
-            )
+            session["rental_company_id"] = company["id"]
 
             return redirect(
                 url_for("rental_portal.dashboard")
@@ -574,7 +574,7 @@ def login():
 
 
 # ==========================================
-# COMPANY DASHBOARD
+# NEW RENTAL COMPANY DASHBOARD
 # ==========================================
 
 @rental_portal.get("/dashboard")
@@ -584,97 +584,48 @@ def dashboard():
     company = current_company()
 
     if not company:
+
         session.pop("rental_company_id", None)
-        abort(401)
+
+        return redirect(
+            url_for("rental_portal.login")
+        )
 
     with db() as conn:
 
-        vehicles = conn.execute("""
+        vehicles = conn.execute(
+            """
             SELECT *
             FROM rental_vehicles
             WHERE company_id=?
             ORDER BY id DESC
-        """, (company["id"],)).fetchall()
+            """,
+            (company["id"],)
+        ).fetchall()
 
-    return page(
-        "Company Dashboard",
-        """
-        <div class="panel">
+    total_vehicles = len(vehicles)
 
-        <h1>{{ company.company_name }}</h1>
+    active_vehicles = sum(
+        1
+        for vehicle in vehicles
+        if vehicle["status"] in (
+            "available",
+            "active"
+        )
+    )
 
-        <p>Rental Company Dashboard</p>
+    inactive_vehicles = (
+        total_vehicles - active_vehicles
+    )
 
-        {% if not company.approved %}
-        <div class="notice">
-        Your company is awaiting WE-SELL approval.
-        Listings are not publicly visible yet.
-        </div>
-        {% endif %}
-
-        <a class="btn" href="{{ add_url }}">
-            + Add Rental Vehicle
-        </a>
-
-        <a class="btn" href="{{ sync_url }}">
-            Inventory Synchronization
-        </a>
-
-        </div>
-
-        <div class="panel">
-
-        <h2>Your Rental Vehicles</h2>
-
-        <p>
-        Total Vehicles: {{ vehicles|length }}
-        </p>
-
-        {% for vehicle in vehicles %}
-
-        <div class="vehicle">
-
-        <h3>
-        {{ vehicle.year }}
-        {{ vehicle.make }}
-        {{ vehicle.model }}
-        </h3>
-
-        <p>
-        Category: {{ vehicle.category }}
-        </p>
-
-        <p>
-        Daily Rate:
-        ${{ "%.2f"|format(
-            vehicle.daily_rate_cents / 100
-        ) }}
-        </p>
-
-        <p>
-        Pickup City: {{ vehicle.pickup_city }}
-        </p>
-
-        <p>
-        Status: {{ vehicle.status }}
-        </p>
-
-        </div>
-
-        {% else %}
-
-        <p>No vehicles listed yet.</p>
-
-        {% endfor %}
-
-        </div>
-        """,
+    return render_template(
+        "rental_company_dashboard.html",
         company=company,
         vehicles=vehicles,
-        add_url=url_for(
-            "rental_portal.add_vehicle"
-        ),
-        sync_url="/rental-sync/dashboard"
+        total_vehicles=total_vehicles,
+        active_vehicles=active_vehicles,
+        inactive_vehicles=inactive_vehicles,
+        csrf_token=csrf_token()
     )
 
 
@@ -692,7 +643,12 @@ def add_vehicle():
     company = current_company()
 
     if not company:
-        abort(401)
+
+        session.pop("rental_company_id", None)
+
+        return redirect(
+            url_for("rental_portal.login")
+        )
 
     if request.method == "POST":
 
@@ -717,8 +673,6 @@ def add_vehicle():
             rate = request.form.get(
                 "daily_rate", ""
             ).strip()
-
-            from decimal import Decimal
 
             cents_value = Decimal(rate) * 100
 
@@ -756,7 +710,8 @@ def add_vehicle():
 
         except (
             ValueError,
-            ArithmeticError
+            ArithmeticError,
+            InvalidOperation
         ):
 
             flash(
@@ -767,7 +722,8 @@ def add_vehicle():
 
             with db() as conn:
 
-                conn.execute("""
+                conn.execute(
+                    """
                     INSERT INTO rental_vehicles
                     (
                         company_id,
@@ -781,17 +737,19 @@ def add_vehicle():
                         status
                     )
                     VALUES (?,?,?,?,?,?,?,?,?)
-                """, (
-                    company["id"],
-                    year,
-                    make,
-                    model,
-                    category,
-                    cents,
-                    city,
-                    description,
-                    "available"
-                ))
+                    """,
+                    (
+                        company["id"],
+                        year,
+                        make,
+                        model,
+                        category,
+                        cents,
+                        city,
+                        description,
+                        "available"
+                    )
+                )
 
             flash("Rental vehicle added.")
 
@@ -805,6 +763,11 @@ def add_vehicle():
         <div class="panel">
 
         <h1>Add Rental Vehicle</h1>
+
+        <p>
+        Add a vehicle to your WE-SELL
+        rental company inventory.
+        </p>
 
         <form method="POST">
 
@@ -835,6 +798,7 @@ def add_vehicle():
 
         <div>
         <label>Vehicle Category</label>
+
         <select name="category" required>
             <option value="economy">Economy</option>
             <option value="sedan">Sedan</option>
@@ -842,6 +806,7 @@ def add_vehicle():
             <option value="luxury">Luxury</option>
             <option value="van">Van</option>
         </select>
+
         </div>
 
         <div>
@@ -870,9 +835,18 @@ def add_vehicle():
 
         </form>
 
+        <p style="margin-top:25px;">
+            <a href="{{ dashboard_url }}">
+                Back to Dashboard
+            </a>
+        </p>
+
         </div>
         """,
-        csrf=csrf_token()
+        csrf=csrf_token(),
+        dashboard_url=url_for(
+            "rental_portal.dashboard"
+        )
     )
 
 
