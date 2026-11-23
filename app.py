@@ -22,6 +22,7 @@ from werkzeug.security import (
 
 from rental_portal import rental_portal, init_rental_portal
 from inventory_sync import inventory_sync, init_inventory_sync
+from social_auth import social_auth, init_social_auth
 
 
 # ==========================================
@@ -1870,6 +1871,10 @@ def dealer_inventory(dealer_id):
 # ==========================================
 
 app.register_blueprint(rental_portal)
+
+# Google OAuth routes (account linking is not enabled yet)
+app.register_blueprint(social_auth)
+init_social_auth(app)
 
 
 # ==========================================
