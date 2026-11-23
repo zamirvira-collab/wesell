@@ -15,7 +15,7 @@
 
   <style>
     /* ========================================
-       WE-SELL MAIN NAVIGATION
+       WE-SELL HEADER
     ======================================== */
 
     .nav {
@@ -35,7 +35,7 @@
     .nav .brand {
       display: flex;
       align-items: center;
-      background: white;
+      background: #ffffff;
       border-radius: 9px;
       padding: 4px 12px;
       flex-shrink: 0;
@@ -48,22 +48,26 @@
       object-fit: contain;
     }
 
+    /* ========================================
+       MAIN NAVIGATION
+    ======================================== */
+
     .nav nav {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: clamp(12px, 1.5vw, 24px);
+      gap: clamp(14px, 2vw, 30px);
       flex-wrap: wrap;
+      flex: 1;
     }
 
-    .nav nav > a,
-    .nav nav > form .navlink {
+    .nav nav > a {
       color: #ffffff !important;
       font-weight: 700;
       text-decoration: none;
       font-size: 14px;
-      background: transparent;
       white-space: nowrap;
+      transition: color .2s ease;
     }
 
     .nav nav > a:hover {
@@ -71,8 +75,45 @@
     }
 
     .nav nav > a.ws-active {
+      color: #ffffff !important;
       border-bottom: 4px solid #ffc229;
       padding-bottom: 9px;
+    }
+
+    /* ========================================
+       SAVED CARS
+    ======================================== */
+
+    .nav nav a.ws-saved-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .ws-heart-icon {
+      color: #ffc229;
+      font-size: 25px;
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .ws-saved-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 20px;
+      background: #ffc229;
+      color: #041b34;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .ws-saved-count[hidden] {
+      display: none !important;
     }
 
     /* ========================================
@@ -82,6 +123,8 @@
     .ws-business-menu {
       position: relative;
       display: inline-flex;
+      margin-left: 10px;
+      flex-shrink: 0;
       z-index: 200;
     }
 
@@ -89,32 +132,33 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 9px;
-      min-height: 46px;
-      padding: 12px 16px;
+      gap: 10px;
+      min-height: 48px;
+      padding: 12px 22px;
       background: linear-gradient(
         135deg,
         #ffe17a 0%,
         #ffc229 100%
       );
       border: 1px solid #ffcb3d;
-      border-radius: 11px;
+      border-radius: 12px;
       color: #061b34;
       font-family: inherit;
       font-size: 14px;
       font-weight: 800;
       cursor: pointer;
       white-space: nowrap;
-      box-shadow: 0 4px 16px rgba(255,194,41,.15);
-      transition: background .2s ease,
-                  transform .2s ease,
-                  box-shadow .2s ease;
+      box-shadow: 0 5px 18px rgba(255,194,41,.17);
+      transition:
+        background .2s ease,
+        transform .2s ease,
+        box-shadow .2s ease;
     }
 
     .ws-business-button:hover {
       background: #ffe17a;
       transform: translateY(-1px);
-      box-shadow: 0 7px 20px rgba(255,194,41,.24);
+      box-shadow: 0 8px 24px rgba(255,194,41,.25);
     }
 
     .ws-business-button:focus-visible {
@@ -173,7 +217,7 @@
       right: 35px;
       width: 12px;
       height: 12px;
-      background: white;
+      background: #ffffff;
       border-left: 1px solid #e1e7ef;
       border-top: 1px solid #e1e7ef;
       transform: rotate(45deg);
@@ -196,8 +240,9 @@
       color: #061b34 !important;
       text-decoration: none;
       border: 1px solid transparent;
-      transition: background .2s ease,
-                  border-color .2s ease;
+      transition:
+        background .2s ease,
+        border-color .2s ease;
     }
 
     .nav nav .ws-business-dropdown a:hover {
@@ -264,126 +309,30 @@
     }
 
     /* ========================================
-       LOGIN / SIGN UP
+       LOGOUT FOR SIGNED-IN USERS
     ======================================== */
-
-    .nav nav .ws-auth-group {
-      display: inline-flex;
-      align-items: center;
-      gap: 0;
-      flex-shrink: 0;
-      border-radius: 12px;
-      box-shadow: 0 4px 18px rgba(0,0,0,.14);
-    }
-
-    .nav nav .ws-auth-group a {
-      box-sizing: border-box;
-      height: 46px;
-      min-width: 94px;
-      padding: 0 15px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 14px;
-      font-weight: 800;
-      line-height: 1;
-      text-decoration: none;
-      white-space: nowrap;
-      border-bottom: 0;
-      transition: background .2s ease,
-                  border-color .2s ease;
-    }
-
-    .nav nav .ws-auth-group a.ws-login {
-      background: rgba(255,255,255,.045);
-      color: #ffffff !important;
-      border: 1px solid #71869b;
-      border-radius: 12px 0 0 12px;
-    }
-
-    .nav nav .ws-auth-group a.ws-login:hover {
-      background: rgba(255,255,255,.13);
-      border-color: #ffc229;
-    }
-
-    .nav nav .ws-auth-group a.ws-signup {
-      background: linear-gradient(
-        135deg,
-        #ffe57a,
-        #ffbe16
-      );
-      color: #071b30 !important;
-      border: 1px solid #ffca32;
-      border-left: 0;
-      border-radius: 0 12px 12px 0;
-    }
-
-    .nav nav .ws-auth-group a.ws-signup:hover {
-      background: #ffe17a;
-    }
-
-    .ws-auth-icon {
-      width: 17px;
-      height: 17px;
-      display: inline-block;
-      flex-shrink: 0;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    /* ========================================
-       SAVED CARS
-    ======================================== */
-
-    .nav nav a.ws-saved-nav {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      white-space: nowrap;
-    }
-
-    .ws-heart-icon {
-      color: #ffc229;
-      font-size: 25px;
-      font-weight: 400;
-      line-height: 1;
-    }
-
-    .ws-saved-count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 20px;
-      height: 20px;
-      padding: 0 5px;
-      border-radius: 20px;
-      background: #ffc229;
-      color: #041b34;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .ws-saved-count[hidden] {
-      display: none;
-    }
 
     .nav nav form {
       margin: 0;
     }
 
     .nav nav button.navlink {
+      background: transparent;
       border: 0;
+      color: #ffffff;
       cursor: pointer;
       font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
       padding: 0;
     }
 
+    .nav nav button.navlink:hover {
+      color: #ffc229;
+    }
+
     /* ========================================
-       RESPONSIVE NAVIGATION
+       RESPONSIVE DESIGN
     ======================================== */
 
     @media (max-width: 1200px) {
@@ -394,7 +343,7 @@
       }
 
       .nav nav {
-        gap: 13px;
+        gap: 16px;
       }
 
       .nav .brand img {
@@ -408,7 +357,7 @@
 
       .ws-business-button {
         font-size: 13px;
-        padding: 11px 13px;
+        padding: 11px 16px;
       }
     }
 
@@ -427,6 +376,10 @@
 
       .nav .brand img {
         height: 46px;
+      }
+
+      .ws-business-menu {
+        margin-left: 0;
       }
     }
 
@@ -456,12 +409,6 @@
       .ws-business-dropdown::before {
         display: none;
       }
-
-      .nav nav .ws-auth-group a {
-        min-width: 85px;
-        padding: 0 11px;
-        font-size: 12px;
-      }
     }
   </style>
 </head>
@@ -486,7 +433,9 @@
 
     </a>
 
-    <!-- MAIN NAVIGATION -->
+    <!-- ========================================
+         MAIN NAVIGATION
+    ======================================== -->
 
     <nav aria-label="Main navigation">
 
@@ -533,7 +482,48 @@
       </a>
 
       <!-- ========================================
-           BUSINESS PORTAL DROPDOWN
+           CUSTOMER DASHBOARD
+      ======================================== -->
+
+      {% if me %}
+
+        <a
+          href="{{ url_for('dashboard') }}"
+          class="{% if request.endpoint == 'dashboard' %}ws-active{% endif %}"
+        >
+          My Dashboard
+        </a>
+
+      {% endif %}
+
+      <!-- ========================================
+           SAVED CARS
+      ======================================== -->
+
+      <a
+        href="{{ url_for('saved_cars') }}"
+        class="ws-saved-nav {% if request.endpoint == 'saved_cars' %}ws-active{% endif %}"
+      >
+
+        <span class="ws-heart-icon"
+              aria-hidden="true">
+          ♡
+        </span>
+
+        <span>Saved Cars</span>
+
+        <span
+          id="ws-saved-count"
+          class="ws-saved-count"
+          hidden
+        >
+          0
+        </span>
+
+      </a>
+
+      <!-- ========================================
+           BUSINESS PORTAL - FAR RIGHT
       ======================================== -->
 
       <div class="ws-business-menu">
@@ -566,7 +556,7 @@
 
         </button>
 
-        <!-- DROPDOWN CONTENT -->
+        <!-- BUSINESS PORTAL DROPDOWN -->
 
         <div
           id="ws-business-dropdown"
@@ -654,120 +644,6 @@
         </div>
 
       </div>
-
-      <!-- ========================================
-           USER DASHBOARD
-      ======================================== -->
-
-      {% if me %}
-
-        <a
-          href="{{ url_for('dashboard') }}"
-          class="{% if request.endpoint in ['dashboard', 'buyer_dashboard', 'dealer_dashboard', 'admin_dashboard'] %}ws-active{% endif %}"
-        >
-          My Dashboard
-        </a>
-
-      {% endif %}
-
-      <!-- ========================================
-           SAVED CARS
-      ======================================== -->
-
-      <a
-        href="{{ url_for('saved_cars') }}"
-        class="ws-saved-nav {% if request.endpoint == 'saved_cars' %}ws-active{% endif %}"
-      >
-
-        <span class="ws-heart-icon"
-              aria-hidden="true">
-          ♡
-        </span>
-
-        <span>Saved Cars</span>
-
-        <span
-          id="ws-saved-count"
-          class="ws-saved-count"
-          hidden
-        >
-          0
-        </span>
-
-      </a>
-
-      <!-- ========================================
-           LOGIN / SIGN UP / LOGOUT
-      ======================================== -->
-
-      {% if me %}
-
-        <form
-          method="post"
-          action="{{ url_for('logout') }}"
-        >
-
-          <input
-            type="hidden"
-            name="csrf"
-            value="{{ csrf }}"
-          >
-
-          <button
-            class="navlink"
-            type="submit"
-          >
-            Log Out
-          </button>
-
-        </form>
-
-      {% else %}
-
-        <div class="ws-auth-group">
-
-          <!-- LOGIN -->
-
-          <a
-            class="ws-login"
-            href="{{ url_for('login') }}"
-          >
-
-            <svg class="ws-auth-icon"
-                 viewBox="0 0 24 24"
-                 aria-hidden="true">
-              <path d="M10 17l5-5-5-5"></path>
-              <path d="M15 12H3"></path>
-              <path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"></path>
-            </svg>
-
-            Login
-
-          </a>
-
-          <!-- SIGN UP -->
-
-          <a
-            class="ws-signup"
-            href="{{ url_for('register') }}"
-          >
-
-            <svg class="ws-auth-icon"
-                 viewBox="0 0 24 24"
-                 aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M20 8v6"></path>
-              <path d="M17 11h6"></path>
-            </svg>
-
-            Sign Up
-
-          </a>
-
-        </div>
-
-      {% endif %}
 
     </nav>
 
