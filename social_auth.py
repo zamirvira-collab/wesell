@@ -1,180 +1,128 @@
-
 import os
 import logging
+import sqlite3
 
-from flask import (
-    Blueprint,
-    current_app,
-    redirect,
-    url_for,
-    flash,
-    session,
-    request,
-)
-
+from flask import Blueprint, current_app, flash, redirect, request, session, url_for
 from authlib.integrations.flask_client import OAuth
 
 social_auth = Blueprint("social_auth", __name__)
 oauth = OAuth()
-
 logger = logging.getLogger(__name__)
-
-VALID_PORTALS = {"dealer", "rental"}
 
 
 def init_social_auth(app):
-    """Initialize Google OAuth for WE-SELL."""
-
     oauth.init_app(app)
-
-    google_id = os.environ.get("GOOGLE_CLIENT_ID")
-    google_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
-
-    if not google_id or not google_secret:
-        app.logger.warning(
-            "Google OAuth credentials are missing."
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    if client_id and client_secret:
+        oauth.register(
+            name="google", client_id=client_id, client_secret=client_secret,
+            server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+            client_kwargs={"scope": "openid email profile"},
         )
-        return
-
-    oauth.register(
-        name="google",
-        client_id=google_id,
-        client_secret=google_secret,
-        server_metadata_url=(
-            "https://accounts.google.com/"
-            ".well-known/openid-configuration"
-        ),
-        client_kwargs={
-            "scope": "openid email profile"
-        },
-    )
 
 
-def portal_login_url(portal):
-    """Return the login URL for a business portal."""
+def portal_login(portal):
+    return url_for("rental_portal.login") if portal == "rental" else url_for("login")
 
-    if portal == "dealer":
-        return url_for("login")
 
-    return url_for("rental_portal.login")
+def google_client():
+    return oauth.create_client("google")
+
+
+def begin_google(portal, purpose):
+    client = google_client()
+    if client is None:
+        flash("Google Sign-In is not configured yet.")
+        return redirect(portal_login(portal))
+    # OAuth state is also managed and verified by Authlib.
+    session["google_portal"] = portal
+    session["google_purpose"] = purpose
+    try:
+        return client.authorize_redirect(url_for("social_auth.google_callback", _external=True, _scheme="https"))
+    except Exception:
+        logger.exception("Could not start Google OAuth")
+        flash("Could not connect to Google. Please try again.")
+        return redirect(portal_login(portal))
 
 
 @social_auth.get("/auth/<provider>/<portal>")
 def start_login(provider, portal):
-    """Start social sign-in."""
-
-    if portal not in VALID_PORTALS:
-        return "Invalid business portal", 400
-
-    if provider != "google":
-        return "Provider not configured yet", 404
-
-    client = oauth.create_client("google")
-
-    if client is None:
-        flash(
-            "Google Sign-In is not configured yet."
-        )
-        return redirect(portal_login_url(portal))
-
-    callback_url = url_for(
-        "social_auth.google_callback",
-        portal=portal,
-        _external=True,
-        _scheme="https",
-    )
-
-    try:
-        return client.authorize_redirect(callback_url)
-
-    except Exception:
-        logger.exception("Google OAuth start failed")
-
-        flash(
-            "Unable to connect to Google. "
-            "Please try again."
-        )
-
-        return redirect(portal_login_url(portal))
+    if provider != "google" or portal not in ("dealer", "rental"):
+        return "Unsupported provider or portal", 404
+    return begin_google(portal, "login")
 
 
-@social_auth.get("/auth/google/callback/<portal>")
-def google_callback(portal):
-    """Handle Google's authentication response."""
+@social_auth.get("/auth/google/link/<portal>")
+def link_google(portal):
+    if portal != "rental":
+        return "Linking not available for this portal yet", 404
+    # Require an existing password-authenticated rental session.
+    company_id = session.get("rental_company_id")
+    if not company_id:
+        flash("Sign in with your rental-company password first.")
+        return redirect(url_for("rental_portal.login"))
+    from rental_portal import db
+    with db() as conn:
+        company = conn.execute("SELECT id FROM rental_companies WHERE id=?", (company_id,)).fetchone()
+    if not company:
+        return redirect(url_for("rental_portal.login"))
+    session["google_link_company_id"] = company_id
+    return begin_google("rental", "link")
 
-    if portal not in VALID_PORTALS:
-        return "Invalid business portal", 400
 
-    client = oauth.create_client("google")
-
+@social_auth.get("/auth/google/callback")
+def google_callback():
+    # This exact callback path matches the Google Cloud configuration.
+    portal = session.get("google_portal")
+    purpose = session.get("google_purpose")
+    if portal not in ("dealer", "rental") or purpose not in ("login", "link"):
+        return "Sign-in session expired. Please try again.", 400
+    client = google_client()
     if client is None:
         return "Google Sign-In is not configured", 503
-
     try:
         token = client.authorize_access_token()
-
-        userinfo = token.get("userinfo")
-
-        if not userinfo:
-            userinfo = client.parse_id_token(token)
-
-        if not userinfo:
-            raise ValueError(
-                "Google did not return user information."
-            )
-
-        google_sub = userinfo.get("sub")
-        email = userinfo.get("email")
-        email_verified = userinfo.get(
-            "email_verified", False
-        )
-
-        if not google_sub:
-            return "Google account ID is missing", 403
-
-        if email_verified not in (True, "true", "True", 1):
-            return "Google email is not verified", 403
-
-        if not email:
-            return "Google email is missing", 403
-
-        # IMPORTANT:
-        # Google identity verification does not
-        # automatically authorize access to a
-        # dealership or rental-company account.
-        #
-        # A secure account-linking process must
-        # first associate Google's immutable
-        # 'sub' identifier with an existing,
-        # authorized WE-SELL business user.
-        #
-        # Never create an authenticated business
-        # session based only on a matching email.
-        #
-        # Until that linking process is implemented,
-        # do not set session["user_id"],
-        # session["dealer_id"], or rental login state.
-
-        current_app.logger.info(
-            "Google identity verified for %s portal",
-            portal,
-        )
-
-        return (
-            "Google Sign-In was successful, but "
-            "your WE-SELL business account has not "
-            "been linked yet. Please sign in using "
-            "your existing email and password.",
-            200,
-        )
-
+        info = token.get("userinfo") or client.parse_id_token(token)
+        sub = info.get("sub") if info else None
+        if not sub or info.get("email_verified") not in (True, "true", "True", 1):
+            return "Google account could not be verified", 403
     except Exception:
-        logger.exception(
-            "Google OAuth callback failed"
-        )
+        logger.exception("Google OAuth callback failed")
+        flash("Google Sign-In failed. Please try again.")
+        return redirect(portal_login(portal))
+    finally:
+        session.pop("google_portal", None)
+        session.pop("google_purpose", None)
 
-        flash(
-            "Google Sign-In failed. Please try again."
-        )
+    if portal != "rental":
+        return "Dealer Google account linking is not enabled yet. Please use your password.", 403
 
-        return redirect(portal_login_url(portal))
+    from rental_portal import db
+    if purpose == "link":
+        company_id = session.pop("google_link_company_id", None)
+        if not company_id or company_id != session.get("rental_company_id"):
+            return "Rental account session expired. Sign in again.", 403
+        try:
+            with db() as conn:
+                company = conn.execute("SELECT id FROM rental_companies WHERE id=?", (company_id,)).fetchone()
+                if not company:
+                    return "Rental company not found", 404
+                existing = conn.execute("SELECT id FROM rental_companies WHERE google_sub=?", (sub,)).fetchone()
+                if existing and existing["id"] != company_id:
+                    return "This Google account is already linked to another company", 409
+                conn.execute("UPDATE rental_companies SET google_sub=? WHERE id=?", (sub, company_id))
+        except sqlite3.IntegrityError:
+            return "This Google account is already linked to another company", 409
+        flash("Your Google account is now linked. You can use Google Sign-In next time.")
+        return redirect(url_for("rental_portal.dashboard"))
+
+    with db() as conn:
+        company = conn.execute("SELECT id FROM rental_companies WHERE google_sub=?", (sub,)).fetchone()
+    if not company:
+        flash("This Google account is not linked yet. Sign in with your password, then visit Connect Google.")
+        return redirect(url_for("rental_portal.login"))
+    session.clear()
+    session["rental_company_id"] = company["id"]
+    flash("Signed in with Google successfully.")
+    return redirect(url_for("rental_portal.dashboard"))
