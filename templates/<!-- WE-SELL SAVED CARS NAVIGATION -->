@@ -1,0 +1,7 @@
+
+<!-- WE-SELL SAVED CARS NAVIGATION -->
+<a href="{{ url_for('saved_cars') }}" class="ws-saved-nav">
+    <span class="ws-heart-icon">♡</span>
+    <span>Saved Cars</span>
+    <span id="ws-saved-count" class="ws-saved-count" hidden>0</span>
+</a>
