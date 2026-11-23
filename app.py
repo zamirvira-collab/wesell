@@ -1,4 +1,3 @@
-
 import os
 import sqlite3
 import secrets
@@ -26,6 +25,7 @@ from werkzeug.security import (
 # ==========================================
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+
 DB = os.environ.get(
     'WESELL_DB',
     os.path.join(ROOT, 'wesell.db')
@@ -176,45 +176,14 @@ def init_db():
             ON leads(buyer_id);
     ''')
 
-    # Add new fields to existing databases.
-    # Existing dealership and vehicle data is retained.
-
     migrations = [
-        (
-            'dealers',
-            'zip_code',
-            "TEXT NOT NULL DEFAULT ''"
-        ),
-        (
-            'dealers',
-            'address',
-            "TEXT NOT NULL DEFAULT ''"
-        ),
-        (
-            'dealers',
-            'email',
-            "TEXT NOT NULL DEFAULT ''"
-        ),
-        (
-            'dealers',
-            'sales_phone',
-            "TEXT NOT NULL DEFAULT ''"
-        ),
-        (
-            'dealers',
-            'service_phone',
-            "TEXT NOT NULL DEFAULT ''"
-        ),
-        (
-            'vehicles',
-            'zip_code',
-            "TEXT NOT NULL DEFAULT ''"
-        ),
-        (
-            'vehicles',
-            'condition',
-            "TEXT NOT NULL DEFAULT 'used'"
-        )
+        ('dealers', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
+        ('dealers', 'address', "TEXT NOT NULL DEFAULT ''"),
+        ('dealers', 'email', "TEXT NOT NULL DEFAULT ''"),
+        ('dealers', 'sales_phone', "TEXT NOT NULL DEFAULT ''"),
+        ('dealers', 'service_phone', "TEXT NOT NULL DEFAULT ''"),
+        ('vehicles', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
+        ('vehicles', 'condition', "TEXT NOT NULL DEFAULT 'used'")
     ]
 
     for table, column, definition in migrations:
@@ -230,8 +199,6 @@ def init_db():
                 f'ALTER TABLE {table} '
                 f'ADD COLUMN {column} {definition}'
             )
-
-    # Demo inventory only for an empty dealership database.
 
     if conn.execute(
         'SELECT COUNT(*) FROM dealers'
@@ -291,9 +258,6 @@ def init_db():
             )
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
         ''', vehicles)
-
-    # Optional demo accounts.
-    # Do not enable demo accounts on a public production site.
 
     if os.environ.get('WESELL_SEED_DEMO') == '1':
         for email, pw, name, role, dealer_id in [
@@ -661,6 +625,15 @@ def sell_car():
 @app.get('/saved-cars')
 def saved_cars():
     return render_template('saved_cars.html')
+
+
+# ==========================================
+# RENTAL CARS
+# ==========================================
+
+@app.get('/rentals')
+def rentals():
+    return render_template('rental_cars.html')
 
 
 # ==========================================
