@@ -1,1 +1,159 @@
-{% extends 'base.html' %}{% block title %}Buyer Dashboard{% endblock %}{% block content %}<section class="section"><div class="sectionhead"><div><div class="eyebrow blue">BUYER PORTAL</div><h1>Welcome, {{me.name}}</h1><p>Track your inquiries and appointments in one place.</p></div><a class="btn navy" href="{{url_for('home')}}">Browse Cars →</a></div><div class="panel"><h2>My vehicle requests</h2><div class="tablewrap"><table><thead><tr><th>Vehicle</th><th>Status</th><th>Appointment</th><th></th></tr></thead><tbody>{% for l in leads %}<tr><td>{{l.year}} {{l.make}} {{l.model}}</td><td><span class="status">{{l.status|replace('_',' ')|title}}</span></td><td>{{l.appointment_time|replace('T',' ') or 'Not scheduled'}}</td><td><a href="{{url_for('lead_detail',lead_id=l.id)}}">View →</a></td></tr>{% else %}<tr><td colspan="4">No requests yet. Browse vehicles to get started.</td></tr>{% endfor %}</tbody></table></div></div></section>{% endblock %}
+
+{% extends 'base.html' %}
+
+{% block title %}Buyer Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+    .ws-buyer-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .ws-buyer-logout {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 22px;
+        background: #ffc229;
+        color: #041b34;
+        border: none;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .ws-buyer-logout:hover {
+        background: #e5aa00;
+    }
+
+    .ws-buyer-logout:focus-visible {
+        outline: 3px solid #041b34;
+        outline-offset: 3px;
+    }
+
+    @media (max-width: 600px) {
+        .ws-buyer-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+<section class="section">
+
+    <div class="sectionhead">
+
+        <div>
+            <div class="eyebrow blue">
+                BUYER PORTAL
+            </div>
+
+            <h1>Welcome, {{ me.name }}</h1>
+
+            <p>
+                Track your inquiries and appointments in one place.
+            </p>
+        </div>
+
+        <div class="ws-buyer-actions">
+
+            <a class="btn navy"
+               href="{{ url_for('home') }}">
+                Browse Cars →
+            </a>
+
+            <form method="POST"
+                  action="{{ url_for('logout') }}"
+                  style="margin: 0;">
+
+                <input type="hidden"
+                       name="csrf"
+                       value="{{ csrf }}">
+
+                <button type="submit"
+                        class="ws-buyer-logout">
+                    Log Out
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <h2>My vehicle requests</h2>
+
+        <div class="tablewrap">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Vehicle</th>
+                        <th>Status</th>
+                        <th>Appointment</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for l in leads %}
+
+                    <tr>
+
+                        <td>
+                            {{ l.year }}
+                            {{ l.make }}
+                            {{ l.model }}
+                        </td>
+
+                        <td>
+                            <span class="status">
+                                {{ l.status|replace('_',' ')|title }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {{ l.appointment_time|replace('T',' ') or 'Not scheduled' }}
+                        </td>
+
+                        <td>
+                            <a href="{{ url_for('lead_detail', lead_id=l.id) }}">
+                                View →
+                            </a>
+                        </td>
+
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="4">
+                            No requests yet. Browse vehicles to get started.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}
