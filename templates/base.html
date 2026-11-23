@@ -225,6 +225,17 @@
       </a>
 
 
+      <!-- RENTAL CARS -->
+
+      <a
+        href="{{ url_for('rentals') }}"
+        class="{% if request.endpoint == 'rentals' %}ws-active{% endif %}"
+        {% if request.endpoint == 'rentals' %}aria-current="page"{% endif %}
+      >
+        Rental Cars
+      </a>
+
+
       <!-- DEALERSHIP DIRECTORY -->
 
       <a
