@@ -107,6 +107,10 @@ def init_rental_portal():
         CREATE INDEX IF NOT EXISTS idx_rental_company
         ON rental_vehicles(company_id);
         """)
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(rental_companies)")}
+        if "google_sub" not in columns:
+            conn.execute("ALTER TABLE rental_companies ADD COLUMN google_sub TEXT")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_rental_google_sub ON rental_companies(google_sub)")
 
 
 # ==========================================
@@ -775,6 +779,16 @@ def login():
             cursor: not-allowed;
         }
 
+        a.rental-social-option {
+            text-decoration: none;
+            opacity: 1;
+            cursor: pointer;
+        }
+        a.rental-social-option:hover {
+            background: #eef5fc;
+            border-color: #9dbad6;
+        }
+
         .rental-social-option:disabled {
             background: #f8fafc;
             color: #26384e;
@@ -985,17 +999,14 @@ def login():
 
                     <!-- GOOGLE / GMAIL -->
 
-                    <button
-                        type="button"
+                    <a
                         class="rental-social-option"
-                        disabled
-                        title="Google sign-in coming soon"
+                        href="{{ google_login_url }}"
+                        title="Sign in with a linked Google account"
                     >
-                        <span class="rental-social-icon rental-google">
-                            G
-                        </span>
+                        <span class="rental-social-icon rental-google">G</span>
                         Google / Gmail
-                    </button>
+                    </a>
 
                     <!-- FACEBOOK -->
 
@@ -1042,7 +1053,7 @@ def login():
                 </div>
 
                 <p class="rental-social-status">
-                    Social sign-in coming soon
+                    Google works after you link it from your rental dashboard. Other providers coming soon.
                 </p>
 
                 <div class="rental-register-link">
@@ -1065,7 +1076,8 @@ def login():
         csrf=csrf_token(),
         register_url=url_for(
             "rental_portal.register"
-        )
+        ),
+        google_login_url=url_for("social_auth.start_login", provider="google", portal="rental")
     )
 
 # ==========================================
@@ -1364,4 +1376,26 @@ def logout():
 
     return redirect(
         url_for("rental_portal.login")
+    )
+
+
+@rental_portal.get("/connect-google")
+@rental_login_required
+def connect_google():
+    """Authenticated rental owners can explicitly link their Google identity."""
+    company = current_company()
+    if company is None:
+        session.pop("rental_company_id", None)
+        return redirect(url_for("rental_portal.login"))
+    return page(
+        "Connect Google",
+        """<div class="panel"><h1>Connect your Google account</h1>
+        <p>Signed in as <strong>{{ company_name }}</strong>.</p>
+        <p>Connect Google to this rental-company account so you can use Google Sign-In next time.</p>
+        <a class="btn" href="{{ link_url }}">Connect Google securely</a>
+        <div class="home-return"><a href="{{ dashboard_url }}">← Back to dashboard</a></div>
+        </div>""",
+        company_name=company["company_name"],
+        link_url=url_for("social_auth.link_google", portal="rental"),
+        dashboard_url=url_for("rental_portal.dashboard"),
     )
