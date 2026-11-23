@@ -74,6 +74,10 @@
       padding: 11px 23px;
     }
 
+    .nav nav a.ws-login:hover {
+      border-color: #ffc229;
+    }
+
     .nav nav a.ws-signup {
       background: linear-gradient(#ffe06a, #ffb900);
       color: #071a30 !important;
@@ -82,11 +86,24 @@
       font-weight: 800;
     }
 
+    .nav nav a.ws-signup:hover {
+      background: linear-gradient(#ffeb92, #ffc229);
+      color: #071a30 !important;
+    }
+
     .nav nav form {
       margin: 0;
     }
 
+    .nav nav button.navlink {
+      border: 0;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0;
+    }
+
     /* SAVED CARS NAVIGATION */
+
     .nav nav a.ws-saved-nav {
       display: inline-flex;
       align-items: center;
@@ -120,149 +137,349 @@
       display: none;
     }
 
-    @media(max-width: 760px) {
+    /* RESPONSIVE NAVIGATION */
+
+    @media (max-width: 1000px) {
+      .nav {
+        padding-left: 20px;
+        padding-right: 20px;
+        gap: 18px;
+      }
+
+      .nav nav {
+        gap: 15px;
+      }
+
+      .nav nav a,
+      .nav nav .navlink {
+        font-size: 14px;
+      }
+
+      .nav .brand img {
+        height: 48px;
+      }
+    }
+
+    @media (max-width: 760px) {
       .nav {
         padding: 15px;
         flex-direction: column;
+        gap: 18px;
       }
 
       .nav nav {
         justify-content: center;
         gap: 15px;
+        width: 100%;
       }
 
       .nav nav a,
       .nav nav .navlink {
         font-size: 13px;
       }
+
+      .nav nav a.ws-login {
+        padding: 9px 16px;
+      }
+
+      .nav nav a.ws-signup {
+        padding: 10px 17px;
+      }
+
+      .nav .brand img {
+        height: 46px;
+        max-width: 200px;
+      }
     }
   </style>
 </head>
 
 <body>
+
+  <!-- ===================================== -->
+  <!-- WE-SELL HEADER / NAVIGATION -->
+  <!-- ===================================== -->
+
   <header class="nav">
-    <a class="brand" href="{{ url_for('home') }}">
+
+    <a class="brand"
+       href="{{ url_for('home') }}"
+       aria-label="WE-SELL Home">
+
       <img
         src="{{ url_for('static', filename='WE-SELL connected arrow logo.png') }}"
         alt="WE-SELL Logo">
+
     </a>
 
-    <nav>
-      <a href="{{ url_for('home') }}"
-         class="{% if request.endpoint == 'home' %}ws-active{% endif %}">
+    <nav aria-label="Main navigation">
+
+      <!-- FIND CARS -->
+
+      <a
+        href="{{ url_for('home') }}"
+        class="{% if request.endpoint == 'home' %}ws-active{% endif %}"
+        {% if request.endpoint == 'home' %}aria-current="page"{% endif %}
+      >
         Find Cars
       </a>
 
-      <a href="{{ url_for('dealers_page') }}">
+
+      <!-- DEALERSHIP DIRECTORY -->
+
+      <a
+        href="{{ url_for('dealer_directory') }}"
+        class="{% if request.endpoint in ['dealer_directory', 'dealer_inventory'] %}ws-active{% endif %}"
+        {% if request.endpoint in ['dealer_directory', 'dealer_inventory'] %}aria-current="page"{% endif %}
+      >
         Dealers
       </a>
+
+
+      <!-- HOW IT WORKS -->
+
+      <a
+        href="{{ url_for('how_it_works') }}"
+        class="{% if request.endpoint == 'how_it_works' %}ws-active{% endif %}"
+        {% if request.endpoint == 'how_it_works' %}aria-current="page"{% endif %}
+      >
+        How It Works
+      </a>
+
+
+      <!-- DASHBOARD -->
+
+      {% if me %}
+
+        <a
+          href="{{ url_for('dashboard') }}"
+          class="{% if request.endpoint in ['dashboard', 'buyer_dashboard', 'dealer_dashboard', 'admin_dashboard'] %}ws-active{% endif %}"
+        >
+          My Dashboard
+        </a>
+
+      {% endif %}
+
+
+      <!-- SAVED CARS -->
+
+      <a
+        href="{{ url_for('saved_cars') }}"
+        class="ws-saved-nav {% if request.endpoint == 'saved_cars' %}ws-active{% endif %}"
+        {% if request.endpoint == 'saved_cars' %}aria-current="page"{% endif %}
+      >
+
+        <span class="ws-heart-icon" aria-hidden="true">
+          ♡
+        </span>
+
+        <span>
+          Saved Cars
+        </span>
+
+        <span
+          id="ws-saved-count"
+          class="ws-saved-count"
+          hidden
+        >
+          0
+        </span>
+
+      </a>
+
+
+      <!-- LOGIN / LOGOUT -->
+
+      {% if me %}
+
+        <form
+          method="post"
+          action="{{ url_for('logout') }}"
+        >
+
+          <input
+            type="hidden"
+            name="csrf"
+            value="{{ csrf }}"
+          >
+
+          <button
+            class="navlink"
+            type="submit"
+          >
+            Log Out
+          </button>
+
+        </form>
+
+      {% else %}
+
+        <a
+          class="ws-login"
+          href="{{ url_for('login') }}"
+        >
+          Login
+        </a>
+
+        <a
+          class="ws-signup"
+          href="{{ url_for('register') }}"
+        >
+          Sign Up
+        </a>
+
+      {% endif %}
+
+    </nav>
+
+  </header>
+
+
+  <!-- ===================================== -->
+  <!-- FLASH MESSAGES -->
+  <!-- ===================================== -->
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+
+    {% if messages %}
+
+      <div class="flashwrap">
+
+        {% for category, message in messages %}
+
+          <div class="flash {{ category }}">
+            {{ message }}
+          </div>
+
+        {% endfor %}
+
+      </div>
+
+    {% endif %}
+
+  {% endwith %}
+
+
+  <!-- ===================================== -->
+  <!-- MAIN PAGE CONTENT -->
+  <!-- ===================================== -->
+
+  <main>
+
+    {% block content %}{% endblock %}
+
+  </main>
+
+
+  <!-- ===================================== -->
+  <!-- WE-SELL FOOTER -->
+  <!-- ===================================== -->
+
+  <footer>
+
+    <div>
+
+      <b>WE-SELL</b>
+
+      <p>
+        Connecting buyers with the right dealership.
+      </p>
+
+    </div>
+
+    <div>
+
+      <a href="{{ url_for('home') }}">
+        Browse Cars
+      </a>
+
+      ·
+
+      <a href="{{ url_for('dealer_directory') }}">
+        Browse Dealerships
+      </a>
+
+      ·
+
+      <a href="{{ url_for('dealers_page') }}">
+        Dealer Partners
+      </a>
+
+      ·
 
       <a href="{{ url_for('how_it_works') }}">
         How It Works
       </a>
 
-      {% if me %}
-        <a href="{{ url_for('dashboard') }}">
-          My Dashboard
-        </a>
-      {% endif %}
-
-      <!-- SAVED CARS: BESIDE LOGIN / LOG OUT -->
-      <a href="/saved-cars"
-         class="ws-saved-nav {% if request.path == '/saved-cars' %}ws-active{% endif %}">
-        <span class="ws-heart-icon">♡</span>
-        <span>Saved Cars</span>
-        <span id="ws-saved-count"
-              class="ws-saved-count"
-              hidden>0</span>
-      </a>
-
-      {% if me %}
-        <form method="post" action="{{ url_for('logout') }}">
-          <input type="hidden" name="csrf" value="{{ csrf }}">
-          <button class="navlink" type="submit">
-            Log Out
-          </button>
-        </form>
-      {% else %}
-        <a class="ws-login" href="{{ url_for('login') }}">
-          Login
-        </a>
-
-        <a class="ws-signup" href="{{ url_for('register') }}">
-          Sign Up
-        </a>
-      {% endif %}
-    </nav>
-  </header>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flashwrap">
-        {% for category, message in messages %}
-          <div class="flash {{ category }}">
-            {{ message }}
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
-
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer>
-    <div>
-      <b>WE-SELL</b>
-      <p>Connecting buyers with the right dealership.</p>
-    </div>
-
-    <div>
-      <a href="{{ url_for('home') }}">Browse Cars</a> ·
-      <a href="{{ url_for('dealers_page') }}">Dealer Partners</a> ·
-      <a href="{{ url_for('how_it_works') }}">How It Works</a>
     </div>
 
     <small>
       © 2026 WE-SELL. Demonstration inventory and pricing are illustrative.
     </small>
+
   </footer>
 
+
+  <!-- ===================================== -->
   <!-- SAVED CARS COUNTER -->
+  <!-- ===================================== -->
+
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+
       const counter = document.getElementById('ws-saved-count');
 
+      const storageKey = 'wesell_saved_cars';
+
       function updateSavedCount() {
-        if (!counter) return;
+
+        if (!counter) {
+          return;
+        }
 
         let cars = [];
 
         try {
+
           cars = JSON.parse(
-            localStorage.getItem('wesell_saved_cars') || '[]'
+            localStorage.getItem(storageKey) || '[]'
           );
 
           if (!Array.isArray(cars)) {
             cars = [];
           }
+
         } catch (error) {
+
           cars = [];
+
         }
 
         counter.textContent = cars.length;
+
         counter.hidden = cars.length === 0;
+
       }
 
       updateSavedCount();
 
-      window.addEventListener('storage', updateSavedCount);
-      window.addEventListener('pageshow', updateSavedCount);
+      window.addEventListener(
+        'storage',
+        updateSavedCount
+      );
 
-      document.addEventListener('wesell:saved-cars-changed',
-                                updateSavedCount);
+      window.addEventListener(
+        'pageshow',
+        updateSavedCount
+      );
+
+      document.addEventListener(
+        'wesell:saved-cars-changed',
+        updateSavedCount
+      );
+
     });
   </script>
+
 </body>
 </html>
