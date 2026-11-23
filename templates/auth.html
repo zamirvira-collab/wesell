@@ -2,238 +2,168 @@
 {% extends 'base.html' %}
 
 {% block title %}
-{{ 'Sign Up' if mode == 'register' else 'Log In' }} | WE-SELL
+{{ 'Dealer Registration' if mode == 'register' else 'Dealer Login' }} | WE-SELL
 {% endblock %}
 
 {% block content %}
 
 <style>
-/* ==========================================
-   WE-SELL PREMIUM AUTHENTICATION PAGE
-   ========================================== */
-
-.ws-auth-page,
-.ws-auth-page * {
+.ws-dealer-page,
+.ws-dealer-page * {
     box-sizing: border-box;
 }
 
-.ws-auth-page {
-    --ws-navy: #061d35;
-    --ws-navy-light: #103a59;
-    --ws-gold: #ffca35;
-    --ws-teal: #08a99b;
-
+.ws-dealer-page {
     min-height: calc(100vh - 90px);
+    padding: 42px 20px 65px;
     background: #f1f5f9;
-    padding: 48px 20px 70px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: Arial, Helvetica, sans-serif;
 }
 
-.ws-auth-shell {
+.ws-dealer-shell {
     width: 100%;
-    max-width: 1100px;
+    max-width: 1120px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    background: #ffffff;
+    background: white;
     border-radius: 24px;
     overflow: hidden;
     box-shadow: 0 22px 65px rgba(6,29,53,.12);
 }
 
-/* ==========================================
-   LEFT PANEL
-   ========================================== */
-
-.ws-auth-left {
-    position: relative;
-    overflow: hidden;
+.ws-dealer-left {
     background:
-        radial-gradient(
-            circle at 85% 85%,
-            rgba(8,169,155,.22),
-            transparent 45%
-        ),
-        linear-gradient(
-            145deg,
-            #061d35 0%,
-            #103a59 100%
-        );
+        radial-gradient(circle at 90% 90%,
+        rgba(0,169,153,.24), transparent 45%),
+        linear-gradient(145deg,#061d35,#103b58);
+    color: white;
     padding: 54px 48px;
-    color: #ffffff;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 660px;
+    min-height: 650px;
 }
 
-.ws-auth-left::after {
-    content: "";
-    position: absolute;
-    width: 290px;
-    height: 290px;
-    border: 1px solid rgba(255,255,255,.09);
-    border-radius: 50%;
-    right: -130px;
-    bottom: -120px;
-    pointer-events: none;
-}
-
-.ws-left-brand {
-    position: relative;
-    z-index: 1;
-}
-
-.ws-brand-name {
+.ws-dealer-brand {
     font-size: 31px;
     font-weight: 900;
+    color: #ffca35;
     letter-spacing: -1px;
-    color: #ffca35;
-    margin: 0;
 }
 
-.ws-brand-caption {
-    margin-top: 5px;
+.ws-dealer-brand small {
+    display: block;
     font-size: 12px;
-    letter-spacing: 1px;
-    color: #a8c7dc;
+    letter-spacing: 1.5px;
+    color: #b9d1e2;
+    margin-top: 7px;
+    font-weight: 600;
 }
 
-.ws-left-content {
-    position: relative;
-    z-index: 1;
-    margin: 48px 0;
-}
-
-.ws-left-eyebrow {
-    color: #ffca35;
+.ws-dealer-eyebrow {
     font-size: 12px;
     font-weight: 800;
+    color: #ffca35;
     letter-spacing: 2px;
-    text-transform: uppercase;
     margin-bottom: 20px;
 }
 
-.ws-left-content h1 {
-    color: white;
-    font-size: clamp(32px, 3vw, 46px);
-    line-height: 1.16;
-    letter-spacing: -1.4px;
-    margin: 0 0 24px;
+.ws-dealer-left h1 {
+    font-size: clamp(33px,3.2vw,46px);
     font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -1.2px;
+    margin: 0 0 24px;
+    color: white;
 }
 
-.ws-left-content h1 span {
+.ws-dealer-left h1 span {
     color: #ffca35;
 }
 
-.ws-left-content p {
-    color: #c6d9e8;
+.ws-dealer-description {
     font-size: 15px;
+    color: #c9dbe9;
     line-height: 1.85;
-    margin: 0 0 32px;
-    max-width: 390px;
+    margin-bottom: 30px;
 }
 
-.ws-benefits {
+.ws-dealer-benefits {
     display: grid;
     gap: 18px;
 }
 
-.ws-benefit {
+.ws-dealer-benefit {
     display: flex;
     align-items: center;
     gap: 13px;
-    color: #e7f0f7;
     font-size: 14px;
-    font-weight: 500;
+    color: #edf4fa;
 }
 
-.ws-benefit-icon {
-    width: 29px;
-    height: 29px;
-    min-width: 29px;
+.ws-dealer-check {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255,202,53,.13);
-    border: 1px solid rgba(255,202,53,.25);
-    color: #ffca35;
     border-radius: 9px;
-    font-size: 15px;
+    background: rgba(255,202,53,.13);
+    border: 1px solid rgba(255,202,53,.3);
+    color: #ffca35;
     font-weight: 900;
 }
 
-.ws-left-bottom {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-top: 25px;
+.ws-dealer-bottom {
     border-top: 1px solid rgba(255,255,255,.14);
-    color: #a8c7dc;
+    padding-top: 22px;
+    color: #a9c5d8;
     font-size: 12px;
 }
 
-.ws-status-dot {
-    width: 8px;
-    height: 8px;
-    background: #14c9a9;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-/* ==========================================
-   RIGHT PANEL
-   ========================================== */
-
-.ws-auth-right {
-    padding: 45px 52px;
+.ws-dealer-right {
+    padding: 48px 52px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-width: 0;
 }
 
-.ws-auth-logo {
+.ws-portal-tag {
+    display: inline-block;
+    align-self: flex-start;
+    background: #e8f7f4;
+    color: #008f83;
+    padding: 9px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1px;
     margin-bottom: 25px;
 }
 
-.ws-auth-logo img {
-    width: 175px;
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
-
-.ws-auth-title {
+.ws-dealer-title {
     color: #061d35;
     font-size: 31px;
     font-weight: 900;
-    letter-spacing: -.8px;
-    line-height: 1.2;
-    margin: 0 0 10px;
+    margin: 0 0 12px;
 }
 
-.ws-auth-subtitle {
+.ws-dealer-subtitle {
     color: #697c8f;
     font-size: 14px;
     line-height: 1.7;
-    margin: 0 0 25px;
+    margin: 0 0 28px;
 }
 
-.ws-auth-form {
-    width: 100%;
+.ws-dealer-field {
+    margin-bottom: 18px;
 }
 
-.ws-auth-field {
-    margin-bottom: 17px;
-}
-
-.ws-auth-field label {
+.ws-dealer-field label {
     display: block;
     font-size: 13px;
     font-weight: 800;
@@ -241,438 +171,300 @@
     margin-bottom: 8px;
 }
 
-.ws-auth-field input {
-    display: block;
+.ws-dealer-field input {
     width: 100%;
-    height: 48px;
+    height: 49px;
     padding: 12px 15px;
-    background: #ffffff;
-    color: #102b46;
     border: 1px solid #d7e1eb;
     border-radius: 10px;
     font-size: 14px;
-    font-family: inherit;
-    transition: border-color .2s, box-shadow .2s;
+    color: #102b46;
+    background: white;
 }
 
-.ws-auth-field input::placeholder {
-    color: #9ba9b8;
-}
-
-.ws-auth-field input:focus {
+.ws-dealer-field input:focus {
     outline: none;
     border-color: #08a99b;
     box-shadow: 0 0 0 3px rgba(8,169,155,.12);
 }
 
-.ws-password-wrap {
+.ws-dealer-password {
     position: relative;
 }
 
-.ws-password-wrap input {
-    padding-right: 72px;
+.ws-dealer-password input {
+    padding-right: 75px;
 }
 
-.ws-password-toggle {
+.ws-dealer-toggle {
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    border: none;
+    border: 0;
     background: transparent;
     color: #087f91;
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
-    padding: 8px;
 }
 
-.ws-auth-submit {
+.ws-dealer-submit {
     width: 100%;
-    min-height: 49px;
+    min-height: 50px;
     margin-top: 7px;
-    padding: 14px;
-    background: linear-gradient(
-        100deg,
-        #ffdb65,
-        #ffbd17
-    );
     border: none;
     border-radius: 10px;
+    background: linear-gradient(100deg,#ffdb65,#ffbd17);
     color: #061d35;
     font-size: 15px;
     font-weight: 900;
-    font-family: inherit;
     cursor: pointer;
-    box-shadow: 0 6px 16px rgba(255,190,23,.18);
-    transition: transform .2s, box-shadow .2s;
 }
 
-.ws-auth-submit:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 9px 20px rgba(255,190,23,.28);
+.ws-dealer-submit:hover {
+    background: #f6b900;
 }
 
-/* ==========================================
-   SOCIAL SIGN IN
-   ========================================== */
-
-.ws-auth-divider {
+.ws-dealer-divider {
     display: flex;
     align-items: center;
-    gap: 13px;
+    gap: 12px;
+    margin: 26px 0 18px;
     color: #8997a6;
     font-size: 12px;
-    margin: 25px 0 17px;
-    white-space: nowrap;
 }
 
-.ws-auth-divider::before,
-.ws-auth-divider::after {
+.ws-dealer-divider::before,
+.ws-dealer-divider::after {
     content: "";
+    flex: 1;
     height: 1px;
     background: #e1e8f0;
-    flex: 1;
 }
 
-.ws-social-grid {
+.ws-dealer-social {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2,minmax(0,1fr));
     gap: 11px;
 }
 
-.ws-social-btn {
+.ws-dealer-social button {
+    min-height: 48px;
+    border: 1px solid #dce5ee;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #20364d;
+    font-size: 13px;
+    font-weight: 800;
     display: flex;
-    flex-direction: row;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    min-height: 48px;
-    padding: 10px;
-    border: 1px solid #dce5ee;
-    border-radius: 10px;
-    background: #ffffff;
-    color: #20364d;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 800;
-    white-space: nowrap;
 }
 
-.ws-social-btn:disabled {
-    cursor: not-allowed;
+.ws-dealer-social button:disabled {
     opacity: .65;
-    background: #f8fafc;
+    cursor: not-allowed;
 }
 
-.ws-social-icon {
+.ws-dealer-social strong {
     font-size: 21px;
-    line-height: 1;
-    font-weight: 900;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
 }
 
-.ws-google {
-    color: #4285f4;
-}
+.ws-dealer-social .google { color: #4285f4; }
+.ws-dealer-social .facebook { color: #1877f2; }
+.ws-dealer-social .linkedin { color: #0a66c2; }
+.ws-dealer-social .apple { color: #111827; }
 
-.ws-facebook {
-    color: #1877f2;
-}
-
-.ws-linkedin {
-    color: #0a66c2;
-    font-size: 17px;
-}
-
-.ws-apple {
-    color: #111827;
-    font-size: 23px;
-}
-
-.ws-social-note {
+.ws-dealer-social-note {
     text-align: center;
     color: #94a3b8;
     font-size: 11px;
-    margin: 12px 0 0;
+    margin-top: 13px;
 }
 
-/* ==========================================
-   FOOTER
-   ========================================== */
-
-.ws-auth-switch {
-    margin-top: 24px;
-    padding-top: 20px;
+.ws-dealer-switch {
+    margin-top: 25px;
+    padding-top: 22px;
     border-top: 1px solid #e7edf3;
     text-align: center;
-    color: #687b8e;
     font-size: 13px;
+    color: #687b8e;
 }
 
-.ws-auth-switch a {
+.ws-dealer-switch a {
     color: #008b91;
     font-weight: 900;
     text-decoration: none;
 }
 
-.ws-auth-switch a:hover {
-    text-decoration: underline;
-}
-
-.ws-auth-legal {
-    margin: 17px 0 0;
+.ws-dealer-home {
     text-align: center;
-    color: #9aa8b5;
-    font-size: 11px;
-    line-height: 1.7;
+    margin-top: 23px;
 }
 
-.ws-auth-home {
-    text-align: center;
-    margin-top: 14px;
-}
-
-.ws-auth-home a {
+.ws-dealer-home a {
     color: #657b8d;
+    text-decoration: none;
     font-size: 12px;
     font-weight: 700;
-    text-decoration: none;
 }
 
-/* ==========================================
-   RESPONSIVE
-   ========================================== */
-
-@media (max-width: 850px) {
-    .ws-auth-shell {
+@media(max-width:850px) {
+    .ws-dealer-shell {
         grid-template-columns: 1fr;
-        max-width: 540px;
+        max-width: 560px;
     }
 
-    .ws-auth-left {
+    .ws-dealer-left {
         min-height: auto;
-        padding: 28px 30px;
+        padding: 30px;
+        gap: 25px;
     }
 
-    .ws-left-content {
-        margin: 25px 0;
+    .ws-dealer-left h1 {
+        font-size: 30px;
     }
 
-    .ws-left-content h1 {
-        font-size: 29px;
-        margin-bottom: 12px;
-    }
-
-    .ws-left-content p {
-        margin-bottom: 18px;
-    }
-
-    .ws-benefits {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
-
-    .ws-benefit {
-        font-size: 12px;
-    }
-
-    .ws-left-bottom {
-        padding-top: 17px;
-    }
-
-    .ws-auth-right {
-        padding: 35px 32px;
+    .ws-dealer-right {
+        padding: 35px 30px;
     }
 }
 
-@media (max-width: 500px) {
-    .ws-auth-page {
+@media(max-width:500px) {
+    .ws-dealer-page {
         padding: 18px 12px 40px;
     }
 
-    .ws-auth-shell {
-        border-radius: 17px;
+    .ws-dealer-left,
+    .ws-dealer-right {
+        padding: 25px 22px;
     }
 
-    .ws-auth-left {
-        padding: 24px;
+    .ws-dealer-title {
+        font-size: 26px;
     }
 
-    .ws-left-content h1 {
-        font-size: 27px;
-    }
-
-    .ws-left-content p {
-        font-size: 13px;
-    }
-
-    .ws-benefits {
-        grid-template-columns: 1fr;
-    }
-
-    .ws-auth-right {
-        padding: 29px 22px;
-    }
-
-    .ws-auth-title {
-        font-size: 27px;
-    }
-
-    .ws-social-grid {
-        gap: 8px;
-    }
-
-    .ws-social-btn {
+    .ws-dealer-social button {
         font-size: 12px;
-        gap: 6px;
-        padding: 9px 5px;
     }
 }
 </style>
 
+<section class="ws-dealer-page">
 
-<section class="ws-auth-page">
+    <div class="ws-dealer-shell">
 
-    <div class="ws-auth-shell">
+        <!-- LEFT SIDE -->
 
-        <!-- =================================
-             LEFT SIDE
-             ================================= -->
+        <aside class="ws-dealer-left">
 
-        <aside class="ws-auth-left">
-
-            <div class="ws-left-brand">
-                <div class="ws-brand-name">
-                    WE-SELL
-                </div>
-
-                <div class="ws-brand-caption">
-                    ADVERTISING & CONNECTIONS
-                </div>
+            <div class="ws-dealer-brand">
+                WE-SELL
+                <small>DEALERSHIP BUSINESS PORTAL</small>
             </div>
 
-            <div class="ws-left-content">
+            <div>
 
-                <div class="ws-left-eyebrow">
-                    YOUR AUTOMOTIVE MARKETPLACE
+                <div class="ws-dealer-eyebrow">
+                    BUILT FOR AUTO DEALERSHIPS
                 </div>
 
                 <h1>
-                    Find Your Next Car.<br>
-                    <span>We'll Connect You.</span>
+                    Grow Your Dealership.<br>
+                    <span>Connect With More Buyers.</span>
                 </h1>
 
-                <p>
-                    Discover vehicles, explore rental
-                    options, and connect with automotive
-                    businesses through WE-SELL.
+                <p class="ws-dealer-description">
+                    Join the WE-SELL dealership network.
+                    Showcase your inventory, receive buyer
+                    inquiries, and manage dealership
+                    appointments from one convenient platform.
                 </p>
 
-                <div class="ws-benefits">
+                <div class="ws-dealer-benefits">
 
-                    <div class="ws-benefit">
-                        <span class="ws-benefit-icon">✓</span>
-                        Explore available vehicles
+                    <div class="ws-dealer-benefit">
+                        <span class="ws-dealer-check">✓</span>
+                        Advertise your dealership inventory
                     </div>
 
-                    <div class="ws-benefit">
-                        <span class="ws-benefit-icon">✓</span>
-                        Save your favorite cars
+                    <div class="ws-dealer-benefit">
+                        <span class="ws-dealer-check">✓</span>
+                        Receive potential buyer inquiries
                     </div>
 
-                    <div class="ws-benefit">
-                        <span class="ws-benefit-icon">✓</span>
-                        Request dealership appointments
+                    <div class="ws-dealer-benefit">
+                        <span class="ws-dealer-check">✓</span>
+                        Coordinate customer appointments
                     </div>
 
-                    <div class="ws-benefit">
-                        <span class="ws-benefit-icon">✓</span>
-                        Discover rental opportunities
+                    <div class="ws-dealer-benefit">
+                        <span class="ws-dealer-check">✓</span>
+                        Manage your dealership profile
                     </div>
 
                 </div>
+
             </div>
 
-            <div class="ws-left-bottom">
-                <span class="ws-status-dot"></span>
-                WE-SELL — Your Connection Starts Here
+            <div class="ws-dealer-bottom">
+                WE-SELL | Connecting Dealerships With Buyers
             </div>
 
         </aside>
 
 
-        <!-- =================================
-             RIGHT SIDE
-             ================================= -->
+        <!-- RIGHT SIDE -->
 
-        <div class="ws-auth-right">
+        <div class="ws-dealer-right">
 
-            <!-- ORIGINAL LOGO -->
-
-            <div class="ws-auth-logo">
-                <a href="{{ url_for('home') }}">
-                    <img
-                        src="{{ url_for('static', filename='WE-SELL connected arrow logo.png') }}"
-                        alt="WE-SELL Advertising & Connections">
-                </a>
+            <div class="ws-portal-tag">
+                DEALERSHIP PORTAL
             </div>
-
-
-            <!-- HEADING -->
 
             {% if mode == 'register' %}
 
-                <h2 class="ws-auth-title">
-                    Create Your Account
+                <h2 class="ws-dealer-title">
+                    Register Your Dealership
                 </h2>
 
-                <p class="ws-auth-subtitle">
-                    Join WE-SELL and start discovering
-                    your next vehicle.
+                <p class="ws-dealer-subtitle">
+                    Create your dealership account
+                    to get started with WE-SELL.
                 </p>
 
             {% else %}
 
-                <h2 class="ws-auth-title">
-                    Welcome Back!
+                <h2 class="ws-dealer-title">
+                    Welcome Back, Dealer!
                 </h2>
 
-                <p class="ws-auth-subtitle">
-                    Sign in to your WE-SELL account
-                    to continue.
+                <p class="ws-dealer-subtitle">
+                    Sign in to access your WE-SELL
+                    dealership account.
                 </p>
 
             {% endif %}
 
 
-            <!-- =================================
-                 LOGIN / REGISTER FORM
-                 ================================= -->
+            <!-- FORM -->
 
             <form
-                class="ws-auth-form"
                 method="POST"
                 action="{{ url_for('register') if mode == 'register' else url_for('login') }}">
-
-                <!-- CSRF -->
 
                 <input
                     type="hidden"
                     name="csrf"
                     value="{{ csrf }}">
 
-
                 {% if mode == 'register' %}
 
-                <!-- NAME -->
-
-                <div class="ws-auth-field">
+                <div class="ws-dealer-field">
                     <label for="ws-name">
-                        Full Name
+                        Dealer / Contact Name
                     </label>
 
                     <input
@@ -685,11 +477,9 @@
                         required>
                 </div>
 
-                <!-- PHONE -->
-
-                <div class="ws-auth-field">
+                <div class="ws-dealer-field">
                     <label for="ws-phone">
-                        Phone Number
+                        Business Phone Number
                     </label>
 
                     <input
@@ -703,33 +493,27 @@
 
                 {% endif %}
 
-
-                <!-- EMAIL -->
-
-                <div class="ws-auth-field">
+                <div class="ws-dealer-field">
                     <label for="ws-email">
-                        Email Address
+                        Business Email Address
                     </label>
 
                     <input
                         id="ws-email"
                         type="email"
                         name="email"
-                        placeholder="Enter your email address"
+                        placeholder="Enter your business email"
                         autocomplete="email"
                         maxlength="254"
                         required>
                 </div>
 
-
-                <!-- PASSWORD -->
-
-                <div class="ws-auth-field">
+                <div class="ws-dealer-field">
                     <label for="ws-password">
                         {{ 'Create Password' if mode == 'register' else 'Password' }}
                     </label>
 
-                    <div class="ws-password-wrap">
+                    <div class="ws-dealer-password">
 
                         <input
                             id="ws-password"
@@ -743,26 +527,23 @@
                             required>
 
                         <button
-                            class="ws-password-toggle"
                             type="button"
-                            onclick="toggleWsPassword()">
+                            class="ws-dealer-toggle"
+                            onclick="toggleDealerPassword()">
                             Show
                         </button>
 
                     </div>
                 </div>
 
-
-                <!-- SUBMIT -->
-
                 <button
-                    class="ws-auth-submit"
-                    type="submit">
+                    type="submit"
+                    class="ws-dealer-submit">
 
                     {% if mode == 'register' %}
-                        Create My Free Account →
+                        Create Dealership Account →
                     {% else %}
-                        Sign In to WE-SELL →
+                        Sign In to Dealer Portal →
                     {% endif %}
 
                 </button>
@@ -770,93 +551,52 @@
             </form>
 
 
-            <!-- =================================
-                 SOCIAL LOGIN
-                 ================================= -->
+            <!-- SOCIAL SIGN IN -->
 
-            <div class="ws-auth-divider">
+            <div class="ws-dealer-divider">
                 Or continue with
             </div>
 
-            <div class="ws-social-grid">
+            <div class="ws-dealer-social">
 
-                <!-- GOOGLE -->
-
-                <button
-                    type="button"
-                    class="ws-social-btn"
-                    disabled
+                <button type="button" disabled
                     title="Google sign-in coming soon">
-
-                    <span class="ws-social-icon ws-google">
-                        G
-                    </span>
-
+                    <strong class="google">G</strong>
                     Google / Gmail
                 </button>
 
-
-                <!-- FACEBOOK -->
-
-                <button
-                    type="button"
-                    class="ws-social-btn"
-                    disabled
+                <button type="button" disabled
                     title="Facebook sign-in coming soon">
-
-                    <span class="ws-social-icon ws-facebook">
-                        f
-                    </span>
-
+                    <strong class="facebook">f</strong>
                     Facebook
                 </button>
 
-
-                <!-- LINKEDIN -->
-
-                <button
-                    type="button"
-                    class="ws-social-btn"
-                    disabled
+                <button type="button" disabled
                     title="LinkedIn sign-in coming soon">
-
-                    <span class="ws-social-icon ws-linkedin">
-                        in
-                    </span>
-
+                    <strong class="linkedin">in</strong>
                     LinkedIn
                 </button>
 
-
-                <!-- APPLE -->
-
-                <button
-                    type="button"
-                    class="ws-social-btn"
-                    disabled
+                <button type="button" disabled
                     title="Apple sign-in coming soon">
-
-                    <span class="ws-social-icon ws-apple">
-                        &#63743;
-                    </span>
-
+                    <strong class="apple">&#63743;</strong>
                     Apple
                 </button>
 
             </div>
 
-            <p class="ws-social-note">
+            <p class="ws-dealer-social-note">
                 Social sign-in coming soon
             </p>
 
 
             <!-- LOGIN / REGISTER SWITCH -->
 
-            <div class="ws-auth-switch">
+            <div class="ws-dealer-switch">
 
                 {% if mode == 'register' %}
 
-                    Already have an account?
+                    Already registered your dealership?
 
                     <a href="{{ url_for('login') }}">
                         Sign In
@@ -864,27 +604,19 @@
 
                 {% else %}
 
-                    New to WE-SELL?
+                    New dealership?
 
                     <a href="{{ url_for('register') }}">
-                        Create a Free Account
+                        Register Your Dealership
                     </a>
 
                 {% endif %}
 
             </div>
 
-
-            <!-- LEGAL -->
-
-            <p class="ws-auth-legal">
-                Your information is used to provide
-                WE-SELL services.
-            </p>
-
-            <div class="ws-auth-home">
+            <div class="ws-dealer-home">
                 <a href="{{ url_for('home') }}">
-                    ← Return to WE-SELL Home
+                    ← Return to WE-SELL Main Website
                 </a>
             </div>
 
@@ -894,21 +626,12 @@
 
 </section>
 
-
 <script>
-function toggleWsPassword() {
+function toggleDealerPassword() {
+    const password = document.getElementById('ws-password');
+    const button = document.querySelector('.ws-dealer-toggle');
 
-    const password = document.getElementById(
-        'ws-password'
-    );
-
-    const button = document.querySelector(
-        '.ws-password-toggle'
-    );
-
-    if (!password || !button) {
-        return;
-    }
+    if (!password || !button) return;
 
     if (password.type === 'password') {
         password.type = 'text';
