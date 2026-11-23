@@ -4,25 +4,17 @@
 {% block content %}
 
 <style>
-/* ==========================================
-   WE-SELL HOMEPAGE
-========================================== */
+/* WE-SELL HOMEPAGE */
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
-/* HERO */
 .ws-hero {
   background:
-    linear-gradient(
-      90deg,
-      rgba(4, 19, 40, 0.55) 0%,
-      rgba(4, 19, 40, 0.12) 55%,
-      rgba(4, 19, 40, 0.05) 100%
-    ),
+    linear-gradient(90deg,
+      rgba(4,19,40,.55) 0%,
+      rgba(4,19,40,.12) 55%,
+      rgba(4,19,40,.05) 100%),
     url("{{ url_for('static', filename='Luxury SUV Sunset Skyline Reflections.png') }}");
-
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -30,15 +22,11 @@ html {
   padding: 25px 24px 40px;
 }
 
-.ws-inner {
-  max-width: 1160px;
-  margin: auto;
-}
+.ws-inner { max-width: 1160px; margin: auto; }
 
-/* HEADING */
 .ws-hero h1.ws-main-heading {
   font-family: Arial, Helvetica, sans-serif;
-  font-size: clamp(38px, 4.3vw, 66px);
+  font-size: clamp(38px,4.3vw,66px);
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -1.8px;
@@ -48,10 +36,10 @@ html {
 
 .ws-heading-line {
   display: block;
-  font-size: 0.58em;
+  font-size: .58em;
   line-height: 1.2;
   margin-top: 5px;
-  letter-spacing: -0.7px;
+  letter-spacing: -.7px;
 }
 
 .ws-heading-line em {
@@ -62,16 +50,14 @@ html {
 
 .ws-description {
   font-family: Arial, Helvetica, sans-serif;
-  font-size: clamp(17px, 1.55vw, 23px);
+  font-size: clamp(17px,1.55vw,23px);
   line-height: 1.4;
-  color: #fff;
+  color: white;
   max-width: 680px;
   margin: 0 0 26px;
 }
 
-/* ==========================================
-   SEARCH PANEL
-========================================== */
+/* FOUR BUTTONS IN ONE STRAIGHT LINE */
 
 .ws-search-panel {
   width: 100%;
@@ -79,104 +65,74 @@ html {
   background: #041d38;
   border: 2px solid #ffc400;
   border-radius: 26px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
 }
 
-/* ==========================================
-   CLICKABLE ANIMATED TABS
-========================================== */
-
 .ws-tabs {
-  display: flex;
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
   gap: 10px;
   margin-bottom: 16px;
 }
 
 .ws-tab {
   appearance: none;
-  -webkit-appearance: none;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  flex: 1;
+  width: 100%;
   min-width: 0;
   min-height: 54px;
-
-  padding: 13px 18px;
-
+  padding: 13px 10px;
   border: 2px solid #ffc400;
   border-radius: 15px;
-
   background: #092c4e;
-  color: #fff;
-
-  font-family: Arial, Helvetica, sans-serif;
+  color: white;
+  font-family: Arial,Helvetica,sans-serif;
   font-size: 18px;
   font-weight: 800;
   line-height: 1.2;
   text-align: center;
   text-decoration: none;
-
   cursor: pointer;
-
-  transition:
-    transform 0.25s ease,
-    background 0.25s ease,
-    color 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+  transition: transform .25s,background .25s,box-shadow .25s;
 }
 
 .ws-tab:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
   background: #164a75;
-  border-color: #ffda55;
-  color: #fff;
-  box-shadow: 0 9px 22px rgba(0, 0, 0, 0.35);
+  color: white;
   text-decoration: none;
+  box-shadow: 0 9px 22px rgba(0,0,0,.3);
 }
 
 .ws-tab.active {
-  background: linear-gradient(180deg, #ffe477, #ffbb00);
+  background: linear-gradient(180deg,#ffe477,#ffbb00);
   color: #071b31;
-  border-color: #ffc400;
-  box-shadow: 0 3px 12px rgba(255, 196, 0, 0.15);
 }
 
 .ws-tab.active:hover {
-  transform: translateY(-5px);
-  background: linear-gradient(180deg, #fff0a3, #ffcc27);
   color: #071b31;
-  box-shadow: 0 9px 24px rgba(255, 196, 0, 0.3);
-}
-
-.ws-tab:active {
-  transform: translateY(-1px);
 }
 
 .ws-tab:focus-visible {
-  outline: 3px solid #fff;
+  outline: 3px solid white;
   outline-offset: 3px;
 }
 
-/* ==========================================
-   VEHICLE SEARCH
-========================================== */
+/* SEARCH FORM */
 
 .ws-search-form.ws-location-search {
   display: block;
   width: 100%;
   padding: 17px;
-  background: #fff;
+  background: white;
   border-radius: 20px;
 }
 
 .ws-search-top {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0,2fr) minmax(0,1fr);
   border: 1px solid #cbd5e1;
   border-radius: 14px;
   overflow: hidden;
@@ -190,10 +146,9 @@ html {
   padding: 14px 16px;
   border: 0;
   border-radius: 0;
-  background: #fff;
+  background: white;
   color: #09243f;
   font-size: 16px;
-  outline-offset: -3px;
 }
 
 .ws-search-top input {
@@ -202,11 +157,7 @@ html {
 
 .ws-search-bottom {
   display: grid;
-  grid-template-columns:
-    minmax(0, 1fr)
-    minmax(0, 1fr)
-    minmax(0, 1fr)
-    auto;
+  grid-template-columns: repeat(3,minmax(0,1fr)) auto;
   gap: 12px;
   align-items: end;
   margin-top: 16px;
@@ -214,9 +165,7 @@ html {
 
 .ws-location-field,
 .ws-state-field,
-.ws-distance-field {
-  min-width: 0;
-}
+.ws-distance-field { min-width: 0; }
 
 .ws-location-field label,
 .ws-state-field label,
@@ -237,10 +186,10 @@ html {
   padding-left: 12px;
   border: 1px solid #cbd5e1;
   border-radius: 13px;
-  background: #fff;
+  background: white;
 }
 
-.ws-field-control .ws-field-icon {
+.ws-field-icon {
   flex-shrink: 0;
   color: #09243f;
   font-size: 19px;
@@ -253,50 +202,33 @@ html {
   min-height: 50px;
   padding: 12px 9px;
   border: 0;
-  border-radius: 12px;
   background: transparent;
   color: #09243f;
   font-size: 15px;
 }
 
 .ws-search-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   min-height: 52px;
   padding: 15px 21px;
-
   border: 0;
   border-radius: 13px;
-
-  background: linear-gradient(180deg, #ffe477, #ffbb00);
+  background: linear-gradient(180deg,#ffe477,#ffbb00);
   color: #071b31;
-
-  font-family: Arial, Helvetica, sans-serif;
   font-size: 16px;
   font-weight: 800;
   white-space: nowrap;
   cursor: pointer;
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease;
 }
 
 .ws-search-button:hover {
-  transform: translateY(-3px);
-  background: linear-gradient(180deg, #fff0a3, #ffc400);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+  background: #ffe477;
 }
 
-/* ==========================================
-   FEATURE CARDS
-========================================== */
+/* BENEFIT CARDS */
 
 .ws-benefits {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3,minmax(0,1fr));
   gap: 18px;
   margin-top: 24px;
 }
@@ -305,53 +237,35 @@ html {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-
   min-width: 0;
   min-height: 225px;
   padding: 24px;
-
-  background: rgba(5, 30, 55, 0.94);
-  border: 1px solid rgba(255, 196, 0, 0.4);
+  background: rgba(5,30,55,.94);
+  border: 1px solid rgba(255,196,0,.4);
   border-radius: 20px;
-
-  color: #fff;
+  color: white;
   text-decoration: none;
-
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
-
-  transition:
-    transform 0.25s ease,
-    background 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+  box-shadow: 0 10px 28px rgba(0,0,0,.22);
+  transition: transform .25s,background .25s;
 }
 
 .ws-benefit-card:hover {
   transform: translateY(-6px);
   background: #103657;
-  border-color: #ffc400;
-  color: #fff;
+  color: white;
   text-decoration: none;
-  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.3);
-}
-
-.ws-benefit-card:focus-visible {
-  outline: 3px solid #ffc400;
-  outline-offset: 4px;
 }
 
 .ws-benefit-icon-box {
   display: flex;
   align-items: center;
   justify-content: center;
-
   width: 56px;
   height: 56px;
   margin-bottom: 17px;
-
-  border: 1px solid rgba(255, 196, 0, 0.4);
+  border: 1px solid rgba(255,196,0,.4);
   border-radius: 15px;
-  background: rgba(255, 196, 0, 0.1);
+  background: rgba(255,196,0,.1);
 }
 
 .ws-benefit-icon-box svg {
@@ -366,10 +280,9 @@ html {
 
 .ws-benefit-card h3 {
   margin: 0 0 10px;
-  color: #fff;
+  color: white;
   font-size: 19px;
   font-weight: 800;
-  line-height: 1.3;
 }
 
 .ws-benefit-card p {
@@ -381,123 +294,72 @@ html {
 }
 
 .ws-benefit-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
   color: #ffc400;
   font-size: 14px;
   font-weight: 800;
 }
 
-.ws-benefit-card:hover .ws-benefit-link {
-  color: #ffdb55;
-  text-decoration: underline;
-}
+/* SAVED CARS */
 
-/* ==========================================
-   SAVE CAR BUTTON
-========================================== */
-
-.ws-car-image-wrap {
-  position: relative;
-}
+.ws-car-image-wrap { position: relative; }
 
 .ws-save-car-btn {
   position: absolute;
   top: 13px;
   right: 13px;
   z-index: 5;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   width: 43px;
   height: 43px;
   padding: 0;
-
-  background: #fff;
+  background: white;
   color: #09243f;
-
   border: 1px solid #e2e8f0;
   border-radius: 50%;
-
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
-
   font-size: 28px;
-  line-height: 1;
   cursor: pointer;
-
-  transition:
-    transform 0.2s ease,
-    color 0.2s ease,
-    background 0.2s ease;
 }
 
-.ws-save-car-btn:hover {
-  transform: scale(1.1);
-  color: #e11d48;
-}
-
+.ws-save-car-btn:hover,
 .ws-save-car-btn.is-saved {
-  background: #fff1f2;
   color: #e11d48;
-  border-color: #fecdd3;
+  background: #fff1f2;
 }
 
-/* ==========================================
-   MOBILE
-========================================== */
+/* RESPONSIVE DESIGN */
 
-@media (max-width: 900px) {
+@media(max-width:900px) {
   .ws-search-bottom {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2,minmax(0,1fr));
   }
-
-  .ws-search-button {
-    width: 100%;
-  }
-
-  .ws-benefits {
-    gap: 12px;
-  }
-
-  .ws-benefit-card {
-    padding: 20px 16px;
-  }
-
-  .ws-benefit-card h3 {
-    font-size: 17px;
-  }
+  .ws-search-button { width: 100%; }
+  .ws-benefits { gap: 12px; }
+  .ws-benefit-card { padding: 20px 16px; }
 }
 
-@media (max-width: 700px) {
-  .ws-hero {
-    padding: 20px 18px 35px;
-  }
+@media(max-width:700px) {
+  .ws-hero { padding: 20px 18px 35px; }
 
   .ws-hero h1.ws-main-heading {
     font-size: 34px;
-    letter-spacing: -0.8px;
+    letter-spacing: -.8px;
   }
 
-  .ws-heading-line {
-    font-size: 0.68em;
-  }
-
-  .ws-description {
-    font-size: 16px;
-  }
+  .ws-heading-line { font-size: .68em; }
+  .ws-description { font-size: 16px; }
 
   .ws-tabs {
-    gap: 6px;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    gap: 5px;
   }
 
   .ws-tab {
     min-height: 48px;
-    padding: 10px 5px;
-    font-size: 13px;
-    border-radius: 10px;
+    padding: 10px 3px;
+    font-size: 11px;
+    border-radius: 9px;
   }
 
   .ws-search-form.ws-location-search {
@@ -505,9 +367,7 @@ html {
     border-radius: 16px;
   }
 
-  .ws-search-top {
-    grid-template-columns: 1fr;
-  }
+  .ws-search-top { grid-template-columns: 1fr; }
 
   .ws-search-top input {
     border-right: 0;
@@ -516,7 +376,6 @@ html {
 
   .ws-search-bottom {
     grid-template-columns: 1fr;
-    gap: 12px;
   }
 
   .ws-benefits {
@@ -528,35 +387,20 @@ html {
     min-height: 0;
     padding: 22px;
   }
-
-  .ws-benefit-card p {
-    margin-bottom: 15px;
-  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+@media(max-width:380px) {
+  .ws-tabs { gap: 3px; }
+  .ws-tab { font-size: 10px; padding: 8px 2px; }
+}
 
-  .ws-tab,
-  .ws-benefit-card,
-  .ws-search-button,
-  .ws-save-car-btn {
-    transition: none;
-  }
-
-  .ws-tab:hover,
-  .ws-benefit-card:hover,
-  .ws-search-button:hover {
-    transform: none;
-  }
+@media(prefers-reduced-motion:reduce) {
+  html { scroll-behavior: auto; }
+  .ws-tab,.ws-benefit-card { transition: none; }
 }
 </style>
 
-<!-- ==========================================
-     HERO
-========================================== -->
+<!-- HERO -->
 
 <section class="ws-hero">
   <div class="ws-inner">
@@ -569,107 +413,108 @@ html {
     </h1>
 
     <p class="ws-description">
-      Search vehicles from trusted dealerships. We handle the
-      communication and appointment scheduling, so you can
-      shop with confidence.
+      Search vehicles from trusted dealerships.
+      We handle the communication and appointment scheduling,
+      so you can shop with confidence.
     </p>
 
-    <!-- SEARCH PANEL -->
     <div class="ws-search-panel">
 
-      <!-- CLICKABLE TABS -->
-      <div class="ws-tabs" role="group" aria-label="Vehicle shopping options">
+      <!-- FOUR HORIZONTAL BUTTONS -->
 
-        <button
-          type="button"
-          class="ws-tab active"
-          data-type="used"
-          aria-pressed="true"
-          onclick="selectCarType(this)">
+      <div class="ws-tabs"
+           role="group"
+           aria-label="Vehicle shopping options">
+
+        <button type="button"
+                class="ws-tab active"
+                data-type="used"
+                aria-pressed="true"
+                onclick="selectCarType(this)">
           Used Cars
         </button>
 
-        <button
-          type="button"
-          class="ws-tab"
-          data-type="new"
-          aria-pressed="false"
-          onclick="selectCarType(this)">
+        <button type="button"
+                class="ws-tab"
+                data-type="new"
+                aria-pressed="false"
+                onclick="selectCarType(this)">
           New Cars
         </button>
 
-        <a
-          href="{{ url_for('sell_car') }}"
-          class="ws-tab ws-sell-tab">
+        <a href="{{ url_for('sell_car') }}"
+           class="ws-tab">
           Sell Your Car
         </a>
 
+        <button type="button"
+                class="ws-tab"
+                onclick="showRentalNotice()">
+          Rental Cars
+        </button>
+
       </div>
 
-      <!-- SEARCH FORM -->
-      <form
-        class="ws-search-form ws-location-search"
-        method="get"
-        action="{{ url_for('home') }}">
+      <!-- VEHICLE SEARCH -->
 
-        <input
-          type="hidden"
-          name="condition"
-          id="ws-condition"
-          value="{{ selected_condition|default('used', true) }}">
+      <form class="ws-search-form ws-location-search"
+            method="get"
+            action="{{ url_for('home') }}">
+
+        <input type="hidden"
+               name="condition"
+               id="ws-condition"
+               value="{{ selected_condition|default('used',true) }}">
 
         <div class="ws-search-top">
 
-          <input
-            type="search"
-            name="q"
-            aria-label="Search make, model, or year"
-            value="{{ q|default('', true) }}"
-            placeholder="Search make, model, or year">
+          <input type="search"
+                 name="q"
+                 aria-label="Search make, model, or year"
+                 value="{{ q|default('',true) }}"
+                 placeholder="Search make, model, or year">
 
           <select name="make" aria-label="Vehicle make">
             <option value="">All Makes</option>
 
             {% for m in makes %}
-            <option
-              value="{{ m.make }}"
+            <option value="{{ m.make }}"
               {% if selected_make == m.make %}selected{% endif %}>
               {{ m.make }}
             </option>
             {% endfor %}
-
           </select>
 
         </div>
 
         <div class="ws-search-bottom">
 
-          <!-- ZIP -->
+          <!-- ZIP CODE -->
+
           <div class="ws-location-field">
             <label for="ws-zip">Location (ZIP Code)</label>
 
             <div class="ws-field-control">
-              <span class="ws-field-icon" aria-hidden="true">📍</span>
+              <span class="ws-field-icon">📍</span>
 
-              <input
-                id="ws-zip"
-                type="text"
-                name="zip"
-                inputmode="numeric"
-                pattern="[0-9]{5}"
-                maxlength="5"
-                title="Enter a 5-digit ZIP code"
-                placeholder="Enter ZIP Code"
-                value="{{ selected_zip|default('', true) }}">
+              <input id="ws-zip"
+                     type="text"
+                     name="zip"
+                     inputmode="numeric"
+                     pattern="[0-9]{5}"
+                     maxlength="5"
+                     placeholder="Enter ZIP Code"
+                     value="{{ selected_zip|default('',true) }}">
             </div>
           </div>
 
           <!-- STATE -->
+
           <div class="ws-state-field">
             <label for="ws-state">Search by State</label>
 
             <div class="ws-field-control">
-              <span class="ws-field-icon" aria-hidden="true">📍</span>
+              <span class="ws-field-icon">📍</span>
 
               <select id="ws-state" name="state">
                 <option value="">All States</option>
@@ -727,36 +572,35 @@ html {
                   ('WY','Wyoming')
                 ] %}
 
-                {% for code, name in states %}
-                <option
-                  value="{{ code }}"
+                {% for code,name in states %}
+                <option value="{{ code }}"
                   {% if selected_state|default('') == code %}selected{% endif %}>
                   {{ name }}
                 </option>
                 {% endfor %}
+
               </select>
             </div>
           </div>
 
           <!-- DISTANCE -->
+
           <div class="ws-distance-field">
             <label for="ws-distance">Distance From Me</label>
 
             <div class="ws-field-control">
-              <span class="ws-field-icon" aria-hidden="true">◎</span>
+              <span class="ws-field-icon">◎</span>
 
               <select id="ws-distance" name="distance">
 
-                {% for miles in [10, 25, 50, 100, 250, 300, 400, 500, 750, 1000] %}
-                <option
-                  value="{{ miles }}"
+                {% for miles in [10,25,50,100,250,300,400,500,750,1000] %}
+                <option value="{{ miles }}"
                   {% if selected_distance|default('50')|string == miles|string %}selected{% endif %}>
                   {{ miles }} miles
                 </option>
                 {% endfor %}
 
-                <option
-                  value="nationwide"
+                <option value="nationwide"
                   {% if selected_distance|default('50') == 'nationwide' %}selected{% endif %}>
                   Nationwide
                 </option>
@@ -773,15 +617,12 @@ html {
       </form>
     </div>
 
-    <!-- =====================================
-         THREE CLICKABLE CARDS
-    ===================================== -->
+    <!-- BENEFIT CARDS -->
 
     <div class="ws-benefits">
 
-      <a
-        href="{{ url_for('dealers_page') }}"
-        class="ws-benefit-card">
+      <a href="{{ url_for('dealers_page') }}"
+         class="ws-benefit-card">
 
         <div class="ws-benefit-icon-box">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -804,9 +645,8 @@ html {
         </span>
       </a>
 
-      <a
-        href="#how-it-works"
-        class="ws-benefit-card">
+      <a href="#how-it-works"
+         class="ws-benefit-card">
 
         <div class="ws-benefit-icon-box">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -828,9 +668,8 @@ html {
         </span>
       </a>
 
-      <a
-        href="#featured-vehicles"
-        class="ws-benefit-card">
+      <a href="#featured-vehicles"
+         class="ws-benefit-card">
 
         <div class="ws-benefit-icon-box">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -859,9 +698,7 @@ html {
   </div>
 </section>
 
-<!-- ==========================================
-     FEATURED VEHICLES
-========================================== -->
+<!-- FEATURED VEHICLES -->
 
 <section class="section" id="featured-vehicles">
 
@@ -888,12 +725,11 @@ html {
 
       <div class="ws-car-image-wrap">
 
-        <a href="{{ url_for('vehicle', vid=v.id) }}">
-          <div
-            class="carimage"
-            {% if v.image_url %}
-            style="background-image:url('{{ v.image_url }}')"
-            {% endif %}>
+        <a href="{{ url_for('vehicle',vid=v.id) }}">
+          <div class="carimage"
+               {% if v.image_url %}
+               style="background-image:url('{{ v.image_url }}')"
+               {% endif %}>
 
             <span class="pill">
               Available to inquire
@@ -901,16 +737,15 @@ html {
           </div>
         </a>
 
-        <button
-          type="button"
-          class="ws-save-car-btn"
-          data-id="{{ v.id }}"
-          data-title="{{ v.year }} {{ v.make }} {{ v.model }} {{ v.trim }}"
-          data-price="${{ '{:,}'.format(v.price) }}"
-          data-image="{{ v.image_url }}"
-          aria-label="Save this car"
-          aria-pressed="false"
-          title="Save this car">
+        <button type="button"
+                class="ws-save-car-btn"
+                data-id="{{ v.id }}"
+                data-title="{{ v.year }} {{ v.make }} {{ v.model }} {{ v.trim }}"
+                data-price="${{ '{:,}'.format(v.price) }}"
+                data-image="{{ v.image_url }}"
+                aria-label="Save this car"
+                aria-pressed="false"
+                title="Save this car">
           ♡
         </button>
 
@@ -934,14 +769,14 @@ html {
             ${{ '{:,}'.format(v.price) }}
           </strong>
 
-          <a
-            class="btn navy"
-            href="{{ url_for('vehicle', vid=v.id) }}">
+          <a class="btn navy"
+             href="{{ url_for('vehicle',vid=v.id) }}">
             View Details &rarr;
           </a>
 
         </div>
       </div>
+
     </article>
 
     {% else %}
@@ -956,9 +791,7 @@ html {
   </div>
 </section>
 
-<!-- ==========================================
-     HOW WE-SELL WORKS
-========================================== -->
+<!-- HOW WE-SELL WORKS -->
 
 <section class="steps section" id="how-it-works">
 
@@ -966,7 +799,6 @@ html {
     <div class="eyebrow blue">
       SIMPLE FROM START TO FINISH
     </div>
-
     <h2>How WE-SELL Works</h2>
   </div>
 
@@ -975,7 +807,6 @@ html {
     <div class="step">
       <span>01</span>
       <h3>Find Your Car</h3>
-
       <p>
         Browse participating dealerships' listings
         and choose a vehicle.
@@ -985,7 +816,6 @@ html {
     <div class="step">
       <span>02</span>
       <h3>WE-SELL Coordinates</h3>
-
       <p>
         We communicate your inquiry to the dealership
         and help arrange an appointment.
@@ -995,7 +825,6 @@ html {
     <div class="step">
       <span>03</span>
       <h3>Visit the Dealership</h3>
-
       <p>
         Meet the dealer at the confirmed appointment
         and decide whether the car is right for you.
@@ -1005,79 +834,64 @@ html {
   </div>
 </section>
 
-<!-- ==========================================
-     DEALERSHIP PARTNERSHIP
-========================================== -->
+<!-- DEALERSHIP PARTNERSHIP -->
 
 <section class="cta">
   <div>
     <h2>Dealership Owner?</h2>
-
     <p>
       Manage inventory and customer inquiries
       in your own portal.
     </p>
   </div>
 
-  <a
-    class="btn gold"
-    href="{{ url_for('dealers_page') }}">
+  <a class="btn gold"
+     href="{{ url_for('dealers_page') }}">
     Explore Dealer Partnership &rarr;
   </a>
 </section>
 
-<!-- ==========================================
-     JAVASCRIPT
-========================================== -->
-
 <script>
-/* ==========================================
-   USED / NEW TABS
-========================================== */
+/* USED AND NEW CAR TABS */
 
 function selectCarType(button) {
-  const tabs = document.querySelectorAll(
-    '.ws-tab[data-type]'
-  );
+  const tabs = document.querySelectorAll('.ws-tab[data-type]');
 
   tabs.forEach(function(tab) {
-    const isSelected = tab === button;
-
-    tab.classList.toggle('active', isSelected);
-    tab.setAttribute('aria-pressed', String(isSelected));
+    const selected = tab === button;
+    tab.classList.toggle('active', selected);
+    tab.setAttribute('aria-pressed', String(selected));
   });
 
-  const conditionInput = document.getElementById(
-    'ws-condition'
-  );
+  const condition = document.getElementById('ws-condition');
 
-  if (conditionInput) {
-    conditionInput.value = button.dataset.type;
+  if (condition) {
+    condition.value = button.dataset.type;
   }
 }
 
-/* RESTORE SELECTED TAB */
+/* RENTAL CARS */
+
+function showRentalNotice() {
+  alert('WE-SELL Rental Cars is coming soon!');
+}
+
+/* RESTORE SELECTED CAR TYPE */
+
 document.addEventListener('DOMContentLoaded', function() {
-  const conditionInput = document.getElementById(
-    'ws-condition'
+  const condition = document.getElementById('ws-condition');
+  const selected = condition ? condition.value : 'used';
+
+  const tab = document.querySelector(
+    '.ws-tab[data-type="' + selected + '"]'
   );
 
-  const selectedCondition = conditionInput
-    ? conditionInput.value
-    : 'used';
-
-  const selectedTab = document.querySelector(
-    '.ws-tab[data-type="' + selectedCondition + '"]'
-  );
-
-  if (selectedTab) {
-    selectCarType(selectedTab);
+  if (tab) {
+    selectCarType(tab);
   }
 });
 
-/* ==========================================
-   SAVED CARS
-========================================== */
+/* SAVED CARS */
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -1088,9 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const cars = JSON.parse(
         localStorage.getItem(storageKey) || '[]'
       );
-
       return Array.isArray(cars) ? cars : [];
-
     } catch (error) {
       return [];
     }
@@ -1099,61 +911,40 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateHeartButtons() {
     const saved = getSavedCars();
 
-    document.querySelectorAll(
-      '.ws-save-car-btn'
-    ).forEach(function(button) {
+    document.querySelectorAll('.ws-save-car-btn')
+      .forEach(function(button) {
 
-      const isSaved = saved.some(function(car) {
-        return String(car.id) === button.dataset.id;
+        const isSaved = saved.some(function(car) {
+          return String(car.id) === button.dataset.id;
+        });
+
+        button.classList.toggle('is-saved', isSaved);
+        button.textContent = isSaved ? '♥' : '♡';
+        button.setAttribute('aria-pressed', String(isSaved));
+
+        button.setAttribute(
+          'aria-label',
+          isSaved ? 'Remove from Saved Cars' : 'Save this car'
+        );
       });
-
-      button.classList.toggle(
-        'is-saved',
-        isSaved
-      );
-
-      button.textContent = isSaved ? '♥' : '♡';
-
-      button.setAttribute(
-        'aria-pressed',
-        String(isSaved)
-      );
-
-      button.setAttribute(
-        'aria-label',
-        isSaved
-          ? 'Remove from Saved Cars'
-          : 'Save this car'
-      );
-
-      button.title = isSaved
-        ? 'Remove from Saved Cars'
-        : 'Save this car';
-    });
   }
 
-  document.querySelectorAll(
-    '.ws-save-car-btn'
-  ).forEach(function(button) {
+  document.querySelectorAll('.ws-save-car-btn')
+    .forEach(function(button) {
 
-    button.addEventListener(
-      'click',
-      function(event) {
-
+      button.addEventListener('click', function(event) {
         event.preventDefault();
         event.stopPropagation();
 
         const saved = getSavedCars();
         const id = button.dataset.id;
 
-        const existingIndex = saved.findIndex(
-          function(car) {
-            return String(car.id) === id;
-          }
-        );
+        const index = saved.findIndex(function(car) {
+          return String(car.id) === id;
+        });
 
-        if (existingIndex >= 0) {
-          saved.splice(existingIndex, 1);
+        if (index >= 0) {
+          saved.splice(index, 1);
         } else {
           saved.push({
             id: id,
@@ -1174,27 +965,17 @@ document.addEventListener('DOMContentLoaded', function() {
           document.dispatchEvent(
             new Event('wesell:saved-cars-changed')
           );
-
         } catch (error) {
-          alert(
-            'Unable to save cars in this browser.'
-          );
+          alert('Unable to save cars in this browser.');
         }
-      }
-    );
-  });
+      });
+    });
 
   updateHeartButtons();
 
-  window.addEventListener(
-    'pageshow',
-    updateHeartButtons
-  );
+  window.addEventListener('pageshow', updateHeartButtons);
+  window.addEventListener('storage', updateHeartButtons);
 
-  window.addEventListener(
-    'storage',
-    updateHeartButtons
-  );
 });
 </script>
 
