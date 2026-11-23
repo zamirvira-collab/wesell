@@ -4,6 +4,8 @@
 {% block content %}
 
 <style>
+/* HERO SECTION */
+
 .ws-hero {
   background:
     linear-gradient(
@@ -34,8 +36,6 @@
   text-transform: uppercase;
 }
 
-/* MAIN HEADING */
-
 .ws-hero h1.ws-main-heading {
   font-family: Arial, Helvetica, sans-serif;
   font-size: clamp(38px, 4.3vw, 66px);
@@ -63,8 +63,6 @@
   font-style: italic;
   font-weight: 900;
 }
-
-/* DESCRIPTION */
 
 .ws-hero p.ws-description {
   font-family: Arial, Helvetica, sans-serif;
@@ -105,12 +103,16 @@
   font-size: 19px;
   font-weight: 800;
   cursor: pointer;
+  text-align: center;
+  text-decoration: none;
 }
 
 .ws-tab.active {
   background: linear-gradient(#ffe477, #ffbb00);
   color: #071b31;
 }
+
+/* SEARCH FORM */
 
 .ws-search-form {
   display: grid;
@@ -234,63 +236,7 @@
   outline-offset: 3px;
 }
 
-/* MOBILE RESPONSIVE */
-
-@media(max-width:700px) {
-
-  .ws-hero {
-    padding: 48px 18px;
-  }
-
-  .ws-hero h1.ws-main-heading {
-    font-size: 34px;
-    letter-spacing: -0.8px;
-  }
-
-  .ws-hero h1 .ws-heading-line {
-    font-size: 0.68em;
-  }
-
-  .ws-hero p.ws-description {
-    font-size: 16px;
-    line-height: 1.4;
-  }
-
-  .ws-tabs {
-    margin-left: 0;
-  }
-
-  .ws-tab {
-    flex: 1;
-    min-width: 0;
-    font-size: 14px;
-    padding: 12px 8px;
-  }
-
-  .ws-search-form {
-    grid-template-columns: 1fr;
-    border-radius: 18px;
-  }
-
-  .ws-search-form input {
-    border-right: 0;
-    border-bottom: 1px solid #d8e0e8;
-  }
-
-  .ws-search-button {
-    width: 100%;
-  }
-
-  .ws-benefits {
-    grid-template-columns: 1fr;
-  }
-
-  .ws-benefit + .ws-benefit {
-    border-left: 0;
-  }
-}
-
-/* LOCATION & DISTANCE SEARCH — BOTH USED AND NEW TABS */
+/* LOCATION, STATE AND DISTANCE SEARCH */
 
 .ws-search-form.ws-location-search {
   display: block;
@@ -321,20 +267,28 @@
   border-right: 1px solid #cbd5e1;
 }
 
+/* FOUR COLUMNS: ZIP, STATE, DISTANCE, BUTTON */
+
 .ws-search-bottom {
   display: grid;
-  grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto;
-  gap: 18px;
+  grid-template-columns:
+    minmax(0,1fr)
+    minmax(0,1fr)
+    minmax(0,1fr)
+    auto;
+  gap: 12px;
   align-items: end;
   margin-top: 16px;
 }
 
 .ws-location-field,
+.ws-state-field,
 .ws-distance-field {
   min-width: 0;
 }
 
 .ws-location-field label,
+.ws-state-field label,
 .ws-distance-field label {
   display: block;
   color: #09243f;
@@ -351,11 +305,13 @@
   border-radius: 13px;
   padding-left: 12px;
   background: #fff;
+  min-width: 0;
 }
 
 .ws-field-control span {
   font-size: 21px;
   color: #09243f;
+  flex-shrink: 0;
 }
 
 .ws-location-search .ws-field-control input,
@@ -375,12 +331,54 @@
 }
 
 .ws-location-search .ws-search-button {
-  padding: 16px 24px;
+  padding: 16px 20px;
   border-radius: 14px;
   min-height: 50px;
 }
 
+/* MOBILE RESPONSIVE */
+
+@media(max-width:900px) {
+  .ws-search-bottom {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  .ws-location-search .ws-search-button {
+    width: 100%;
+  }
+}
+
 @media(max-width:700px) {
+  .ws-hero {
+    padding: 48px 18px;
+  }
+
+  .ws-hero h1.ws-main-heading {
+    font-size: 34px;
+    letter-spacing: -0.8px;
+  }
+
+  .ws-hero h1 .ws-heading-line {
+    font-size: 0.68em;
+    white-space: normal;
+  }
+
+  .ws-hero p.ws-description {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  .ws-tabs {
+    margin-left: 0;
+  }
+
+  .ws-tab {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    padding: 12px 8px;
+  }
+
   .ws-search-form.ws-location-search {
     border-radius: 18px;
   }
@@ -401,6 +399,14 @@
 
   .ws-location-search .ws-search-button {
     width: 100%;
+  }
+
+  .ws-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .ws-benefit + .ws-benefit {
+    border-left: 0;
   }
 }
 </style>
@@ -427,7 +433,7 @@
       shop with confidence.
     </p>
 
-    <!-- SEARCH BAR -->
+    <!-- SEARCH PANEL -->
 
     <div class="ws-search-panel">
 
@@ -457,6 +463,8 @@
 
       </div>
 
+      <!-- VEHICLE SEARCH -->
+
       <form
         class="ws-search-form ws-location-search"
         method="get"
@@ -468,6 +476,8 @@
           id="ws-condition"
           value="{{ selected_condition|default('used') }}">
 
+        <!-- SEARCH MAKE AND MODEL -->
+
         <div class="ws-search-top">
 
           <input
@@ -478,6 +488,7 @@
             placeholder="Search make, model, or year">
 
           <select name="make" aria-label="Vehicle make">
+
             <option value="">All Makes</option>
 
             {% for m in makes %}
@@ -489,14 +500,23 @@
             {% endfor %}
 
           </select>
+
         </div>
+
+        <!-- ZIP, STATE, DISTANCE -->
 
         <div class="ws-search-bottom">
 
+          <!-- ZIP CODE -->
+
           <div class="ws-location-field">
-            <label for="ws-zip">Location (ZIP Code)</label>
+
+            <label for="ws-zip">
+              Location (ZIP Code)
+            </label>
 
             <div class="ws-field-control">
+
               <span aria-hidden="true">📍</span>
 
               <input
@@ -509,23 +529,116 @@
                 title="Enter a 5-digit ZIP code"
                 placeholder="Enter ZIP Code"
                 value="{{ selected_zip|default('') }}">
+
             </div>
           </div>
 
-          <div class="ws-distance-field">
-            <label for="ws-distance">Distance From Me</label>
+          <!-- SEARCH BY STATE -->
+
+          <div class="ws-state-field">
+
+            <label for="ws-state">
+              Search by State
+            </label>
 
             <div class="ws-field-control">
+
+              <span aria-hidden="true">📍</span>
+
+              <select id="ws-state" name="state">
+
+                <option value="">All States</option>
+
+                {% set states = [
+                  ('AL','Alabama'),
+                  ('AK','Alaska'),
+                  ('AZ','Arizona'),
+                  ('AR','Arkansas'),
+                  ('CA','California'),
+                  ('CO','Colorado'),
+                  ('CT','Connecticut'),
+                  ('DE','Delaware'),
+                  ('FL','Florida'),
+                  ('GA','Georgia'),
+                  ('HI','Hawaii'),
+                  ('ID','Idaho'),
+                  ('IL','Illinois'),
+                  ('IN','Indiana'),
+                  ('IA','Iowa'),
+                  ('KS','Kansas'),
+                  ('KY','Kentucky'),
+                  ('LA','Louisiana'),
+                  ('ME','Maine'),
+                  ('MD','Maryland'),
+                  ('MA','Massachusetts'),
+                  ('MI','Michigan'),
+                  ('MN','Minnesota'),
+                  ('MS','Mississippi'),
+                  ('MO','Missouri'),
+                  ('MT','Montana'),
+                  ('NE','Nebraska'),
+                  ('NV','Nevada'),
+                  ('NH','New Hampshire'),
+                  ('NJ','New Jersey'),
+                  ('NM','New Mexico'),
+                  ('NY','New York'),
+                  ('NC','North Carolina'),
+                  ('ND','North Dakota'),
+                  ('OH','Ohio'),
+                  ('OK','Oklahoma'),
+                  ('OR','Oregon'),
+                  ('PA','Pennsylvania'),
+                  ('RI','Rhode Island'),
+                  ('SC','South Carolina'),
+                  ('SD','South Dakota'),
+                  ('TN','Tennessee'),
+                  ('TX','Texas'),
+                  ('UT','Utah'),
+                  ('VT','Vermont'),
+                  ('VA','Virginia'),
+                  ('WA','Washington'),
+                  ('WV','West Virginia'),
+                  ('WI','Wisconsin'),
+                  ('WY','Wyoming')
+                ] %}
+
+                {% for code, name in states %}
+
+                <option
+                  value="{{ code }}"
+                  {% if selected_state|default('') == code %}selected{% endif %}>
+                  {{ name }}
+                </option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+          </div>
+
+          <!-- DISTANCE -->
+
+          <div class="ws-distance-field">
+
+            <label for="ws-distance">
+              Distance From Me
+            </label>
+
+            <div class="ws-field-control">
+
               <span aria-hidden="true">◎</span>
 
               <select id="ws-distance" name="distance">
 
                 {% for miles in [10, 25, 50, 100, 250] %}
+
                 <option
                   value="{{ miles }}"
                   {% if selected_distance|default('50')|string == miles|string %}selected{% endif %}>
                   {{ miles }} miles
                 </option>
+
                 {% endfor %}
 
                 <option
@@ -535,14 +648,20 @@
                 </option>
 
               </select>
+
             </div>
           </div>
 
-          <button type="submit" class="ws-search-button">
+          <!-- FIND VEHICLES -->
+
+          <button
+            type="submit"
+            class="ws-search-button">
             Find Vehicles →
           </button>
 
         </div>
+
       </form>
 
     </div>
@@ -607,7 +726,8 @@
 
     <article class="vehiclecard">
 
-      <!-- VEHICLE IMAGE WITH SAVE HEART -->
+      <!-- VEHICLE IMAGE AND SAVE BUTTON -->
+
       <div class="ws-car-image-wrap">
 
         <a href="{{ url_for('vehicle', vid=v.id) }}">
@@ -623,9 +743,9 @@
             </span>
 
           </div>
+
         </a>
 
-        <!-- SAVE / UNSAVE VEHICLE -->
         <button
           type="button"
           class="ws-save-car-btn"
@@ -640,6 +760,8 @@
         </button>
 
       </div>
+
+      <!-- VEHICLE DETAILS -->
 
       <div class="carbody">
 
@@ -753,6 +875,9 @@
 </section>
 
 <script>
+
+/* USED AND NEW CAR TABS */
+
 function selectCarType(button) {
 
   document.querySelectorAll('.ws-tab').forEach(function(tab) {
@@ -765,18 +890,25 @@ function selectCarType(button) {
     button.dataset.type;
 }
 
-/* KEEP THE SELECTED SEARCH TAB AFTER SUBMIT */
+/* KEEP SELECTED TAB AFTER SEARCH */
 
 document.addEventListener('DOMContentLoaded', function () {
-  const selected = new URLSearchParams(window.location.search).get('condition');
+
+  const selected = new URLSearchParams(
+    window.location.search
+  ).get('condition');
 
   if (selected === 'used' || selected === 'new') {
+
     const tab = document.querySelector(
       '.ws-tab[data-type="' + selected + '"]'
     );
 
-    if (tab) selectCarType(tab);
+    if (tab) {
+      selectCarType(tab);
+    }
   }
+
 });
 
 /* SAVED CARS FUNCTIONALITY */
@@ -792,12 +924,14 @@ document.addEventListener('DOMContentLoaded', function () {
       );
 
       return Array.isArray(cars) ? cars : [];
+
     } catch (error) {
       return [];
     }
   }
 
   function updateHeartButtons() {
+
     const saved = getSavedCars();
 
     document.querySelectorAll('.ws-save-car-btn').forEach(function(button) {
@@ -820,6 +954,7 @@ document.addEventListener('DOMContentLoaded', function () {
       button.title = isSaved
         ? 'Remove from Saved Cars'
         : 'Save this car';
+
     });
   }
 
@@ -853,6 +988,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       try {
+
         localStorage.setItem(
           storageKey,
           JSON.stringify(saved)
@@ -865,10 +1001,13 @@ document.addEventListener('DOMContentLoaded', function () {
         );
 
       } catch (error) {
+
         alert('Unable to save cars in this browser.');
+
       }
 
     });
+
   });
 
   updateHeartButtons();
@@ -877,6 +1016,7 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('storage', updateHeartButtons);
 
 });
+
 </script>
 
 {% endblock %}
