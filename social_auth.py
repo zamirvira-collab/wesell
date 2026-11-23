@@ -117,116 +117,101 @@ def google_callback():
         return redirect(url_for("rental_portal.login") if portal == "rental" else url_for("login"))
 
     if portal == "dealer":
-        from flask import g
-        from flask import current_app
-        # Use the same database path as the running main application.
         db_path = os.environ.get("WESELL_DB", os.path.join(current_app.root_path, "wesell.db"))
         conn = sqlite3.connect(db_path, timeout=15)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys=ON")
         try:
             if intent == "link":
-                if (not linking_user_id or session.get("uid") != linking_user_id
-                    or not g.get("user") or g.user["role"] != "dealer"
-                    or g.user["id"] != linking_user_id
-                    or g.user["dealer_id"] is None):
-                    return "Sign in to your dealer account with a password first", 403
-                dealer = conn.execute(
-                    "SELECT id FROM dealers WHERE id=? AND approved=1",
-                    (g.user["dealer_id"],),
-                ).fetchone()
-                if dealer is None:
-                    return "Dealership is not approved", 403
-                existing = conn.execute(
-                    "SELECT user_id FROM dealer_google_identities WHERE google_sub=?",
-                    (sub,),
-                ).fetchone()
-                if existing and existing["user_id"] != linking_user_id:
-                    return "Google account is linked to another dealer user", 409
-                linked = conn.execute(
-                    "SELECT google_sub FROM dealer_google_identities WHERE user_id=?",
+                if not linking_user_id or session.get("uid") != linking_user_id:
+                    return "Sign in with your dealer password before connecting Google", 403
+                user = conn.execute(
+                    "SELECT id FROM users WHERE id=? AND role='dealer' AND dealer_id IS NOT NULL",
                     (linking_user_id,),
                 ).fetchone()
-                if linked and linked["google_sub"] != sub:
-                    return "Dealer account already linked to a different Google account", 409
+                if not user:
+                    return "Dealer account not found", 403
+                other = conn.execute(
+                    "SELECT user_id FROM dealer_google_identities WHERE google_sub=?", (sub,)
+                ).fetchone()
+                if other and other["user_id"] != linking_user_id:
+                    return "This Google account is already linked to another dealer", 409
+                existing = conn.execute(
+                    "SELECT google_sub FROM dealer_google_identities WHERE user_id=?", (linking_user_id,)
+                ).fetchone()
+                if existing and existing["google_sub"] != sub:
+                    return "This dealer account already has another Google account linked", 409
                 conn.execute(
                     "INSERT OR IGNORE INTO dealer_google_identities(google_sub,user_id) VALUES (?,?)",
                     (sub, linking_user_id),
                 )
                 conn.commit()
-                flash("Google account connected to your dealership login.")
+                flash("Google account connected to your dealership.", "success")
                 return redirect(url_for("dealer_dashboard"))
 
-            user = conn.execute(
-                """SELECT u.id FROM dealer_google_identities AS gi
-                   JOIN users AS u ON u.id=gi.user_id
-                   JOIN dealers AS d ON d.id=u.dealer_id
+            row = conn.execute(
+                """SELECT u.id FROM dealer_google_identities gi
+                   JOIN users u ON u.id=gi.user_id
+                   JOIN dealers d ON d.id=u.dealer_id
                    WHERE gi.google_sub=? AND u.role='dealer' AND d.approved=1""",
                 (sub,),
             ).fetchone()
-            if user is None:
-                flash("Google verified your identity. Sign in with your dealer password, then connect Google from your dealer account.")
+            if not row:
+                flash("Sign in with your dealer password first, then connect Google from your dealer dashboard.", "error")
                 return redirect(url_for("login"))
-            user_id = user["id"]
+            user_id = row["id"]
         except sqlite3.Error:
-            logger.exception("Dealer Google database error")
-            return "Dealer account login temporarily unavailable", 503
+            logger.exception("Dealer Google account database error")
+            return "Dealer login is temporarily unavailable", 503
         finally:
             conn.close()
         session.clear()
         session["uid"] = user_id
-        flash("Signed in to your dealer account with Google.")
+        flash("Signed in to your dealership with Google.", "success")
         return redirect(url_for("dealer_dashboard"))
 
     conn = rental_db()
     try:
         if intent == "link":
-            # Only an already password-authenticated owner may link.
             if not linking_company_id or session.get("rental_company_id") != linking_company_id:
-                return "Please sign in with your rental password first", 403
+                return "Sign in with your rental password before connecting Google", 403
             company = conn.execute(
-                "SELECT id FROM rental_companies WHERE id=?",
-                (linking_company_id,),
+                "SELECT id FROM rental_companies WHERE id=?", (linking_company_id,)
             ).fetchone()
             if not company:
                 return "Rental company not found", 404
-            existing = conn.execute(
-                "SELECT company_id FROM rental_google_identities WHERE google_sub=?",
-                (sub,),
+            other = conn.execute(
+                "SELECT company_id FROM rental_google_identities WHERE google_sub=?", (sub,)
             ).fetchone()
-            if existing and existing["company_id"] != linking_company_id:
+            if other and other["company_id"] != linking_company_id:
                 return "This Google account is already linked to another rental company", 409
-            company_link = conn.execute(
-                "SELECT google_sub FROM rental_google_identities WHERE company_id=?",
-                (linking_company_id,),
+            existing = conn.execute(
+                "SELECT google_sub FROM rental_google_identities WHERE company_id=?", (linking_company_id,)
             ).fetchone()
-            if company_link and company_link["google_sub"] != sub:
-                return "This company already has a different Google account linked", 409
+            if existing and existing["google_sub"] != sub:
+                return "This company already has another Google account linked", 409
             conn.execute(
                 "INSERT OR IGNORE INTO rental_google_identities(google_sub,company_id) VALUES (?,?)",
                 (sub, linking_company_id),
             )
             conn.commit()
-            flash("Your Google account is now connected.")
+            flash("Your Google account is now connected.", "success")
             return redirect(url_for("rental_portal.dashboard"))
 
         row = conn.execute(
-            """SELECT c.id FROM rental_google_identities AS gi
-               JOIN rental_companies AS c ON c.id=gi.company_id
-               WHERE gi.google_sub=?""",
-            (sub,),
+            """SELECT c.id FROM rental_google_identities gi
+               JOIN rental_companies c ON c.id=gi.company_id
+               WHERE gi.google_sub=?""", (sub,)
         ).fetchone()
         if not row:
-            flash("Google verified your identity. Sign in with your rental password, then connect Google from /rental-company/connect-google.")
+            flash("Sign in with your rental password first, then connect Google.", "error")
             return redirect(url_for("rental_portal.login"))
         company_id = row["id"]
     except sqlite3.Error:
-        logger.exception("Google account database error")
-        return "Account login is temporarily unavailable", 503
+        logger.exception("Rental Google account database error")
+        return "Rental login is temporarily unavailable", 503
     finally:
         conn.close()
-
     session.clear()
     session["rental_company_id"] = company_id
-    flash("Signed in with Google successfully.")
+    flash("Signed in with Google successfully.", "success")
     return redirect(url_for("rental_portal.dashboard"))
