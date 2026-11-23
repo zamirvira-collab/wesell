@@ -68,6 +68,26 @@
       padding-bottom: 9px;
     }
 
+    /* RENTAL DASHBOARD BUTTON */
+
+    .nav nav a.ws-rental-dashboard {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 16px;
+      border-radius: 9px;
+      background: #ffc229;
+      color: #041b34 !important;
+      white-space: nowrap;
+      font-weight: 800;
+      border-bottom: 0;
+    }
+
+    .nav nav a.ws-rental-dashboard:hover {
+      background: #ffe078;
+      color: #041b34 !important;
+    }
+
     /* PREMIUM CONNECTED LOGIN / SIGN UP */
 
     .nav nav .ws-auth-group {
@@ -267,9 +287,7 @@
 
 <body>
 
-  <!-- ===================================== -->
   <!-- WE-SELL HEADER / NAVIGATION -->
-  <!-- ===================================== -->
 
   <header class="nav">
 
@@ -305,6 +323,16 @@
         Rental Cars
       </a>
 
+      <!-- RENTAL COMPANY DASHBOARD -->
+
+      <a
+        href="{{ url_for('rental_portal.dashboard') }}"
+        class="ws-rental-dashboard"
+        {% if request.endpoint == 'rental_portal.dashboard' %}aria-current="page"{% endif %}
+      >
+        Rental Dashboard
+      </a>
+
       <!-- DEALERSHIP DIRECTORY -->
 
       <a
@@ -325,7 +353,7 @@
         How It Works
       </a>
 
-      <!-- DASHBOARD -->
+      <!-- BUYER / DEALER / ADMIN DASHBOARD -->
 
       {% if me %}
 
@@ -418,7 +446,7 @@
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
               <path d="M20 8v6"></path>
-              <path d="M17 11h6"></path>
+              <path d="17 11h6"></path>
             </svg>
             Sign Up
           </a>
@@ -431,9 +459,7 @@
 
   </header>
 
-  <!-- ===================================== -->
   <!-- FLASH MESSAGES -->
-  <!-- ===================================== -->
 
   {% with messages = get_flashed_messages(with_categories=true) %}
 
@@ -455,9 +481,7 @@
 
   {% endwith %}
 
-  <!-- ===================================== -->
   <!-- MAIN PAGE CONTENT -->
-  <!-- ===================================== -->
 
   <main>
 
@@ -465,9 +489,7 @@
 
   </main>
 
-  <!-- ===================================== -->
   <!-- WE-SELL FOOTER -->
-  <!-- ===================================== -->
 
   <footer>
 
@@ -513,9 +535,7 @@
 
   </footer>
 
-  <!-- ===================================== -->
   <!-- SAVED CARS COUNTER -->
-  <!-- ===================================== -->
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
