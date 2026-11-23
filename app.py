@@ -164,6 +164,10 @@ def home():
 def sell_car():
     return render_template('sell_car.html')
 
+@app.get('/saved-cars')
+def saved_cars():
+    return render_template('saved_cars.html')
+
 @app.get('/vehicle/<int:vid>')
 def vehicle(vid):
     v=db().execute('''
