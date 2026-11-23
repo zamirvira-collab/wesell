@@ -1,0 +1,1105 @@
+
+{% extends 'base.html' %}
+
+{% block title %}{{ dealer.name }} Inventory | WE-SELL{% endblock %}
+
+{% block content %}
+
+<style>
+:root {
+    --ws-navy: #071d38;
+    --ws-blue: #123c62;
+    --ws-gold: #ffc400;
+    --ws-bg: #f4f7fb;
+    --ws-text: #17283d;
+    --ws-muted: #6b7b8f;
+    --ws-border: #e3e9f0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.showroom {
+    background: var(--ws-bg);
+    min-height: 100vh;
+    padding-bottom: 85px;
+}
+
+.showroom-hero {
+    background:
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(255,196,0,.13),
+            transparent 35%
+        ),
+        linear-gradient(135deg, #06172d, #123e64);
+    color: white;
+    padding: 28px 24px 55px;
+}
+
+.showroom-container {
+    max-width: 1250px;
+    margin: auto;
+}
+
+.showroom-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #c9d8e8;
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 35px;
+}
+
+.showroom-back:hover {
+    color: white;
+}
+
+.dealer-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.dealer-logo {
+    width: 105px;
+    height: 105px;
+    border-radius: 23px;
+    background: white;
+    color: var(--ws-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 47px;
+    font-weight: 900;
+    box-shadow: 0 12px 35px rgba(0,0,0,.16);
+    flex-shrink: 0;
+}
+
+.dealer-info {
+    flex: 1;
+    min-width: 240px;
+}
+
+.dealer-eyebrow {
+    color: var(--ws-gold);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 9px;
+}
+
+.dealer-info h1 {
+    font-size: clamp(30px, 4vw, 48px);
+    line-height: 1.15;
+    margin: 0 0 13px;
+    color: white;
+}
+
+.dealer-address {
+    color: #c8d6e7;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.dealer-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 25px;
+}
+
+.dealer-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 23px;
+    border-radius: 11px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 800;
+    transition: transform .2s, background .2s;
+}
+
+.dealer-action:hover {
+    transform: translateY(-2px);
+}
+
+.dealer-action.primary {
+    background: var(--ws-gold);
+    color: var(--ws-navy);
+}
+
+.dealer-action.secondary {
+    border: 1px solid rgba(255,255,255,.35);
+    color: white;
+}
+
+.dealer-action.secondary:hover {
+    background: rgba(255,255,255,.1);
+}
+
+.dealer-summary {
+    margin-left: auto;
+    background: rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 17px;
+    padding: 23px 32px;
+    text-align: center;
+    min-width: 155px;
+}
+
+.dealer-summary strong {
+    display: block;
+    font-size: 38px;
+    color: var(--ws-gold);
+}
+
+.dealer-summary span {
+    font-size: 13px;
+    color: #d6e0ec;
+}
+
+.inventory-wrap {
+    max-width: 1250px;
+    margin: 38px auto 0;
+    padding: 0 22px;
+}
+
+.inventory-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 26px;
+}
+
+.inventory-top h2 {
+    font-size: 29px;
+    margin: 0 0 7px;
+    color: var(--ws-navy);
+}
+
+.inventory-top p {
+    margin: 0;
+    color: var(--ws-muted);
+    font-size: 14px;
+}
+
+.inventory-count {
+    color: var(--ws-muted);
+    font-size: 14px;
+}
+
+.inventory-layout {
+    display: grid;
+    grid-template-columns: 270px minmax(0, 1fr);
+    gap: 25px;
+    align-items: start;
+}
+
+.inventory-filters {
+    background: white;
+    border: 1px solid var(--ws-border);
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 5px 22px rgba(5,28,55,.04);
+}
+
+.inventory-filters h3 {
+    font-size: 19px;
+    margin: 0 0 22px;
+    color: var(--ws-navy);
+}
+
+.filter-field {
+    margin-bottom: 19px;
+}
+
+.filter-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 9px;
+    color: var(--ws-text);
+}
+
+.filter-field input,
+.filter-field select,
+.inventory-sort select {
+    width: 100%;
+    padding: 12px 13px;
+    border: 1px solid #dce4ed;
+    border-radius: 10px;
+    background: white;
+    color: var(--ws-text);
+    font-size: 14px;
+    outline: none;
+}
+
+.filter-field input:focus,
+.filter-field select:focus,
+.inventory-sort select:focus {
+    border-color: #3273a6;
+    box-shadow: 0 0 0 3px rgba(50,115,166,.1);
+}
+
+.filter-button {
+    width: 100%;
+    background: var(--ws-navy);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.filter-button:hover {
+    background: #164a75;
+}
+
+.filter-clear {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    color: var(--ws-muted);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.filter-clear:hover {
+    color: var(--ws-navy);
+}
+
+.inventory-results {
+    min-width: 0;
+}
+
+.inventory-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 19px;
+}
+
+.inventory-toolbar strong {
+    color: var(--ws-navy);
+    font-size: 15px;
+}
+
+.inventory-sort {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.inventory-sort label {
+    color: var(--ws-muted);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.inventory-sort select {
+    min-width: 190px;
+}
+
+.vehicle-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.vehicle-card {
+    background: white;
+    border: 1px solid var(--ws-border);
+    border-radius: 17px;
+    overflow: hidden;
+    box-shadow: 0 5px 22px rgba(5,28,55,.05);
+    transition: transform .25s, box-shadow .25s;
+}
+
+.vehicle-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(5,28,55,.12);
+}
+
+.vehicle-image {
+    position: relative;
+    height: 215px;
+    background: #e9eef5;
+    overflow: hidden;
+}
+
+.vehicle-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .35s;
+}
+
+.vehicle-card:hover .vehicle-image img {
+    transform: scale(1.04);
+}
+
+.vehicle-no-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    color: #718096;
+    background: linear-gradient(135deg, #e8eef5, #dce6f0);
+    font-size: 14px;
+}
+
+.vehicle-no-image span {
+    font-size: 38px;
+}
+
+.vehicle-condition {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: white;
+    color: var(--ws-navy);
+    border-radius: 7px;
+    padding: 7px 11px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.vehicle-content {
+    padding: 21px;
+}
+
+.vehicle-content h3 {
+    font-size: 19px;
+    line-height: 1.4;
+    margin: 0 0 8px;
+    color: var(--ws-navy);
+}
+
+.vehicle-price {
+    font-size: 27px;
+    font-weight: 900;
+    color: var(--ws-navy);
+    margin: 12px 0 15px;
+}
+
+.vehicle-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-bottom: 19px;
+}
+
+.vehicle-spec {
+    background: #f1f5f9;
+    color: #506177;
+    border-radius: 7px;
+    padding: 8px 10px;
+    font-size: 12px;
+}
+
+.vehicle-vin {
+    font-size: 12px;
+    color: var(--ws-muted);
+    margin-bottom: 17px;
+    overflow-wrap: anywhere;
+}
+
+.vehicle-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.vehicle-details {
+    flex: 1;
+    text-align: center;
+    text-decoration: none;
+    background: var(--ws-navy);
+    color: white !important;
+    border-radius: 10px;
+    padding: 13px 12px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.vehicle-details:hover {
+    background: #164a75;
+}
+
+.vehicle-save {
+    border: 1px solid #dbe4ed;
+    border-radius: 10px;
+    width: 45px;
+    background: white;
+    font-size: 22px;
+    color: #8b99a9;
+    cursor: pointer;
+    transition: color .2s, background .2s;
+}
+
+.vehicle-save:hover,
+.vehicle-save.is-saved {
+    color: #e34b5a;
+    background: #fff2f3;
+}
+
+.inventory-empty {
+    background: white;
+    border: 1px solid var(--ws-border);
+    border-radius: 17px;
+    padding: 65px 25px;
+    text-align: center;
+    color: var(--ws-muted);
+}
+
+.inventory-empty h3 {
+    color: var(--ws-navy);
+    font-size: 22px;
+    margin: 0 0 10px;
+}
+
+.inventory-empty p {
+    margin-bottom: 22px;
+}
+
+.inventory-empty a {
+    display: inline-block;
+    background: var(--ws-gold);
+    color: var(--ws-navy);
+    padding: 13px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 800;
+}
+
+.showroom-footer-note {
+    margin-top: 35px;
+    background: #eaf0f7;
+    border-radius: 13px;
+    padding: 19px 22px;
+    color: #506177;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+@media (max-width: 1000px) {
+    .inventory-layout {
+        grid-template-columns: 230px minmax(0, 1fr);
+    }
+
+    .vehicle-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .showroom-hero {
+        padding: 25px 18px 40px;
+    }
+
+    .dealer-header {
+        align-items: flex-start;
+        gap: 17px;
+    }
+
+    .dealer-logo {
+        width: 76px;
+        height: 76px;
+        font-size: 34px;
+        border-radius: 16px;
+    }
+
+    .dealer-summary {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .inventory-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .inventory-wrap {
+        padding: 0 16px;
+    }
+
+    .vehicle-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inventory-top h2 {
+        font-size: 25px;
+    }
+
+    .inventory-sort {
+        width: 100%;
+    }
+
+    .inventory-sort select {
+        flex: 1;
+        min-width: 0;
+    }
+}
+</style>
+
+<div class="showroom">
+
+    <!-- DEALERSHIP HEADER -->
+
+    <section class="showroom-hero">
+
+        <div class="showroom-container">
+
+            <a
+                href="{{ url_for('dealer_directory') }}"
+                class="showroom-back"
+            >
+                &larr; All Dealerships
+            </a>
+
+            <div class="dealer-header">
+
+                <div class="dealer-logo">
+                    {{ dealer.name[0]|upper }}
+                </div>
+
+                <div class="dealer-info">
+
+                    <div class="dealer-eyebrow">
+                        WE-SELL Dealership Showroom
+                    </div>
+
+                    <h1>{{ dealer.name }}</h1>
+
+                    <div class="dealer-address">
+                        &#128205; {{ dealer.city }}
+
+                        {% if dealer.zip_code %}
+                            {{ dealer.zip_code }}
+                        {% endif %}
+                    </div>
+
+                    <div class="dealer-actions">
+
+                        <a
+                            href="#inventory"
+                            class="dealer-action primary"
+                        >
+                            Browse Inventory
+                        </a>
+
+                        <a
+                            href="{{ url_for('how_it_works') }}"
+                            class="dealer-action secondary"
+                        >
+                            How Appointments Work
+                        </a>
+
+                    </div>
+
+                </div>
+
+                <div class="dealer-summary">
+
+                    <strong>{{ total }}</strong>
+
+                    <span>Available Vehicles</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- INVENTORY CONTENT -->
+
+    <main class="inventory-wrap" id="inventory">
+
+        <div class="inventory-top">
+
+            <div>
+
+                <h2>Explore Available Vehicles</h2>
+
+                <p>
+                    Browse inventory from {{ dealer.name }}.
+                    WE-SELL helps coordinate your vehicle inquiry.
+                </p>
+
+            </div>
+
+            <div class="inventory-count">
+                {{ total }} total vehicles
+            </div>
+
+        </div>
+
+
+        <div class="inventory-layout">
+
+            <!-- FILTER SIDEBAR -->
+
+            <aside class="inventory-filters">
+
+                <h3>Filter Inventory</h3>
+
+                <form
+                    id="inventoryFilterForm"
+                    method="GET"
+                    action="{{ url_for('dealer_inventory', dealer_id=dealer.id) }}"
+                >
+
+                    <div class="filter-field">
+
+                        <label for="inventorySearch">
+                            Search Vehicles
+                        </label>
+
+                        <input
+                            id="inventorySearch"
+                            type="text"
+                            name="q"
+                            value="{{ q or '' }}"
+                            placeholder="Make, model, or year"
+                        >
+
+                    </div>
+
+                    <div class="filter-field">
+
+                        <label for="inventoryMake">
+                            Vehicle Make
+                        </label>
+
+                        <select
+                            id="inventoryMake"
+                            name="make"
+                        >
+
+                            <option value="">
+                                All Makes
+                            </option>
+
+                            {% for item in makes %}
+
+                                <option
+                                    value="{{ item.make }}"
+                                    {% if selected_make == item.make %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ item.make }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+                    <div class="filter-field">
+
+                        <label for="minPrice">
+                            Minimum Price
+                        </label>
+
+                        <input
+                            id="minPrice"
+                            type="number"
+                            name="min_price"
+                            min="0"
+                            step="1"
+                            value="{{ min_price if min_price is not none else '' }}"
+                            placeholder="$ Min"
+                        >
+
+                    </div>
+
+                    <div class="filter-field">
+
+                        <label for="maxPrice">
+                            Maximum Price
+                        </label>
+
+                        <input
+                            id="maxPrice"
+                            type="number"
+                            name="max_price"
+                            min="0"
+                            step="1"
+                            value="{{ max_price if max_price is not none else '' }}"
+                            placeholder="$ Max"
+                        >
+
+                    </div>
+
+                    <div class="filter-field">
+
+                        <label for="maxMileage">
+                            Maximum Mileage
+                        </label>
+
+                        <input
+                            id="maxMileage"
+                            type="number"
+                            name="max_mileage"
+                            min="0"
+                            step="1"
+                            value="{{ max_mileage if max_mileage is not none else '' }}"
+                            placeholder="Maximum miles"
+                        >
+
+                    </div>
+
+                    <input
+                        type="hidden"
+                        name="sort"
+                        id="sortHidden"
+                        value="{{ sort }}"
+                    >
+
+                    <button
+                        type="submit"
+                        class="filter-button"
+                    >
+                        Apply Filters
+                    </button>
+
+                    <a
+                        class="filter-clear"
+                        href="{{ url_for('dealer_inventory', dealer_id=dealer.id) }}"
+                    >
+                        Clear All Filters
+                    </a>
+
+                </form>
+
+            </aside>
+
+
+            <!-- VEHICLE RESULTS -->
+
+            <div class="inventory-results">
+
+                <div class="inventory-toolbar">
+
+                    <strong>
+                        {{ vehicles|length }} Vehicles Found
+                    </strong>
+
+                    <div class="inventory-sort">
+
+                        <label for="inventorySort">
+                            Sort by
+                        </label>
+
+                        <select
+                            id="inventorySort"
+                            aria-label="Sort vehicles"
+                        >
+
+                            <option
+                                value="newest"
+                                {% if sort == 'newest' %}selected{% endif %}
+                            >
+                                Recently Added
+                            </option>
+
+                            <option
+                                value="price_low"
+                                {% if sort == 'price_low' %}selected{% endif %}
+                            >
+                                Price: Low to High
+                            </option>
+
+                            <option
+                                value="price_high"
+                                {% if sort == 'price_high' %}selected{% endif %}
+                            >
+                                Price: High to Low
+                            </option>
+
+                            <option
+                                value="mileage_low"
+                                {% if sort == 'mileage_low' %}selected{% endif %}
+                            >
+                                Lowest Mileage
+                            </option>
+
+                            <option
+                                value="year_new"
+                                {% if sort == 'year_new' %}selected{% endif %}
+                            >
+                                Newest Model Year
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="vehicle-grid">
+
+                    {% for v in vehicles %}
+
+                    <article class="vehicle-card">
+
+                        <div class="vehicle-image">
+
+                            {% if v.image_url %}
+
+                                <img
+                                    src="{{ v.image_url }}"
+                                    alt="{{ v.year }} {{ v.make }} {{ v.model }}"
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer"
+                                >
+
+                            {% else %}
+
+                                <div class="vehicle-no-image">
+                                    <span>&#128663;</span>
+                                    Photo Coming Soon
+                                </div>
+
+                            {% endif %}
+
+                            <span class="vehicle-condition">
+                                {{ v.condition|default('Used', true)|title }}
+                            </span>
+
+                        </div>
+
+
+                        <div class="vehicle-content">
+
+                            <h3>
+                                {{ v.year }}
+                                {{ v.make }}
+                                {{ v.model }}
+
+                                {% if v.trim %}
+                                    {{ v.trim }}
+                                {% endif %}
+                            </h3>
+
+                            <div class="vehicle-price">
+                                ${{ "{:,.0f}".format(v.price) }}
+                            </div>
+
+                            <div class="vehicle-specs">
+
+                                <span class="vehicle-spec">
+                                    &#128663;
+                                    {{ v.year }}
+                                </span>
+
+                                <span class="vehicle-spec">
+                                    &#128739;
+                                    {{ "{:,}".format(v.mileage) }} mi
+                                </span>
+
+                                <span class="vehicle-spec">
+                                    {{ v.condition|default('Used', true)|title }}
+                                </span>
+
+                            </div>
+
+                            {% if v.vin %}
+
+                            <div class="vehicle-vin">
+                                VIN: {{ v.vin }}
+                            </div>
+
+                            {% endif %}
+
+                            <div class="vehicle-buttons">
+
+                                <a
+                                    href="{{ url_for('vehicle', vid=v.id) }}"
+                                    class="vehicle-details"
+                                >
+                                    View Details &amp; Request Visit
+                                </a>
+
+                                <button
+                                    type="button"
+                                    class="vehicle-save"
+                                    data-vehicle-id="{{ v.id }}"
+                                    aria-label="Save vehicle"
+                                    aria-pressed="false"
+                                    title="Save vehicle"
+                                >
+                                    &#9825;
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                    {% else %}
+
+                    <div class="inventory-empty">
+
+                        <h3>No Vehicles Found</h3>
+
+                        <p>
+                            No vehicles match your current filters.
+                            Try adjusting your search.
+                        </p>
+
+                        <a
+                            href="{{ url_for('dealer_inventory', dealer_id=dealer.id) }}"
+                        >
+                            View All Inventory
+                        </a>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="showroom-footer-note">
+
+            <strong>Shop with WE-SELL:</strong>
+            Select a vehicle and submit your inquiry through
+            WE-SELL. We coordinate with the dealership to
+            confirm availability and arrange an appointment.
+            Vehicle prices, availability, and details should
+            be confirmed before purchase.
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // =====================================
+    // INVENTORY SORTING
+    // =====================================
+
+    const sortSelect = document.getElementById('inventorySort');
+    const sortHidden = document.getElementById('sortHidden');
+    const filterForm = document.getElementById('inventoryFilterForm');
+
+    if (sortSelect && sortHidden && filterForm) {
+
+        sortSelect.addEventListener('change', function () {
+            sortHidden.value = this.value;
+            filterForm.submit();
+        });
+
+    }
+
+
+    // =====================================
+    // SAVED VEHICLES
+    // =====================================
+
+    const storageKey = 'wesell_saved_cars';
+
+    function getSavedCars() {
+        try {
+            const saved = JSON.parse(
+                localStorage.getItem(storageKey) || '[]'
+            );
+
+            return Array.isArray(saved)
+                ? saved.map(String)
+                : [];
+
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function saveCars(ids) {
+        try {
+            localStorage.setItem(
+                storageKey,
+                JSON.stringify(ids)
+            );
+        } catch (error) {
+            // Storage may be unavailable.
+        }
+    }
+
+    function refreshButtons() {
+        const saved = getSavedCars();
+
+        document.querySelectorAll('.vehicle-save').forEach(function (button) {
+
+            const id = button.dataset.vehicleId;
+            const isSaved = saved.includes(id);
+
+            button.classList.toggle('is-saved', isSaved);
+            button.setAttribute('aria-pressed', String(isSaved));
+            button.setAttribute(
+                'aria-label',
+                isSaved ? 'Remove saved vehicle' : 'Save vehicle'
+            );
+
+            button.innerHTML = isSaved ? '&#9829;' : '&#9825;';
+
+        });
+    }
+
+    document.querySelectorAll('.vehicle-save').forEach(function (button) {
+
+        button.addEventListener('click', function () {
+
+            const id = button.dataset.vehicleId;
+            let saved = getSavedCars();
+
+            if (saved.includes(id)) {
+                saved = saved.filter(function (item) {
+                    return item !== id;
+                });
+            } else {
+                saved.push(id);
+            }
+
+            saveCars(saved);
+            refreshButtons();
+
+        });
+
+    });
+
+    refreshButtons();
+
+});
+</script>
+
+{% endblock %}
