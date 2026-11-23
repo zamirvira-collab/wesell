@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <meta name="description"
-        content="WE-SELL helps car buyers find vehicles and coordinate dealership appointments.">
+        content="WE-SELL connects car buyers with dealerships and rental vehicle providers.">
 
   <title>{% block title %}WE-SELL{% endblock %} | Find your next car</title>
 
@@ -14,6 +14,10 @@
         href="{{ url_for('static', filename='style.css') }}">
 
   <style>
+    /* ========================================
+       WE-SELL MAIN NAVIGATION
+    ======================================== */
+
     .nav {
       box-sizing: border-box;
       background: #041b34 !important;
@@ -23,14 +27,16 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 25px;
+      gap: 22px;
+      position: relative;
+      z-index: 100;
     }
 
     .nav .brand {
       display: flex;
       align-items: center;
       background: white;
-      border-radius: 8px;
+      border-radius: 9px;
       padding: 4px 12px;
       flex-shrink: 0;
     }
@@ -46,65 +52,235 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: clamp(14px, 2.5vw, 38px);
+      gap: clamp(12px, 1.5vw, 24px);
       flex-wrap: wrap;
     }
 
-    .nav nav a,
-    .nav nav .navlink {
+    .nav nav > a,
+    .nav nav > form .navlink {
       color: #ffffff !important;
       font-weight: 700;
       text-decoration: none;
-      font-size: 15px;
+      font-size: 14px;
       background: transparent;
+      white-space: nowrap;
     }
 
-    .nav nav a:hover {
+    .nav nav > a:hover {
       color: #ffc229 !important;
     }
 
-    .nav nav a.ws-active {
+    .nav nav > a.ws-active {
       border-bottom: 4px solid #ffc229;
       padding-bottom: 9px;
     }
 
-    /* RENTAL DASHBOARD BUTTON */
+    /* ========================================
+       BUSINESS PORTAL BUTTON
+    ======================================== */
 
-    .nav nav a.ws-rental-dashboard {
+    .ws-business-menu {
+      position: relative;
+      display: inline-flex;
+      z-index: 200;
+    }
+
+    .ws-business-button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 9px;
+      min-height: 46px;
       padding: 12px 16px;
-      border-radius: 9px;
-      background: #ffc229;
-      color: #041b34 !important;
-      white-space: nowrap;
+      background: linear-gradient(
+        135deg,
+        #ffe17a 0%,
+        #ffc229 100%
+      );
+      border: 1px solid #ffcb3d;
+      border-radius: 11px;
+      color: #061b34;
+      font-family: inherit;
+      font-size: 14px;
       font-weight: 800;
-      border-bottom: 0;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(255,194,41,.15);
+      transition: background .2s ease,
+                  transform .2s ease,
+                  box-shadow .2s ease;
     }
 
-    .nav nav a.ws-rental-dashboard:hover {
-      background: #ffe078;
-      color: #041b34 !important;
+    .ws-business-button:hover {
+      background: #ffe17a;
+      transform: translateY(-1px);
+      box-shadow: 0 7px 20px rgba(255,194,41,.24);
     }
 
-    /* PREMIUM CONNECTED LOGIN / SIGN UP */
+    .ws-business-button:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 3px;
+    }
+
+    .ws-business-icon {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    .ws-business-chevron {
+      width: 15px;
+      height: 15px;
+      transition: transform .2s ease;
+    }
+
+    .ws-business-button[aria-expanded="true"]
+    .ws-business-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* ========================================
+       BUSINESS PORTAL DROPDOWN
+    ======================================== */
+
+    .ws-business-dropdown {
+      position: absolute;
+      top: calc(100% + 13px);
+      right: 0;
+      width: 335px;
+      max-width: calc(100vw - 32px);
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #e1e7ef;
+      border-radius: 16px;
+      box-shadow: 0 20px 55px rgba(0,0,0,.28);
+      z-index: 1000;
+    }
+
+    .ws-business-dropdown[hidden] {
+      display: none !important;
+    }
+
+    .ws-business-dropdown::before {
+      content: "";
+      position: absolute;
+      top: -7px;
+      right: 35px;
+      width: 12px;
+      height: 12px;
+      background: white;
+      border-left: 1px solid #e1e7ef;
+      border-top: 1px solid #e1e7ef;
+      transform: rotate(45deg);
+    }
+
+    .ws-business-heading {
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      padding: 12px;
+    }
+
+    .nav nav .ws-business-dropdown a {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 15px 12px;
+      border-radius: 11px;
+      color: #061b34 !important;
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: background .2s ease,
+                  border-color .2s ease;
+    }
+
+    .nav nav .ws-business-dropdown a:hover {
+      background: #f3f7fb;
+      border-color: #e2e8f0;
+      color: #061b34 !important;
+    }
+
+    .ws-portal-icon {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #edf4fb;
+      color: #0a426e;
+      border-radius: 11px;
+    }
+
+    .ws-portal-icon svg {
+      width: 23px;
+      height: 23px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .ws-portal-copy {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ws-portal-copy strong {
+      display: block;
+      color: #061b34;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .ws-portal-copy small {
+      display: block;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+
+    .ws-portal-arrow {
+      color: #94a3b8;
+      font-size: 19px;
+    }
+
+    .ws-business-footer {
+      margin: 10px 4px 3px;
+      padding: 13px 8px 3px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    /* ========================================
+       LOGIN / SIGN UP
+    ======================================== */
 
     .nav nav .ws-auth-group {
       display: inline-flex;
       align-items: center;
       gap: 0;
       flex-shrink: 0;
-      margin-left: 2px;
       border-radius: 12px;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+      box-shadow: 0 4px 18px rgba(0,0,0,.14);
     }
 
     .nav nav .ws-auth-group a {
       box-sizing: border-box;
       height: 46px;
-      min-width: 108px;
-      padding: 0 19px;
+      min-width: 94px;
+      padding: 0 15px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -115,27 +291,28 @@
       text-decoration: none;
       white-space: nowrap;
       border-bottom: 0;
-      transition: background 0.2s ease,
-                  border-color 0.2s ease,
-                  box-shadow 0.2s ease,
-                  transform 0.2s ease;
+      transition: background .2s ease,
+                  border-color .2s ease;
     }
 
     .nav nav .ws-auth-group a.ws-login {
-      background: rgba(255, 255, 255, 0.045);
+      background: rgba(255,255,255,.045);
       color: #ffffff !important;
       border: 1px solid #71869b;
       border-radius: 12px 0 0 12px;
     }
 
     .nav nav .ws-auth-group a.ws-login:hover {
-      background: rgba(255, 255, 255, 0.13);
+      background: rgba(255,255,255,.13);
       border-color: #ffc229;
-      color: #ffffff !important;
     }
 
     .nav nav .ws-auth-group a.ws-signup {
-      background: linear-gradient(135deg, #ffe57a, #ffbe16);
+      background: linear-gradient(
+        135deg,
+        #ffe57a,
+        #ffbe16
+      );
       color: #071b30 !important;
       border: 1px solid #ffca32;
       border-left: 0;
@@ -143,9 +320,7 @@
     }
 
     .nav nav .ws-auth-group a.ws-signup:hover {
-      background: linear-gradient(135deg, #fff0a0, #ffd043);
-      color: #071b30 !important;
-      box-shadow: 0 4px 18px rgba(255, 190, 22, 0.24);
+      background: #ffe17a;
     }
 
     .ws-auth-icon {
@@ -160,25 +335,9 @@
       stroke-linejoin: round;
     }
 
-    .nav nav .ws-auth-group a:focus-visible {
-      outline: 3px solid #ffffff;
-      outline-offset: 3px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .nav nav form {
-      margin: 0;
-    }
-
-    .nav nav button.navlink {
-      border: 0;
-      cursor: pointer;
-      font-family: inherit;
-      padding: 0;
-    }
-
-    /* SAVED CARS NAVIGATION */
+    /* ========================================
+       SAVED CARS
+    ======================================== */
 
     .nav nav a.ws-saved-nav {
       display: inline-flex;
@@ -201,7 +360,6 @@
       min-width: 20px;
       height: 20px;
       padding: 0 5px;
-      box-sizing: border-box;
       border-radius: 20px;
       background: #ffc229;
       color: #041b34;
@@ -213,72 +371,95 @@
       display: none;
     }
 
-    /* RESPONSIVE NAVIGATION */
+    .nav nav form {
+      margin: 0;
+    }
 
-    @media (max-width: 1000px) {
+    .nav nav button.navlink {
+      border: 0;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0;
+    }
+
+    /* ========================================
+       RESPONSIVE NAVIGATION
+    ======================================== */
+
+    @media (max-width: 1200px) {
       .nav {
         padding-left: 20px;
         padding-right: 20px;
-        gap: 18px;
-      }
-
-      .nav nav {
         gap: 15px;
       }
 
-      .nav nav a,
-      .nav nav .navlink {
-        font-size: 14px;
+      .nav nav {
+        gap: 13px;
       }
 
       .nav .brand img {
         height: 48px;
+        max-width: 185px;
+      }
+
+      .nav nav > a {
+        font-size: 13px;
+      }
+
+      .ws-business-button {
+        font-size: 13px;
+        padding: 11px 13px;
       }
     }
 
-    @media (max-width: 760px) {
+    @media (max-width: 850px) {
       .nav {
-        padding: 15px;
         flex-direction: column;
-        gap: 18px;
+        padding: 15px;
+        gap: 16px;
       }
 
       .nav nav {
-        justify-content: center;
-        gap: 15px;
         width: 100%;
-      }
-
-      .nav nav a,
-      .nav nav .navlink {
-        font-size: 13px;
-      }
-
-      .nav nav .ws-auth-group {
-        margin-left: 0;
-      }
-
-      .nav nav .ws-auth-group a {
-        min-width: 96px;
-        height: 42px;
-        padding: 0 13px;
-        font-size: 13px;
+        justify-content: center;
+        gap: 14px;
       }
 
       .nav .brand img {
         height: 46px;
-        max-width: 200px;
       }
     }
 
-    @media (max-width: 380px) {
+    @media (max-width: 480px) {
       .nav nav {
-        gap: 11px;
+        gap: 12px;
+      }
+
+      .nav nav > a {
+        font-size: 12px;
+      }
+
+      .ws-business-button {
+        font-size: 12px;
+        padding: 11px 12px;
+      }
+
+      .ws-business-dropdown {
+        position: fixed;
+        top: auto;
+        left: 16px;
+        right: 16px;
+        width: auto;
+        max-width: none;
+      }
+
+      .ws-business-dropdown::before {
+        display: none;
       }
 
       .nav nav .ws-auth-group a {
-        min-width: 86px;
-        padding: 0 10px;
+        min-width: 85px;
+        padding: 0 11px;
         font-size: 12px;
       }
     }
@@ -287,9 +468,13 @@
 
 <body>
 
-  <!-- WE-SELL HEADER / NAVIGATION -->
+  <!-- ========================================
+       WE-SELL HEADER
+  ======================================== -->
 
   <header class="nav">
+
+    <!-- ORIGINAL WE-SELL LOGO -->
 
     <a class="brand"
        href="{{ url_for('home') }}"
@@ -301,6 +486,8 @@
 
     </a>
 
+    <!-- MAIN NAVIGATION -->
+
     <nav aria-label="Main navigation">
 
       <!-- FIND CARS -->
@@ -308,39 +495,32 @@
       <a
         href="{{ url_for('home') }}"
         class="{% if request.endpoint == 'home' %}ws-active{% endif %}"
-        {% if request.endpoint == 'home' %}aria-current="page"{% endif %}
+        {% if request.endpoint == 'home' %}
+          aria-current="page"
+        {% endif %}
       >
         Find Cars
       </a>
 
-      <!-- RENTAL CARS -->
+      <!-- RENT A CAR -->
 
       <a
         href="{{ url_for('rentals') }}"
         class="{% if request.endpoint == 'rentals' %}ws-active{% endif %}"
-        {% if request.endpoint == 'rentals' %}aria-current="page"{% endif %}
+        {% if request.endpoint == 'rentals' %}
+          aria-current="page"
+        {% endif %}
       >
-        Rental Cars
+        Rent a Car
       </a>
 
-      <!-- RENTAL COMPANY DASHBOARD -->
-
-      <a
-        href="{{ url_for('rental_portal.dashboard') }}"
-        class="ws-rental-dashboard"
-        {% if request.endpoint == 'rental_portal.dashboard' %}aria-current="page"{% endif %}
-      >
-        Rental Dashboard
-      </a>
-
-      <!-- DEALERSHIP DIRECTORY -->
+      <!-- DEALERSHIPS -->
 
       <a
         href="{{ url_for('dealer_directory') }}"
         class="{% if request.endpoint in ['dealer_directory', 'dealer_inventory'] %}ws-active{% endif %}"
-        {% if request.endpoint in ['dealer_directory', 'dealer_inventory'] %}aria-current="page"{% endif %}
       >
-        Dealers
+        Dealerships
       </a>
 
       <!-- HOW IT WORKS -->
@@ -348,12 +528,136 @@
       <a
         href="{{ url_for('how_it_works') }}"
         class="{% if request.endpoint == 'how_it_works' %}ws-active{% endif %}"
-        {% if request.endpoint == 'how_it_works' %}aria-current="page"{% endif %}
       >
         How It Works
       </a>
 
-      <!-- BUYER / DEALER / ADMIN DASHBOARD -->
+      <!-- ========================================
+           BUSINESS PORTAL DROPDOWN
+      ======================================== -->
+
+      <div class="ws-business-menu">
+
+        <button
+          type="button"
+          class="ws-business-button"
+          id="ws-business-toggle"
+          aria-expanded="false"
+          aria-haspopup="true"
+          aria-controls="ws-business-dropdown"
+        >
+
+          <svg class="ws-business-icon"
+               viewBox="0 0 24 24"
+               aria-hidden="true">
+            <rect x="3" y="7" width="18" height="14" rx="2"></rect>
+            <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <path d="M3 12h18"></path>
+            <path d="M10 12v2h4v-2"></path>
+          </svg>
+
+          <span>Business Portal</span>
+
+          <svg class="ws-business-icon ws-business-chevron"
+               viewBox="0 0 24 24"
+               aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+
+        </button>
+
+        <!-- DROPDOWN CONTENT -->
+
+        <div
+          id="ws-business-dropdown"
+          class="ws-business-dropdown"
+          hidden
+        >
+
+          <div class="ws-business-heading">
+            WE-SELL PARTNER ACCESS
+          </div>
+
+          <!-- DEALERSHIP PORTAL -->
+
+          <a href="{{ url_for('dashboard') }}">
+
+            <span class="ws-portal-icon">
+
+              <svg viewBox="0 0 24 24"
+                   aria-hidden="true">
+                <path d="M3 10h18"></path>
+                <path d="M5 10v11h14V10"></path>
+                <path d="M3 10l2-7h14l2 7"></path>
+                <path d="M9 21v-7h6v7"></path>
+                <path d="M3 10c0 2 3 2 3 0"></path>
+                <path d="M6 10c0 2 3 2 3 0"></path>
+                <path d="M9 10c0 2 3 2 3 0"></path>
+                <path d="M12 10c0 2 3 2 3 0"></path>
+                <path d="M15 10c0 2 3 2 3 0"></path>
+                <path d="M18 10c0 2 3 2 3 0"></path>
+              </svg>
+
+            </span>
+
+            <span class="ws-portal-copy">
+              <strong>Dealership Portal</strong>
+              <small>
+                Manage listings, leads and appointments
+              </small>
+            </span>
+
+            <span class="ws-portal-arrow"
+                  aria-hidden="true">
+              ›
+            </span>
+
+          </a>
+
+          <!-- RENTAL COMPANY PORTAL -->
+
+          <a href="{{ url_for('rental_portal.dashboard') }}">
+
+            <span class="ws-portal-icon">
+
+              <svg viewBox="0 0 24 24"
+                   aria-hidden="true">
+                <path d="M5 17h14"></path>
+                <path d="M7 17v2"></path>
+                <path d="M17 17v2"></path>
+                <path d="M4 11l2-5h12l2 5"></path>
+                <rect x="3" y="11" width="18" height="6" rx="2"></rect>
+                <path d="M6 14h2"></path>
+                <path d="M16 14h2"></path>
+              </svg>
+
+            </span>
+
+            <span class="ws-portal-copy">
+              <strong>Rental Company Portal</strong>
+              <small>
+                Manage rental fleets, rates and inventory
+              </small>
+            </span>
+
+            <span class="ws-portal-arrow"
+                  aria-hidden="true">
+              ›
+            </span>
+
+          </a>
+
+          <div class="ws-business-footer">
+            Grow your automotive business with WE-SELL
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================
+           USER DASHBOARD
+      ======================================== -->
 
       {% if me %}
 
@@ -366,21 +670,21 @@
 
       {% endif %}
 
-      <!-- SAVED CARS -->
+      <!-- ========================================
+           SAVED CARS
+      ======================================== -->
 
       <a
         href="{{ url_for('saved_cars') }}"
         class="ws-saved-nav {% if request.endpoint == 'saved_cars' %}ws-active{% endif %}"
-        {% if request.endpoint == 'saved_cars' %}aria-current="page"{% endif %}
       >
 
-        <span class="ws-heart-icon" aria-hidden="true">
+        <span class="ws-heart-icon"
+              aria-hidden="true">
           ♡
         </span>
 
-        <span>
-          Saved Cars
-        </span>
+        <span>Saved Cars</span>
 
         <span
           id="ws-saved-count"
@@ -392,7 +696,9 @@
 
       </a>
 
-      <!-- LOGIN / LOGOUT -->
+      <!-- ========================================
+           LOGIN / SIGN UP / LOGOUT
+      ======================================== -->
 
       {% if me %}
 
@@ -418,14 +724,15 @@
 
       {% else %}
 
-        <!-- CONNECTED AUTHENTICATION BUTTONS -->
-
         <div class="ws-auth-group">
+
+          <!-- LOGIN -->
 
           <a
             class="ws-login"
             href="{{ url_for('login') }}"
           >
+
             <svg class="ws-auth-icon"
                  viewBox="0 0 24 24"
                  aria-hidden="true">
@@ -433,22 +740,29 @@
               <path d="M15 12H3"></path>
               <path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"></path>
             </svg>
+
             Login
+
           </a>
+
+          <!-- SIGN UP -->
 
           <a
             class="ws-signup"
             href="{{ url_for('register') }}"
           >
+
             <svg class="ws-auth-icon"
                  viewBox="0 0 24 24"
                  aria-hidden="true">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
               <path d="M20 8v6"></path>
-              <path d="17 11h6"></path>
+              <path d="M17 11h6"></path>
             </svg>
+
             Sign Up
+
           </a>
 
         </div>
@@ -459,7 +773,9 @@
 
   </header>
 
-  <!-- FLASH MESSAGES -->
+  <!-- ========================================
+       FLASH MESSAGES
+  ======================================== -->
 
   {% with messages = get_flashed_messages(with_categories=true) %}
 
@@ -481,15 +797,17 @@
 
   {% endwith %}
 
-  <!-- MAIN PAGE CONTENT -->
+  <!-- ========================================
+       MAIN PAGE CONTENT
+  ======================================== -->
 
   <main>
-
     {% block content %}{% endblock %}
-
   </main>
 
-  <!-- WE-SELL FOOTER -->
+  <!-- ========================================
+       FOOTER
+  ======================================== -->
 
   <footer>
 
@@ -535,27 +853,105 @@
 
   </footer>
 
-  <!-- SAVED CARS COUNTER -->
+  <!-- ========================================
+       JAVASCRIPT
+  ======================================== -->
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener("DOMContentLoaded", function () {
 
-      const counter = document.getElementById('ws-saved-count');
+      // BUSINESS PORTAL DROPDOWN
 
-      const storageKey = 'wesell_saved_cars';
+      const businessButton = document.getElementById(
+        "ws-business-toggle"
+      );
+
+      const businessMenu = document.getElementById(
+        "ws-business-dropdown"
+      );
+
+      const businessWrapper = document.querySelector(
+        ".ws-business-menu"
+      );
+
+      function closeBusinessPortal() {
+        if (!businessButton || !businessMenu) return;
+
+        businessMenu.hidden = true;
+
+        businessButton.setAttribute(
+          "aria-expanded",
+          "false"
+        );
+      }
+
+      if (businessButton && businessMenu) {
+
+        businessButton.addEventListener(
+          "click",
+          function () {
+
+            const isOpen = !businessMenu.hidden;
+
+            businessMenu.hidden = isOpen;
+
+            businessButton.setAttribute(
+              "aria-expanded",
+              String(!isOpen)
+            );
+
+          }
+        );
+
+        document.addEventListener(
+          "click",
+          function (event) {
+
+            if (
+              businessWrapper &&
+              !businessWrapper.contains(event.target)
+            ) {
+              closeBusinessPortal();
+            }
+
+          }
+        );
+
+        document.addEventListener(
+          "keydown",
+          function (event) {
+
+            if (
+              event.key === "Escape" &&
+              !businessMenu.hidden
+            ) {
+              closeBusinessPortal();
+              businessButton.focus();
+            }
+
+          }
+        );
+
+      }
+
+      // SAVED CARS COUNTER
+
+      const counter = document.getElementById(
+        "ws-saved-count"
+      );
+
+      const storageKey = "wesell_saved_cars";
 
       function updateSavedCount() {
 
-        if (!counter) {
-          return;
-        }
+        if (!counter) return;
 
         let cars = [];
 
         try {
 
           cars = JSON.parse(
-            localStorage.getItem(storageKey) || '[]'
+            localStorage.getItem(storageKey) || "[]"
           );
 
           if (!Array.isArray(cars)) {
@@ -577,17 +973,17 @@
       updateSavedCount();
 
       window.addEventListener(
-        'storage',
+        "storage",
         updateSavedCount
       );
 
       window.addEventListener(
-        'pageshow',
+        "pageshow",
         updateSavedCount
       );
 
       document.addEventListener(
-        'wesell:saved-cars-changed',
+        "wesell:saved-cars-changed",
         updateSavedCount
       );
 
