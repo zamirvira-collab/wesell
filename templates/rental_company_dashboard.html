@@ -86,6 +86,8 @@ a {
   background: var(--navy);
   color: white;
   padding: 26px 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-heading {
@@ -121,6 +123,49 @@ a {
 .navlink.active {
   background: var(--yellow);
   color: var(--navy);
+}
+
+/* SIGN OUT BUTTON */
+
+.logout-form {
+  margin: 28px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid #29415d;
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 15px 18px;
+  background: #dc3545;
+  color: #ffffff;
+  border: 1px solid #dc3545;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
+}
+
+.logout-button:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.logout-button:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 3px;
+}
+
+.logout-icon {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
 }
 
 .main {
@@ -185,7 +230,7 @@ a {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 24px;
-  box-shadow: 0 4px 15px rgba(10, 35, 70, .04);
+  box-shadow: 0 4px 15px rgba(10,35,70,.04);
 }
 
 .stat .number {
@@ -233,7 +278,7 @@ a {
   border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(10, 35, 70, .04);
+  box-shadow: 0 4px 15px rgba(10,35,70,.04);
 }
 
 .panel-header {
@@ -331,27 +376,13 @@ td {
   font-size: 14px;
 }
 
-.logout-form {
-  margin: 0;
-}
-
-.logout-button {
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: white;
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
-}
-
-@media(max-width: 1100px) {
+@media (max-width: 1100px) {
   .stats {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media(max-width: 800px) {
+@media (max-width: 800px) {
   .layout {
     display: block;
   }
@@ -390,7 +421,7 @@ td {
   }
 }
 
-@media(max-width: 450px) {
+@media (max-width: 450px) {
   .stats {
     grid-template-columns: 1fr;
   }
@@ -401,6 +432,7 @@ td {
 <body>
 
 <header class="topbar">
+
   <a class="brand" href="/">
     WE-<span>SELL</span>
     <small>ADVERTISING & CONNECTIONS</small>
@@ -415,6 +447,7 @@ td {
       Rental Company Portal
     </a>
   </nav>
+
 </header>
 
 <div class="layout">
@@ -431,8 +464,7 @@ td {
       ▦ Dashboard
     </a>
 
-    <a class="navlink"
-       href="#fleet">
+    <a class="navlink" href="#fleet">
       🚘 Rental Vehicles
     </a>
 
@@ -446,22 +478,38 @@ td {
       ↻ Inventory Sync (API)
     </a>
 
-    <a class="navlink"
-       href="/rentals">
+    <a class="navlink" href="/rentals">
       Rental Marketplace
     </a>
 
+    <!-- SIGN OUT -->
+
     <form class="logout-form"
-          action="/rental-company/logout"
+          action="{{ url_for('rental_portal.logout') }}"
           method="POST">
 
-      <input type="hidden"
-             name="csrf"
-             value="{{ csrf_token }}">
+      <input
+        type="hidden"
+        name="csrf"
+        value="{{ csrf_token }}"
+      >
 
-      <button class="navlink logout-button"
-              type="submit">
-        Log Out
+      <button class="logout-button" type="submit">
+
+        <svg class="logout-icon"
+             xmlns="http://www.w3.org/2000/svg"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor"
+             stroke-width="2"
+             aria-hidden="true">
+          <path stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+        </svg>
+
+        Sign Out
+
       </button>
 
     </form>
@@ -522,7 +570,11 @@ td {
 
       <div class="stat">
         <div class="number">
-          {% if company.approved %}Approved{% else %}Pending{% endif %}
+          {% if company.approved %}
+            Approved
+          {% else %}
+            Pending
+          {% endif %}
         </div>
         <div class="label">Company Status</div>
       </div>
@@ -611,7 +663,7 @@ td {
               <td>{{ vehicle.pickup_city or "—" }}</td>
 
               <td>
-                <span class="status {% if vehicle.status != 'active' %}inactive{% endif %}">
+                <span class="status {% if vehicle.status not in ['active', 'available'] %}inactive{% endif %}">
                   {{ vehicle.status|title }}
                 </span>
               </td>
