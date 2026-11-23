@@ -28,6 +28,7 @@ from werkzeug.security import (
 from rental_portal import rental_portal, init_rental_portal
 from inventory_sync import inventory_sync, init_inventory_sync
 from social_auth import social_auth, init_social_auth
+from we_sell_admin_portal import owner_portal
 
 
 # ==========================================
@@ -346,6 +347,7 @@ def load_user():
     if (
         request.method == "POST"
         and request.endpoint != "inventory_sync.push_inventory"
+        and not (request.endpoint or "").startswith("owner_portal.")
     ):
         token = request.form.get("csrf", "")
         saved_token = session.get("csrf", "")
@@ -2072,6 +2074,9 @@ init_social_auth(app)
 # ==========================================
 
 app.register_blueprint(inventory_sync)
+
+# Private WE-SELL owner administration
+app.register_blueprint(owner_portal)
 
 
 # ==========================================
