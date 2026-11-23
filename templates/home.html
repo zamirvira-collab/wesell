@@ -447,11 +447,10 @@ html { scroll-behavior: smooth; }
           Sell Your Car
         </a>
 
-        <button type="button"
-                class="ws-tab"
-                onclick="showRentalNotice()">
+        <a href="{{ url_for('rentals') }}"
+           class="ws-tab">
           Rent a Car
-        </button>
+        </a>
 
       </div>
 
@@ -868,12 +867,6 @@ function selectCarType(button) {
   if (condition) {
     condition.value = button.dataset.type;
   }
-}
-
-/* RENT A CAR */
-
-function showRentalNotice() {
-  alert('WE-SELL Rent a Car is coming soon!');
 }
 
 /* RESTORE SELECTED CAR TYPE */
