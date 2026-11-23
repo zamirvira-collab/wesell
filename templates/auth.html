@@ -8,17 +8,82 @@
 {% block content %}
 
 <style>
+/* ==========================================
+   WE-SELL DEALERSHIP PORTAL
+   COMPLETE LOGIN & REGISTRATION DESIGN
+   ========================================== */
+
 .ws-dealer-page,
 .ws-dealer-page * {
     box-sizing: border-box;
 }
 
-.ws-dealer-page {
-    min-height: calc(100vh - 90px);
-    padding: 42px 20px 65px;
-    background: #f1f5f9;
+/* HIDE MAIN WEBSITE NAVIGATION */
+
+body:has(.ws-dealer-page) .nav,
+body:has(.ws-dealer-page) header.nav,
+body:has(.ws-dealer-page) .navbar {
+    display: none !important;
+}
+
+/* ==========================================
+   SIMPLE BUSINESS PORTAL HEADER
+   ========================================== */
+
+.ws-dealer-topbar {
+    width: 100%;
+    min-height: 82px;
+    padding: 15px 30px;
+    background: #061b34;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.ws-dealer-topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 17px;
+}
+
+.ws-dealer-topbar-logo {
+    font-size: 26px;
+    font-weight: 900;
+    color: #ffc400;
+    letter-spacing: -.7px;
+}
+
+.ws-dealer-topbar-name {
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.ws-dealer-topbar-home {
+    border: 1px solid #58718b;
+    border-radius: 9px;
+    padding: 12px 17px;
+    color: white !important;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.ws-dealer-topbar-home:hover {
+    background: #123b5b;
+}
+
+/* ==========================================
+   PAGE LAYOUT
+   ========================================== */
+
+.ws-dealer-page {
+    min-height: calc(100vh - 82px);
+    padding: 44px 20px 65px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: flex-start;
     justify-content: center;
     font-family: Arial, Helvetica, sans-serif;
 }
@@ -34,11 +99,22 @@
     box-shadow: 0 22px 65px rgba(6,29,53,.12);
 }
 
+/* ==========================================
+   LEFT BUSINESS PANEL
+   ========================================== */
+
 .ws-dealer-left {
     background:
-        radial-gradient(circle at 90% 90%,
-        rgba(0,169,153,.24), transparent 45%),
-        linear-gradient(145deg,#061d35,#103b58);
+        radial-gradient(
+            circle at 90% 90%,
+            rgba(0,169,153,.24),
+            transparent 45%
+        ),
+        linear-gradient(
+            145deg,
+            #061d35,
+            #103b58
+        );
     color: white;
     padding: 54px 48px;
     display: flex;
@@ -124,6 +200,10 @@
     color: #a9c5d8;
     font-size: 12px;
 }
+
+/* ==========================================
+   RIGHT LOGIN PANEL
+   ========================================== */
 
 .ws-dealer-right {
     padding: 48px 52px;
@@ -215,7 +295,11 @@
     margin-top: 7px;
     border: none;
     border-radius: 10px;
-    background: linear-gradient(100deg,#ffdb65,#ffbd17);
+    background: linear-gradient(
+        100deg,
+        #ffdb65,
+        #ffbd17
+    );
     color: #061d35;
     font-size: 15px;
     font-weight: 900;
@@ -225,6 +309,10 @@
 .ws-dealer-submit:hover {
     background: #f6b900;
 }
+
+/* ==========================================
+   SOCIAL SIGN IN
+   ========================================== */
 
 .ws-dealer-divider {
     display: flex;
@@ -272,10 +360,21 @@
     font-size: 21px;
 }
 
-.ws-dealer-social .google { color: #4285f4; }
-.ws-dealer-social .facebook { color: #1877f2; }
-.ws-dealer-social .linkedin { color: #0a66c2; }
-.ws-dealer-social .apple { color: #111827; }
+.ws-dealer-social .google {
+    color: #4285f4;
+}
+
+.ws-dealer-social .facebook {
+    color: #1877f2;
+}
+
+.ws-dealer-social .linkedin {
+    color: #0a66c2;
+}
+
+.ws-dealer-social .apple {
+    color: #111827;
+}
 
 .ws-dealer-social-note {
     text-align: center;
@@ -283,6 +382,10 @@
     font-size: 11px;
     margin-top: 13px;
 }
+
+/* ==========================================
+   FOOTER
+   ========================================== */
 
 .ws-dealer-switch {
     margin-top: 25px;
@@ -311,7 +414,12 @@
     font-weight: 700;
 }
 
-@media(max-width:850px) {
+/* ==========================================
+   MOBILE RESPONSIVE
+   ========================================== */
+
+@media (max-width: 850px) {
+
     .ws-dealer-shell {
         grid-template-columns: 1fr;
         max-width: 560px;
@@ -332,7 +440,25 @@
     }
 }
 
-@media(max-width:500px) {
+@media (max-width: 500px) {
+
+    .ws-dealer-topbar {
+        padding: 14px;
+    }
+
+    .ws-dealer-topbar-logo {
+        font-size: 21px;
+    }
+
+    .ws-dealer-topbar-name {
+        font-size: 12px;
+    }
+
+    .ws-dealer-topbar-home {
+        padding: 10px;
+        font-size: 11px;
+    }
+
     .ws-dealer-page {
         padding: 18px 12px 40px;
     }
@@ -352,11 +478,43 @@
 }
 </style>
 
+
+<!-- ==========================================
+     DEALERSHIP PORTAL HEADER
+     ========================================== -->
+
+<div class="ws-dealer-topbar">
+
+    <div class="ws-dealer-topbar-brand">
+
+        <span class="ws-dealer-topbar-logo">
+            WE-SELL
+        </span>
+
+        <span class="ws-dealer-topbar-name">
+            Dealership Portal
+        </span>
+
+    </div>
+
+    <a
+        class="ws-dealer-topbar-home"
+        href="{{ url_for('home') }}">
+        ← Main Website
+    </a>
+
+</div>
+
+
+<!-- ==========================================
+     DEALERSHIP LOGIN / REGISTRATION
+     ========================================== -->
+
 <section class="ws-dealer-page">
 
     <div class="ws-dealer-shell">
 
-        <!-- LEFT SIDE -->
+        <!-- LEFT PANEL -->
 
         <aside class="ws-dealer-left">
 
@@ -416,7 +574,7 @@
         </aside>
 
 
-        <!-- RIGHT SIDE -->
+        <!-- RIGHT PANEL -->
 
         <div class="ws-dealer-right">
 
@@ -449,7 +607,7 @@
             {% endif %}
 
 
-            <!-- FORM -->
+            <!-- LOGIN / REGISTER FORM -->
 
             <form
                 method="POST"
@@ -493,7 +651,11 @@
 
                 {% endif %}
 
+
+                <!-- EMAIL -->
+
                 <div class="ws-dealer-field">
+
                     <label for="ws-email">
                         Business Email Address
                     </label>
@@ -506,9 +668,14 @@
                         autocomplete="email"
                         maxlength="254"
                         required>
+
                 </div>
 
+
+                <!-- PASSWORD -->
+
                 <div class="ws-dealer-field">
+
                     <label for="ws-password">
                         {{ 'Create Password' if mode == 'register' else 'Password' }}
                     </label>
@@ -534,7 +701,11 @@
                         </button>
 
                     </div>
+
                 </div>
+
+
+                <!-- SUBMIT -->
 
                 <button
                     type="submit"
@@ -559,25 +730,33 @@
 
             <div class="ws-dealer-social">
 
-                <button type="button" disabled
+                <button
+                    type="button"
+                    disabled
                     title="Google sign-in coming soon">
                     <strong class="google">G</strong>
                     Google / Gmail
                 </button>
 
-                <button type="button" disabled
+                <button
+                    type="button"
+                    disabled
                     title="Facebook sign-in coming soon">
                     <strong class="facebook">f</strong>
                     Facebook
                 </button>
 
-                <button type="button" disabled
+                <button
+                    type="button"
+                    disabled
                     title="LinkedIn sign-in coming soon">
                     <strong class="linkedin">in</strong>
                     LinkedIn
                 </button>
 
-                <button type="button" disabled
+                <button
+                    type="button"
+                    disabled
                     title="Apple sign-in coming soon">
                     <strong class="apple">&#63743;</strong>
                     Apple
@@ -614,10 +793,15 @@
 
             </div>
 
+
+            <!-- HOME LINK -->
+
             <div class="ws-dealer-home">
+
                 <a href="{{ url_for('home') }}">
                     ← Return to WE-SELL Main Website
                 </a>
+
             </div>
 
         </div>
@@ -626,12 +810,21 @@
 
 </section>
 
+
 <script>
 function toggleDealerPassword() {
-    const password = document.getElementById('ws-password');
-    const button = document.querySelector('.ws-dealer-toggle');
 
-    if (!password || !button) return;
+    const password = document.getElementById(
+        'ws-password'
+    );
+
+    const button = document.querySelector(
+        '.ws-dealer-toggle'
+    );
+
+    if (!password || !button) {
+        return;
+    }
 
     if (password.type === 'password') {
         password.type = 'text';
