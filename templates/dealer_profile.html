@@ -1,0 +1,303 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Edit Dealership Profile | WE-SELL{% endblock %}
+
+{% block content %}
+
+<style>
+.profile-page {
+    min-height: 80vh;
+    background: #f4f7fb;
+    padding: 55px 20px 90px;
+    color: #071d38;
+}
+
+.profile-container {
+    max-width: 780px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    margin-bottom: 28px;
+}
+
+.profile-header h1 {
+    font-size: 34px;
+    margin: 0 0 10px;
+    color: #071d38;
+}
+
+.profile-header p {
+    color: #65758b;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.profile-card {
+    background: white;
+    padding: 35px;
+    border-radius: 18px;
+    border: 1px solid #e3e9f0;
+    box-shadow: 0 8px 30px rgba(7,29,56,.06);
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.profile-field {
+    margin-bottom: 20px;
+}
+
+.profile-field.full {
+    grid-column: 1 / -1;
+}
+
+.profile-field label {
+    display: block;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 9px;
+}
+
+.profile-field input {
+    display: block;
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid #dce4ed;
+    border-radius: 10px;
+    font-size: 15px;
+    background: #fff;
+    color: #17283d;
+    box-sizing: border-box;
+}
+
+.profile-field input:focus {
+    outline: none;
+    border-color: #2774a8;
+    box-shadow: 0 0 0 3px rgba(39,116,168,.12);
+}
+
+.profile-note {
+    background: #f2f6fb;
+    border-radius: 10px;
+    padding: 15px;
+    color: #60718a;
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 25px;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.profile-save {
+    background: #ffc400;
+    color: #071d38;
+    border: none;
+    padding: 14px 25px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.profile-save:hover {
+    background: #f0b800;
+}
+
+.profile-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dce4ed;
+    border-radius: 10px;
+    padding: 14px 25px;
+    text-decoration: none;
+    color: #071d38;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+@media (max-width: 600px) {
+    .profile-card {
+        padding: 22px;
+    }
+
+    .profile-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .profile-header h1 {
+        font-size: 27px;
+    }
+}
+</style>
+
+<div class="profile-page">
+    <div class="profile-container">
+
+        <div class="profile-header">
+            <h1>Edit Dealership Profile</h1>
+            <p>
+                Manage your dealership's business information.
+                Saved details will appear on your WE-SELL showroom.
+            </p>
+        </div>
+
+        <div class="profile-card">
+
+            <form method="POST"
+                  action="{{ url_for('dealer_profile') }}">
+
+                <input
+                    type="hidden"
+                    name="csrf"
+                    value="{{ csrf }}"
+                >
+
+                <div class="profile-grid">
+
+                    <div class="profile-field full">
+                        <label for="name">
+                            Dealership Name *
+                        </label>
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            maxlength="120"
+                            value="{{ dealer.name }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="profile-field full">
+                        <label for="address">
+                            Street Address
+                        </label>
+                        <input
+                            type="text"
+                            id="address"
+                            name="address"
+                            maxlength="250"
+                            value="{{ dealer.address or '' }}"
+                            placeholder="123 Main Street"
+                        >
+                    </div>
+
+                    <div class="profile-field">
+                        <label for="city">
+                            City and State *
+                        </label>
+                        <input
+                            type="text"
+                            id="city"
+                            name="city"
+                            maxlength="120"
+                            value="{{ dealer.city }}"
+                            placeholder="San Diego, CA"
+                            required
+                        >
+                    </div>
+
+                    <div class="profile-field">
+                        <label for="zip_code">
+                            ZIP Code
+                        </label>
+                        <input
+                            type="text"
+                            id="zip_code"
+                            name="zip_code"
+                            maxlength="5"
+                            pattern="[0-9]{5}"
+                            inputmode="numeric"
+                            value="{{ dealer.zip_code or '' }}"
+                            placeholder="92101"
+                        >
+                    </div>
+
+                    <div class="profile-field full">
+                        <label for="email">
+                            Dealership Email
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            maxlength="254"
+                            value="{{ dealer.email or '' }}"
+                            placeholder="sales@example.com"
+                        >
+                    </div>
+
+                    <div class="profile-field">
+                        <label for="sales_phone">
+                            Sales Phone Number
+                        </label>
+                        <input
+                            type="tel"
+                            id="sales_phone"
+                            name="sales_phone"
+                            maxlength="30"
+                            value="{{ dealer.sales_phone or '' }}"
+                            placeholder="(619) 555-0100"
+                        >
+                    </div>
+
+                    <div class="profile-field">
+                        <label for="service_phone">
+                            Service Phone Number
+                        </label>
+                        <input
+                            type="tel"
+                            id="service_phone"
+                            name="service_phone"
+                            maxlength="30"
+                            value="{{ dealer.service_phone or '' }}"
+                            placeholder="(619) 555-0200"
+                        >
+                    </div>
+
+                </div>
+
+                <div class="profile-note">
+                    Customers should submit vehicle inquiries
+                    and appointment requests through WE-SELL.
+                    Your dealership contact information will
+                    be displayed on your public showroom.
+                </div>
+
+                <div class="profile-actions">
+
+                    <button
+                        type="submit"
+                        class="profile-save"
+                    >
+                        Save Dealership Profile
+                    </button>
+
+                    <a
+                        href="{{ url_for('dealer_dashboard') }}"
+                        class="profile-cancel"
+                    >
+                        Cancel
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
