@@ -15,7 +15,6 @@ from flask import (
     redirect,
     url_for,
     flash,
-    abort,
     render_template,
     render_template_string
 )
@@ -158,7 +157,7 @@ def current_company():
 
 
 # ==========================================
-# SHARED LOGIN / REGISTRATION PAGE
+# SHARED PAGE DESIGN
 # ==========================================
 
 PAGE = """
@@ -179,7 +178,7 @@ PAGE = """
 
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
     background: #f3f6fa;
     color: #071d36;
 }
@@ -188,11 +187,36 @@ header {
     background: #041b34;
     color: white;
     padding: 22px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
 header strong {
     color: #ffc400;
     font-size: 24px;
+}
+
+.header-title {
+    margin-left: 10px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.header-home {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid #68819a;
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.header-home:hover {
+    background: #123a60;
 }
 
 main {
@@ -269,9 +293,45 @@ a {
     border-radius: 8px;
 }
 
+.home-return {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.home-return a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 13px 20px;
+    background: #061b34;
+    color: #ffffff;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.home-return a:hover {
+    background: #123a60;
+}
+
 @media(max-width: 650px) {
     .grid {
         grid-template-columns: 1fr;
+    }
+
+    main {
+        margin-top: 25px;
+    }
+
+    .panel {
+        padding: 22px;
+    }
+
+    header {
+        padding: 18px;
     }
 }
 </style>
@@ -280,8 +340,18 @@ a {
 <body>
 
 <header>
-    <strong>WE-SELL</strong>
-    &nbsp; Rental Company Portal
+
+    <div>
+        <strong>WE-SELL</strong>
+        <span class="header-title">
+            Rental Company Portal
+        </span>
+    </div>
+
+    <a class="header-home" href="/">
+        ← Main Website
+    </a>
+
 </header>
 
 <main>
@@ -474,6 +544,12 @@ def register():
         <a href="{{ login_url }}">Login here</a>
         </p>
 
+        <div class="home-return">
+            <a href="/">
+                ← Back to WE-SELL Home
+            </a>
+        </div>
+
         </div>
         """,
         csrf=csrf_token(),
@@ -564,6 +640,12 @@ def login():
         <a href="{{ register_url }}">Register</a>
         </p>
 
+        <div class="home-return">
+            <a href="/">
+                ← Back to WE-SELL Home
+            </a>
+        </div>
+
         </div>
         """,
         csrf=csrf_token(),
@@ -574,7 +656,7 @@ def login():
 
 
 # ==========================================
-# NEW RENTAL COMPANY DASHBOARD
+# RENTAL COMPANY DASHBOARD
 # ==========================================
 
 @rental_portal.get("/dashboard")
@@ -835,11 +917,18 @@ def add_vehicle():
 
         </form>
 
-        <p style="margin-top:25px;">
+        <div class="home-return">
+
             <a href="{{ dashboard_url }}">
-                Back to Dashboard
+                ← Back to Rental Dashboard
             </a>
-        </p>
+
+            <a href="/"
+               style="margin-left:8px;">
+                WE-SELL Home
+            </a>
+
+        </div>
 
         </div>
         """,
