@@ -1,5 +1,7 @@
 
-import os, sqlite3, secrets, re
+import os, sqlite3, secrets, re, json, math
+from functools import lru_cache
+from urllib.request import urlopen
 from datetime import datetime, timezone
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, g, abort
@@ -39,18 +41,33 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_leads_dealer ON leads(dealer_id);
     CREATE INDEX IF NOT EXISTS idx_leads_buyer ON leads(buyer_id);
     ''')
+
+    # Safe schema updates for existing WE-SELL databases.
+    for table, column, definition in [
+        ('dealers', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
+        ('vehicles', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
+        ('vehicles', 'condition', "TEXT NOT NULL DEFAULT 'used'"),
+    ]:
+        existing = {
+            row[1] for row in conn.execute(f'PRAGMA table_info({table})')
+        }
+        if column not in existing:
+            conn.execute(
+                f'ALTER TABLE {table} ADD COLUMN {column} {definition}'
+            )
+
     if conn.execute('SELECT COUNT(*) FROM dealers').fetchone()[0]==0:
         conn.execute("INSERT INTO dealers(name,city) VALUES('Pacific Coast Auto Group','San Diego, CA'),('Mission Valley Motors','San Diego, CA')")
         vehicles=[
-            (1,2019,'Nissan','Pathfinder','SV',15995,111349,'5N1DR2MM3KC637462','https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=900&q=85','Family-friendly SUV'),
-            (1,2020,'Mercedes-Benz','C-Class','C 300',21995,117155,'','https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=900&q=85','Luxury sedan'),
-            (2,2018,'Ford','Explorer','Sport',17995,113624,'','https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=900&q=85','Spacious SUV'),
-            (2,2017,'Jeep','Compass','High Altitude',11995,93168,'','https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85','Versatile crossover'),
-            (1,2019,'Jeep','Renegade','Altitude',14995,81381,'','https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=900&q=85','Compact SUV'),
-            (2,2018,'Volkswagen','Tiguan','2.0T',13995,115385,'','https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=900&q=85','Comfortable daily driver')
+            (1,2019,'Nissan','Pathfinder','SV',15995,111349,'5N1DR2MM3KC637462','https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=900&q=85','Family-friendly SUV','','used'),
+            (1,2020,'Mercedes-Benz','C-Class','C 300',21995,117155,'','https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=900&q=85','Luxury sedan','','used'),
+            (2,2018,'Ford','Explorer','Sport',17995,113624,'','https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=900&q=85','Spacious SUV','','used'),
+            (2,2017,'Jeep','Compass','High Altitude',11995,93168,'','https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85','Versatile crossover','','used'),
+            (1,2019,'Jeep','Renegade','Altitude',14995,81381,'','https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=900&q=85','Compact SUV','','used'),
+            (2,2018,'Volkswagen','Tiguan','2.0T',13995,115385,'','https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=900&q=85','Comfortable daily driver','','used')
         ]
         conn.executemany(
-            'INSERT INTO vehicles(dealer_id,year,make,model,trim,price,mileage,vin,image_url,description) VALUES(?,?,?,?,?,?,?,?,?,?)',
+            'INSERT INTO vehicles(dealer_id,year,make,model,trim,price,mileage,vin,image_url,description,zip_code,condition) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
             vehicles
         )
     if os.environ.get('WESELL_SEED_DEMO')=='1':
@@ -130,34 +147,92 @@ def lead_for_role(lead_id):
         abort(403)
     return lead
 
+# ZIP code coordinates are approximate and cached.
+# The lookup service may be unavailable or may not recognize a ZIP.
+@lru_cache(maxsize=4096)
+def zip_coordinates(zip_code):
+    if not re.fullmatch(r'\d{5}', zip_code or ''):
+        return None
+    try:
+        with urlopen(f'https://api.zippopotam.us/us/{zip_code}', timeout=4) as response:
+            data = json.load(response)
+        place = data['places'][0]
+        return (float(place['latitude']), float(place['longitude']))
+    except (OSError, ValueError, KeyError, IndexError, TypeError):
+        return None
+
+def distance_miles(point_a, point_b):
+    '''Great-circle distance between two (latitude, longitude) points.'''
+    lat1, lon1 = map(math.radians, point_a)
+    lat2, lon2 = map(math.radians, point_b)
+    delta_lat = lat2 - lat1
+    delta_lon = lon2 - lon1
+    a = (
+        math.sin(delta_lat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2)
+        * math.sin(delta_lon / 2) ** 2
+    )
+    return 3958.7613 * 2 * math.asin(min(1.0, math.sqrt(a)))
+
 @app.get('/')
 def home():
-    q=request.args.get('q','').strip()[:100]
-    make=request.args.get('make','').strip()[:50]
-    sql='''
-        SELECT v.*,d.name dealer_name,d.city
-        FROM vehicles v
-        JOIN dealers d ON v.dealer_id=d.id
-        WHERE v.active=1 AND d.approved=1
-    '''
-    args=[]
+    q = request.args.get('q', '').strip()[:100]
+    make = request.args.get('make', '').strip()[:50]
+    selected_condition = request.args.get('condition', 'used').strip().lower()
+    if selected_condition not in ('new', 'used'):
+        selected_condition = 'used'
+
+    selected_zip = request.args.get('zip', '').strip()[:5]
+    selected_distance = request.args.get('distance', '50').strip().lower()
+    if selected_distance not in ('10', '25', '50', '100', '250', 'nationwide'):
+        selected_distance = '50'
+
+    if selected_zip and not re.fullmatch(r'\d{5}', selected_zip):
+        flash('Enter a valid 5-digit ZIP code.', 'error')
+        selected_zip = ''
+
+    sql = '''SELECT v.*, d.name dealer_name, d.city,
+                    d.zip_code dealer_zip_code
+             FROM vehicles v
+             JOIN dealers d ON v.dealer_id=d.id
+             WHERE v.active=1 AND d.approved=1 AND v.condition=?'''
+    args = [selected_condition]
+
     if q:
-        sql+=' AND (v.make LIKE ? OR v.model LIKE ? OR v.trim LIKE ? OR CAST(v.year AS TEXT) LIKE ?)'
-        args+=['%'+q+'%']*4
+        sql += ''' AND (
+            v.make LIKE ? OR v.model LIKE ? OR v.trim LIKE ?
+            OR CAST(v.year AS TEXT) LIKE ?
+        )'''
+        args += ['%' + q + '%'] * 4
     if make:
-        sql+=' AND v.make=?'
+        sql += ' AND v.make=?'
         args.append(make)
-    sql+=' ORDER BY v.created_at DESC,v.id DESC'
-    vehicles=db().execute(sql,args).fetchall()
-    makes=db().execute(
+
+    sql += ' ORDER BY v.created_at DESC,v.id DESC'
+    all_vehicles = db().execute(sql, args).fetchall()
+    vehicles = all_vehicles
+
+    if selected_zip and selected_distance != 'nationwide':
+        origin = zip_coordinates(selected_zip)
+        if origin is None:
+            flash('ZIP code could not be located. Please try another ZIP code.', 'error')
+            vehicles = []
+        else:
+            nearby = []
+            for vehicle in all_vehicles:
+                vehicle_zip = vehicle['zip_code'] or vehicle['dealer_zip_code']
+                coords = zip_coordinates(vehicle_zip) if vehicle_zip else None
+                if coords is not None and distance_miles(origin, coords) <= int(selected_distance):
+                    nearby.append(vehicle)
+            vehicles = nearby
+
+    makes = db().execute(
         'SELECT DISTINCT make FROM vehicles WHERE active=1 ORDER BY make'
     ).fetchall()
     return render_template(
-        'home.html',
-        vehicles=vehicles,
-        makes=makes,
-        q=q,
-        selected_make=make
+        'home.html', vehicles=vehicles, makes=makes,
+        q=q, selected_make=make, selected_condition=selected_condition,
+        selected_zip=selected_zip, selected_distance=selected_distance
     )
 
 @app.get('/sell-your-car')
@@ -306,18 +381,23 @@ def add_vehicle():
             make=request.form['make'].strip()[:50]
             model=request.form['model'].strip()[:50]
             assert make and model
+            vehicle_zip=request.form.get('zip_code','').strip()
+            assert not vehicle_zip or re.fullmatch(r'\d{5}',vehicle_zip)
+            condition=request.form.get('condition','used').strip().lower()
+            assert condition in ('new','used')
         except (ValueError,KeyError,AssertionError):
             flash('Check required vehicle fields and numeric values.','error')
             return render_template('add_vehicle.html')
         db().execute(
-            'INSERT INTO vehicles(dealer_id,year,make,model,trim,price,mileage,vin,image_url,description) VALUES(?,?,?,?,?,?,?,?,?,?)',
+            'INSERT INTO vehicles(dealer_id,year,make,model,trim,price,mileage,vin,image_url,description,zip_code,condition) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
             (
                 g.user['dealer_id'],year,make,model,
                 request.form.get('trim','').strip()[:80],
                 price,mileage,
                 request.form.get('vin','').strip().upper()[:17],
                 request.form.get('image_url','').strip()[:500],
-                request.form.get('description','').strip()[:2000]
+                request.form.get('description','').strip()[:2000],
+                vehicle_zip,condition
             )
         )
         db().commit()
