@@ -5,10 +5,6 @@
 {% block content %}
 
 <style>
-/* ==========================================
-   WE-SELL RENTAL CARS PAGE
-========================================== */
-
 .rental-page {
   background: #f4f7fb;
   color: #071d36;
@@ -45,10 +41,6 @@
   padding: 0 20px;
 }
 
-/* ==========================================
-   RENTAL SEARCH
-========================================== */
-
 .rental-search {
   background: white;
   padding: 28px;
@@ -59,13 +51,13 @@
 }
 
 .rental-search h2 {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .rental-fields {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 20px;
 }
 
 .rental-field {
@@ -97,6 +89,22 @@
 .rental-field select:focus {
   outline: 2px solid #ffc400;
   outline-offset: 1px;
+}
+
+.rental-same-location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rental-same-location input {
+  width: 18px;
+  height: 18px;
+  accent-color: #0875ee;
 }
 
 .rental-btn {
@@ -131,10 +139,6 @@
   font-weight: 600;
 }
 
-/* ==========================================
-   RENTAL CATEGORIES
-========================================== */
-
 .rental-section-title {
   text-align: center;
   margin: 65px 0 28px;
@@ -165,10 +169,6 @@
   color: #ffc400;
   border-color: #ffc400;
 }
-
-/* ==========================================
-   RENTAL VEHICLE CARDS
-========================================== */
 
 .rental-grid {
   display: grid;
@@ -215,19 +215,9 @@
   margin-bottom: 18px;
 }
 
-.rental-price small {
-  font-size: 14px;
-  color: #64748b;
-  font-weight: 400;
-}
-
 .rental-card .rental-btn {
   width: 100%;
 }
-
-/* ==========================================
-   HOW RENTALS WORK
-========================================== */
 
 .rental-how {
   background: #071d36;
@@ -275,15 +265,8 @@
   font-size: 13px;
 }
 
-/* ==========================================
-   RESPONSIVE DESIGN
-========================================== */
-
 @media (max-width: 900px) {
-  .rental-fields {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
+  .rental-fields,
   .rental-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -312,15 +295,9 @@
 
 <div class="rental-page">
 
-  <!-- ======================================
-       HERO
-  ======================================= -->
-
   <section class="rental-hero">
-
     <h1>
-      Find Your Perfect
-      <span>Rental Car</span>
+      Find Your Perfect <span>Rental Car</span>
     </h1>
 
     <p>
@@ -328,14 +305,9 @@
       Compare options, submit your request, and let us
       help coordinate your reservation.
     </p>
-
   </section>
 
   <div class="rental-container">
-
-    <!-- ======================================
-         RENTAL SEARCH FORM
-    ======================================= -->
 
     <div class="rental-search">
 
@@ -345,10 +317,7 @@
 
         <div class="rental-fields">
 
-          <!-- PICKUP LOCATION -->
-
           <div class="rental-field">
-
             <label for="pickupLocation">
               Pickup Location
             </label>
@@ -360,13 +329,37 @@
               placeholder="City or ZIP Code"
               required
             >
-
           </div>
 
-          <!-- PICKUP DATE -->
+          <div class="rental-field" id="dropoffField">
+            <label for="dropoffLocation">
+              Drop-off Location
+            </label>
+
+            <input
+              type="text"
+              id="dropoffLocation"
+              name="dropoff_location"
+              placeholder="City or ZIP Code"
+            >
+          </div>
 
           <div class="rental-field">
+            <label for="vehicleType">
+              Vehicle Type
+            </label>
 
+            <select id="vehicleType" name="vehicle_type">
+              <option value="all">All Vehicles</option>
+              <option value="economy">Economy</option>
+              <option value="sedan">Sedan</option>
+              <option value="suv">SUV</option>
+              <option value="luxury">Luxury</option>
+              <option value="van">Van</option>
+            </select>
+          </div>
+
+          <div class="rental-field">
             <label for="pickupDate">
               Pickup Date
             </label>
@@ -377,13 +370,9 @@
               name="pickup_date"
               required
             >
-
           </div>
 
-          <!-- PICKUP TIME -->
-
           <div class="rental-field">
-
             <label for="pickupTime">
               Pickup Time
             </label>
@@ -396,13 +385,9 @@
               step="900"
               required
             >
-
           </div>
 
-          <!-- RETURN DATE -->
-
           <div class="rental-field">
-
             <label for="returnDate">
               Return Date
             </label>
@@ -413,13 +398,9 @@
               name="return_date"
               required
             >
-
           </div>
 
-          <!-- RETURN TIME -->
-
           <div class="rental-field">
-
             <label for="returnTime">
               Return Time
             </label>
@@ -432,48 +413,20 @@
               step="900"
               required
             >
-
-          </div>
-
-          <!-- VEHICLE TYPE -->
-
-          <div class="rental-field">
-
-            <label for="vehicleType">
-              Vehicle Type
-            </label>
-
-            <select id="vehicleType" name="vehicle_type">
-
-              <option value="all">
-                All Vehicles
-              </option>
-
-              <option value="economy">
-                Economy
-              </option>
-
-              <option value="sedan">
-                Sedan
-              </option>
-
-              <option value="suv">
-                SUV
-              </option>
-
-              <option value="luxury">
-                Luxury
-              </option>
-
-              <option value="van">
-                Van
-              </option>
-
-            </select>
-
           </div>
 
         </div>
+
+        <label class="rental-same-location">
+          <input
+            type="checkbox"
+            id="sameLocation"
+            name="same_location"
+            value="1"
+            checked
+          >
+          Return car to the same pickup location
+        </label>
 
         <div
           id="rentalError"
@@ -492,254 +445,132 @@
 
     </div>
 
-    <!-- ======================================
-         VEHICLE CATEGORIES
-    ======================================= -->
-
     <h2 class="rental-section-title">
       Browse Rental Vehicles
     </h2>
 
     <div class="rental-categories">
 
-      <button
-        type="button"
-        class="rental-category active"
-        data-category="all"
-      >
+      <button type="button"
+              class="rental-category active"
+              data-category="all">
         All Cars
       </button>
 
-      <button
-        type="button"
-        class="rental-category"
-        data-category="economy"
-      >
+      <button type="button"
+              class="rental-category"
+              data-category="economy">
         Economy
       </button>
 
-      <button
-        type="button"
-        class="rental-category"
-        data-category="sedan"
-      >
+      <button type="button"
+              class="rental-category"
+              data-category="sedan">
         Sedans
       </button>
 
-      <button
-        type="button"
-        class="rental-category"
-        data-category="suv"
-      >
+      <button type="button"
+              class="rental-category"
+              data-category="suv">
         SUVs
       </button>
 
-      <button
-        type="button"
-        class="rental-category"
-        data-category="luxury"
-      >
+      <button type="button"
+              class="rental-category"
+              data-category="luxury">
         Luxury
       </button>
 
-      <button
-        type="button"
-        class="rental-category"
-        data-category="van"
-      >
+      <button type="button"
+              class="rental-category"
+              data-category="van">
         Vans
       </button>
 
     </div>
 
-    <!-- ======================================
-         RENTAL VEHICLES
-    ======================================= -->
-
     <div class="rental-grid" id="rentalGrid">
 
-      <!-- ECONOMY -->
-
-      <div
-        class="rental-card"
-        data-category="economy"
-      >
-
-        <div class="rental-car-image">
-          &#128663;
-        </div>
-
+      <div class="rental-card" data-category="economy">
+        <div class="rental-car-image">&#128663;</div>
         <div class="rental-card-body">
-
           <h3>Economy Car</h3>
-
           <p class="rental-details">
             5 Seats | Automatic | Great Fuel Economy
           </p>
-
-          <div class="rental-price">
-            Quote Required
-          </div>
-
-          <button
-            type="button"
-            class="rental-btn"
-            onclick="requestRental('Economy Car')"
-          >
+          <div class="rental-price">Quote Required</div>
+          <button type="button" class="rental-btn"
+                  onclick="requestRental('Economy Car')">
             Request Reservation
           </button>
-
         </div>
-
       </div>
 
-      <!-- SEDAN -->
-
-      <div
-        class="rental-card"
-        data-category="sedan"
-      >
-
-        <div class="rental-car-image">
-          &#128663;
-        </div>
-
+      <div class="rental-card" data-category="sedan">
+        <div class="rental-car-image">&#128663;</div>
         <div class="rental-card-body">
-
           <h3>Standard Sedan</h3>
-
           <p class="rental-details">
             5 Seats | Automatic | Comfortable
           </p>
-
-          <div class="rental-price">
-            Quote Required
-          </div>
-
-          <button
-            type="button"
-            class="rental-btn"
-            onclick="requestRental('Standard Sedan')"
-          >
+          <div class="rental-price">Quote Required</div>
+          <button type="button" class="rental-btn"
+                  onclick="requestRental('Standard Sedan')">
             Request Reservation
           </button>
-
         </div>
-
       </div>
 
-      <!-- SUV -->
-
-      <div
-        class="rental-card"
-        data-category="suv"
-      >
-
-        <div class="rental-car-image">
-          &#128665;
-        </div>
-
+      <div class="rental-card" data-category="suv">
+        <div class="rental-car-image">&#128665;</div>
         <div class="rental-card-body">
-
           <h3>SUV Rental</h3>
-
           <p class="rental-details">
             Spacious | Family Friendly | Automatic
           </p>
-
-          <div class="rental-price">
-            Quote Required
-          </div>
-
-          <button
-            type="button"
-            class="rental-btn"
-            onclick="requestRental('SUV Rental')"
-          >
+          <div class="rental-price">Quote Required</div>
+          <button type="button" class="rental-btn"
+                  onclick="requestRental('SUV Rental')">
             Request Reservation
           </button>
-
         </div>
-
       </div>
 
-      <!-- LUXURY -->
-
-      <div
-        class="rental-card"
-        data-category="luxury"
-      >
-
-        <div class="rental-car-image">
-          &#127950;
-        </div>
-
+      <div class="rental-card" data-category="luxury">
+        <div class="rental-car-image">&#127950;</div>
         <div class="rental-card-body">
-
           <h3>Luxury Car</h3>
-
           <p class="rental-details">
             Premium Comfort | Automatic
           </p>
-
-          <div class="rental-price">
-            Quote Required
-          </div>
-
-          <button
-            type="button"
-            class="rental-btn"
-            onclick="requestRental('Luxury Car')"
-          >
+          <div class="rental-price">Quote Required</div>
+          <button type="button" class="rental-btn"
+                  onclick="requestRental('Luxury Car')">
             Request Reservation
           </button>
-
         </div>
-
       </div>
 
-      <!-- VAN -->
-
-      <div
-        class="rental-card"
-        data-category="van"
-      >
-
-        <div class="rental-car-image">
-          &#128656;
-        </div>
-
+      <div class="rental-card" data-category="van">
+        <div class="rental-car-image">&#128656;</div>
         <div class="rental-card-body">
-
           <h3>Passenger Van</h3>
-
           <p class="rental-details">
             Group Travel | Extra Passenger Space
           </p>
-
-          <div class="rental-price">
-            Quote Required
-          </div>
-
-          <button
-            type="button"
-            class="rental-btn"
-            onclick="requestRental('Passenger Van')"
-          >
+          <div class="rental-price">Quote Required</div>
+          <button type="button" class="rental-btn"
+                  onclick="requestRental('Passenger Van')">
             Request Reservation
           </button>
-
         </div>
-
       </div>
 
     </div>
 
-    <p
-      id="rentalEmpty"
-      class="rental-notice"
-      style="display:none;"
-    >
+    <p id="rentalEmpty"
+       class="rental-notice"
+       style="display:none;">
       No vehicles match this category.
     </p>
 
@@ -749,10 +580,6 @@
       by participating rental providers.
     </p>
 
-    <!-- ======================================
-         HOW WE-SELL RENTALS WORK
-    ======================================= -->
-
     <section class="rental-how">
 
       <h2>How WE-SELL Rentals Work</h2>
@@ -760,49 +587,31 @@
       <div class="rental-steps">
 
         <div class="rental-step">
-
-          <div class="rental-step-number">
-            1
-          </div>
-
+          <div class="rental-step-number">1</div>
           <h3>Search</h3>
-
           <p>
-            Choose your location, pickup date and time,
-            return date and time, and preferred vehicle type.
+            Choose pickup and drop-off locations,
+            dates, times, and your preferred vehicle.
           </p>
-
         </div>
 
         <div class="rental-step">
-
-          <div class="rental-step-number">
-            2
-          </div>
-
+          <div class="rental-step-number">2</div>
           <h3>Request</h3>
-
           <p>
             Submit your rental request through
             WE-SELL for coordination.
           </p>
-
         </div>
 
         <div class="rental-step">
-
-          <div class="rental-step-number">
-            3
-          </div>
-
+          <div class="rental-step-number">3</div>
           <h3>Confirmation</h3>
-
           <p>
             WE-SELL helps coordinate with the
             provider before your reservation
             is confirmed.
           </p>
-
         </div>
 
       </div>
@@ -810,16 +619,15 @@
     </section>
 
   </div>
-
 </div>
 
-<!-- ==========================================
-     RENTAL PAGE JAVASCRIPT
-========================================== -->
-
 <script>
-
 document.addEventListener("DOMContentLoaded", function () {
+
+  const pickupLocation = document.getElementById("pickupLocation");
+  const dropoffLocation = document.getElementById("dropoffLocation");
+  const dropoffField = document.getElementById("dropoffField");
+  const sameLocation = document.getElementById("sameLocation");
 
   const pickupDate = document.getElementById("pickupDate");
   const pickupTime = document.getElementById("pickupTime");
@@ -833,6 +641,25 @@ document.addEventListener("DOMContentLoaded", function () {
   const cards = document.querySelectorAll(".rental-card");
   const emptyMessage = document.getElementById("rentalEmpty");
 
+  function updateLocation() {
+    if (sameLocation.checked) {
+      dropoffLocation.value = pickupLocation.value;
+      dropoffLocation.required = false;
+      dropoffField.style.display = "none";
+    } else {
+      dropoffField.style.display = "";
+      dropoffLocation.required = true;
+    }
+  }
+
+  sameLocation.addEventListener("change", updateLocation);
+
+  pickupLocation.addEventListener("input", function () {
+    if (sameLocation.checked) {
+      dropoffLocation.value = pickupLocation.value;
+    }
+  });
+
   function localDateString(date) {
     return [
       date.getFullYear(),
@@ -842,13 +669,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function updateDateLimits() {
-
     const today = localDateString(new Date());
-
     pickupDate.min = today;
-
     returnDate.min = pickupDate.value || today;
-
   }
 
   function clearError() {
@@ -861,53 +684,43 @@ document.addEventListener("DOMContentLoaded", function () {
     errorBox.style.display = "block";
   }
 
-  function getPickupDateTime() {
-
-    if (!pickupDate.value || !pickupTime.value) {
-      return null;
-    }
-
-    return new Date(
-      pickupDate.value + "T" + pickupTime.value + ":00"
-    );
-
-  }
-
-  function getReturnDateTime() {
-
-    if (!returnDate.value || !returnTime.value) {
-      return null;
-    }
-
-    return new Date(
-      returnDate.value + "T" + returnTime.value + ":00"
-    );
-
-  }
-
   function validateRental() {
-
     clearError();
+    updateLocation();
 
-    const location = document
-      .getElementById("pickupLocation")
-      .value.trim();
-
-    if (!location) {
+    if (!pickupLocation.value.trim()) {
       showError("Please enter your pickup location.");
       return false;
     }
 
-    const pickup = getPickupDateTime();
-    const dropoff = getReturnDateTime();
+    if (!sameLocation.checked && !dropoffLocation.value.trim()) {
+      showError("Please enter your drop-off location.");
+      return false;
+    }
 
     if (
-      !pickup ||
-      !dropoff ||
+      !pickupDate.value ||
+      !pickupTime.value ||
+      !returnDate.value ||
+      !returnTime.value
+    ) {
+      showError("Please select pickup and return dates and times.");
+      return false;
+    }
+
+    const pickup = new Date(
+      pickupDate.value + "T" + pickupTime.value
+    );
+
+    const dropoff = new Date(
+      returnDate.value + "T" + returnTime.value
+    );
+
+    if (
       Number.isNaN(pickup.getTime()) ||
       Number.isNaN(dropoff.getTime())
     ) {
-      showError("Please select valid pickup and return dates and times.");
+      showError("Please select valid dates and times.");
       return false;
     }
 
@@ -917,50 +730,41 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (dropoff <= pickup) {
-      showError("Return date and time must be after pickup date and time.");
+      showError("Return date and time must be after pickup.");
       return false;
     }
 
     return true;
-
   }
 
   function filterVehicles(category) {
-
     let count = 0;
 
-    cards.forEach(function(card) {
-
+    cards.forEach(function (card) {
       const matches =
         category === "all" ||
         card.dataset.category === category;
 
       card.style.display = matches ? "" : "none";
 
-      if (matches) {
-        count++;
-      }
-
+      if (matches) count++;
     });
 
     emptyMessage.style.display =
       count === 0 ? "block" : "none";
 
-    buttons.forEach(function(button) {
-
+    buttons.forEach(function (button) {
       button.classList.toggle(
         "active",
         button.dataset.category === category
       );
-
     });
-
   }
 
+  updateLocation();
   updateDateLimits();
 
   pickupDate.addEventListener("change", function () {
-
     updateDateLimits();
 
     if (
@@ -971,36 +775,30 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     clearError();
-
   });
 
-  [pickupTime, returnDate, returnTime].forEach(function(field) {
-
+  [
+    pickupLocation,
+    dropoffLocation,
+    pickupTime,
+    returnDate,
+    returnTime
+  ].forEach(function (field) {
     field.addEventListener("change", clearError);
-
   });
 
-  buttons.forEach(function(button) {
-
-    button.addEventListener("click", function() {
-
+  buttons.forEach(function (button) {
+    button.addEventListener("click", function () {
       const category = button.dataset.category;
-
       filterVehicles(category);
-
       document.getElementById("vehicleType").value = category;
-
     });
-
   });
 
-  form.addEventListener("submit", function(event) {
-
+  form.addEventListener("submit", function (event) {
     event.preventDefault();
 
-    if (!validateRental()) {
-      return;
-    }
+    if (!validateRental()) return;
 
     const category =
       document.getElementById("vehicleType").value;
@@ -1012,20 +810,12 @@ document.addEventListener("DOMContentLoaded", function () {
         behavior: "smooth",
         block: "start"
       });
-
   });
 
   window.validateRentalRequest = validateRental;
-
 });
 
-
-/* ==========================================
-   RENTAL REQUEST PREVIEW
-========================================== */
-
 function requestRental(vehicle) {
-
   if (
     typeof window.validateRentalRequest !== "function" ||
     !window.validateRentalRequest()
@@ -1035,8 +825,15 @@ function requestRental(vehicle) {
     return;
   }
 
-  const location =
+  const pickupLocation =
     document.getElementById("pickupLocation").value.trim();
+
+  const sameLocation =
+    document.getElementById("sameLocation").checked;
+
+  const dropoffLocation = sameLocation
+    ? pickupLocation
+    : document.getElementById("dropoffLocation").value.trim();
 
   const pickupDate =
     document.getElementById("pickupDate").value;
@@ -1051,24 +848,20 @@ function requestRental(vehicle) {
     document.getElementById("returnTime").value;
 
   function formatTime(time) {
-
     const parts = time.split(":");
-
     const hour = Number(parts[0]);
     const minute = parts[1];
-
     const period = hour >= 12 ? "PM" : "AM";
-
     const displayHour = hour % 12 || 12;
 
     return displayHour + ":" + minute + " " + period;
-
   }
 
   alert(
     "WE-SELL Rental Request Preview\n\n" +
     "Vehicle: " + vehicle + "\n" +
-    "Pickup Location: " + location + "\n" +
+    "Pickup Location: " + pickupLocation + "\n" +
+    "Drop-off Location: " + dropoffLocation + "\n" +
     "Pickup Date: " + pickupDate + "\n" +
     "Pickup Time: " + formatTime(pickupTime) + "\n" +
     "Return Date: " + returnDate + "\n" +
@@ -1076,9 +869,7 @@ function requestRental(vehicle) {
     "This is a preview only.\n" +
     "Online rental requests are not yet connected."
   );
-
 }
-
 </script>
 
 {% endblock %}
