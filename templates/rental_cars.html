@@ -1,0 +1,606 @@
+
+{% extends 'base.html' %}
+{% block title %}Rental Cars | WE-SELL{% endblock %}
+
+{% block content %}
+
+<style>
+.rental-page {
+  background: #f4f7fb;
+  color: #071d36;
+  padding-bottom: 70px;
+}
+
+.rental-hero {
+  background: linear-gradient(120deg, #061b35, #103a62);
+  color: white;
+  padding: 75px 24px;
+  text-align: center;
+}
+
+.rental-hero h1 {
+  font-size: clamp(34px, 5vw, 58px);
+  font-weight: 800;
+  margin-bottom: 15px;
+}
+
+.rental-hero h1 span {
+  color: #ffc400;
+}
+
+.rental-hero p {
+  font-size: 18px;
+  max-width: 700px;
+  margin: auto;
+  line-height: 1.7;
+}
+
+.rental-container {
+  max-width: 1160px;
+  margin: auto;
+  padding: 0 20px;
+}
+
+.rental-search {
+  background: white;
+  padding: 28px;
+  border-radius: 18px;
+  box-shadow: 0 12px 35px rgba(0,0,0,.12);
+  margin-top: -35px;
+  position: relative;
+}
+
+.rental-search h2 {
+  margin-bottom: 20px;
+}
+
+.rental-fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.rental-field label {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.rental-field input,
+.rental-field select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-size: 15px;
+  background: white;
+  color: #071d36;
+}
+
+.rental-btn {
+  background: #ffc400;
+  color: #071d36;
+  border: none;
+  padding: 15px 25px;
+  border-radius: 9px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.rental-btn:hover {
+  background: #e9ad00;
+}
+
+.rental-search-button {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.rental-section-title {
+  text-align: center;
+  margin: 65px 0 28px;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.rental-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.rental-category {
+  padding: 13px 22px;
+  border-radius: 30px;
+  background: white;
+  border: 2px solid #d7e0ea;
+  color: #071d36;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rental-category.active,
+.rental-category:hover {
+  background: #071d36;
+  color: #ffc400;
+  border-color: #ffc400;
+}
+
+.rental-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 30px;
+}
+
+.rental-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 5px 25px rgba(0,0,0,.07);
+}
+
+.rental-car-image {
+  height: 195px;
+  background: linear-gradient(135deg, #e4ebf4, #cbd8e7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 75px;
+}
+
+.rental-card-body {
+  padding: 22px;
+}
+
+.rental-card h3 {
+  font-size: 22px;
+  margin: 0 0 10px;
+}
+
+.rental-details {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.rental-price {
+  font-size: 27px;
+  font-weight: 800;
+  color: #071d36;
+  margin-bottom: 18px;
+}
+
+.rental-price small {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.rental-card .rental-btn {
+  width: 100%;
+}
+
+.rental-how {
+  background: #071d36;
+  color: white;
+  padding: 60px 25px;
+  margin-top: 70px;
+  border-radius: 18px;
+}
+
+.rental-how h2 {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.rental-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  text-align: center;
+}
+
+.rental-step-number {
+  background: #ffc400;
+  color: #071d36;
+  border-radius: 50%;
+  width: 55px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.rental-step p {
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.rental-notice {
+  color: #64748b;
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+}
+
+@media(max-width: 900px) {
+  .rental-fields {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rental-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media(max-width: 600px) {
+  .rental-fields,
+  .rental-grid,
+  .rental-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .rental-hero {
+    padding: 55px 20px 75px;
+  }
+
+  .rental-search {
+    padding: 20px;
+  }
+}
+</style>
+
+<div class="rental-page">
+
+  <section class="rental-hero">
+    <h1>Find Your Perfect <span>Rental Car</span></h1>
+    <p>
+      WE-SELL connects you with rental vehicle providers.
+      Compare options, submit your request, and let us
+      help coordinate your reservation.
+    </p>
+  </section>
+
+  <div class="rental-container">
+
+    <div class="rental-search">
+      <h2>Find a Rental Car</h2>
+
+      <form id="rentalSearchForm">
+
+        <div class="rental-fields">
+
+          <div class="rental-field">
+            <label>Pickup Location</label>
+            <input
+              type="text"
+              id="pickupLocation"
+              placeholder="City or ZIP Code"
+              required
+            >
+          </div>
+
+          <div class="rental-field">
+            <label>Pickup Date</label>
+            <input
+              type="date"
+              id="pickupDate"
+              required
+            >
+          </div>
+
+          <div class="rental-field">
+            <label>Return Date</label>
+            <input
+              type="date"
+              id="returnDate"
+              required
+            >
+          </div>
+
+          <div class="rental-field">
+            <label>Vehicle Type</label>
+            <select id="vehicleType">
+              <option value="all">All Vehicles</option>
+              <option value="economy">Economy</option>
+              <option value="sedan">Sedan</option>
+              <option value="suv">SUV</option>
+              <option value="luxury">Luxury</option>
+              <option value="van">Van</option>
+            </select>
+          </div>
+
+        </div>
+
+        <button type="submit"
+                class="rental-btn rental-search-button">
+          Search Rental Cars &#8594;
+        </button>
+
+      </form>
+    </div>
+
+    <h2 class="rental-section-title">
+      Browse Rental Vehicles
+    </h2>
+
+    <div class="rental-categories">
+      <button class="rental-category active"
+              data-category="all">All Cars</button>
+      <button class="rental-category"
+              data-category="economy">Economy</button>
+      <button class="rental-category"
+              data-category="sedan">Sedans</button>
+      <button class="rental-category"
+              data-category="suv">SUVs</button>
+      <button class="rental-category"
+              data-category="luxury">Luxury</button>
+      <button class="rental-category"
+              data-category="van">Vans</button>
+    </div>
+
+    <div class="rental-grid" id="rentalGrid">
+
+      <div class="rental-card" data-category="economy">
+        <div class="rental-car-image">&#128663;</div>
+        <div class="rental-card-body">
+          <h3>Economy Car</h3>
+          <p class="rental-details">
+            5 Seats | Automatic | Great Fuel Economy
+          </p>
+          <div class="rental-price">
+            Quote Required
+          </div>
+          <button class="rental-btn"
+                  onclick="requestRental('Economy Car')">
+            Request Reservation
+          </button>
+        </div>
+      </div>
+
+      <div class="rental-card" data-category="sedan">
+        <div class="rental-car-image">&#128663;</div>
+        <div class="rental-card-body">
+          <h3>Standard Sedan</h3>
+          <p class="rental-details">
+            5 Seats | Automatic | Comfortable
+          </p>
+          <div class="rental-price">
+            Quote Required
+          </div>
+          <button class="rental-btn"
+                  onclick="requestRental('Standard Sedan')">
+            Request Reservation
+          </button>
+        </div>
+      </div>
+
+      <div class="rental-card" data-category="suv">
+        <div class="rental-car-image">&#128665;</div>
+        <div class="rental-card-body">
+          <h3>SUV Rental</h3>
+          <p class="rental-details">
+            Spacious | Family Friendly | Automatic
+          </p>
+          <div class="rental-price">
+            Quote Required
+          </div>
+          <button class="rental-btn"
+                  onclick="requestRental('SUV Rental')">
+            Request Reservation
+          </button>
+        </div>
+      </div>
+
+      <div class="rental-card" data-category="luxury">
+        <div class="rental-car-image">&#127950;</div>
+        <div class="rental-card-body">
+          <h3>Luxury Car</h3>
+          <p class="rental-details">
+            Premium Comfort | Automatic
+          </p>
+          <div class="rental-price">
+            Quote Required
+          </div>
+          <button class="rental-btn"
+                  onclick="requestRental('Luxury Car')">
+            Request Reservation
+          </button>
+        </div>
+      </div>
+
+      <div class="rental-card" data-category="van">
+        <div class="rental-car-image">&#128656;</div>
+        <div class="rental-card-body">
+          <h3>Passenger Van</h3>
+          <p class="rental-details">
+            Group Travel | Extra Passenger Space
+          </p>
+          <div class="rental-price">
+            Quote Required
+          </div>
+          <button class="rental-btn"
+                  onclick="requestRental('Passenger Van')">
+            Request Reservation
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <p id="rentalEmpty" class="rental-notice"
+       style="display:none;">
+      No vehicles match this category.
+    </p>
+
+    <p class="rental-notice">
+      Vehicle categories are examples.
+      Availability and prices must be confirmed
+      by participating rental providers.
+    </p>
+
+    <section class="rental-how">
+
+      <h2>How WE-SELL Rentals Work</h2>
+
+      <div class="rental-steps">
+
+        <div class="rental-step">
+          <div class="rental-step-number">1</div>
+          <h3>Search</h3>
+          <p>
+            Choose your location, rental dates,
+            and preferred vehicle type.
+          </p>
+        </div>
+
+        <div class="rental-step">
+          <div class="rental-step-number">2</div>
+          <h3>Request</h3>
+          <p>
+            Submit your rental request through
+            WE-SELL for coordination.
+          </p>
+        </div>
+
+        <div class="rental-step">
+          <div class="rental-step-number">3</div>
+          <h3>Confirmation</h3>
+          <p>
+            WE-SELL helps coordinate with the
+            provider before your reservation
+            is confirmed.
+          </p>
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const pickupDate = document.getElementById("pickupDate");
+  const returnDate = document.getElementById("returnDate");
+
+  const today = new Date();
+  const localToday = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0")
+  ].join("-");
+
+  pickupDate.min = localToday;
+  returnDate.min = localToday;
+
+  pickupDate.addEventListener("change", function () {
+    returnDate.min = pickupDate.value;
+
+    if (returnDate.value &&
+        returnDate.value <= pickupDate.value) {
+      returnDate.value = "";
+    }
+  });
+
+  const buttons = document.querySelectorAll(".rental-category");
+  const cards = document.querySelectorAll(".rental-card");
+  const emptyMessage = document.getElementById("rentalEmpty");
+
+  function filterVehicles(category) {
+    let count = 0;
+
+    cards.forEach(function(card) {
+      const matches =
+        category === "all" ||
+        card.dataset.category === category;
+
+      card.style.display = matches ? "" : "none";
+
+      if (matches) count++;
+    });
+
+    emptyMessage.style.display =
+      count === 0 ? "block" : "none";
+
+    buttons.forEach(function(button) {
+      button.classList.toggle(
+        "active",
+        button.dataset.category === category
+      );
+    });
+  }
+
+  buttons.forEach(function(button) {
+    button.addEventListener("click", function() {
+      filterVehicles(button.dataset.category);
+      document.getElementById("vehicleType").value =
+        button.dataset.category;
+    });
+  });
+
+  document.getElementById("rentalSearchForm")
+    .addEventListener("submit", function(event) {
+
+      event.preventDefault();
+
+      if (returnDate.value <= pickupDate.value) {
+        alert("Return date must be after pickup date.");
+        return;
+      }
+
+      const category =
+        document.getElementById("vehicleType").value;
+
+      filterVehicles(category);
+
+      document.getElementById("rentalGrid")
+        .scrollIntoView({ behavior: "smooth" });
+    });
+
+});
+
+function requestRental(vehicle) {
+  const location =
+    document.getElementById("pickupLocation").value.trim();
+
+  const pickup =
+    document.getElementById("pickupDate").value;
+
+  const returnDate =
+    document.getElementById("returnDate").value;
+
+  if (!location || !pickup || !returnDate) {
+    alert("Please enter your location and rental dates first.");
+    document.getElementById("rentalSearchForm")
+      .scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+
+  if (returnDate <= pickup) {
+    alert("Return date must be after pickup date.");
+    return;
+  }
+
+  alert(
+    "Rental request details:\n\n" +
+    "Vehicle: " + vehicle + "\n" +
+    "Location: " + location + "\n" +
+    "Pickup: " + pickup + "\n" +
+    "Return: " + returnDate + "\n\n" +
+    "This is a preview only. " +
+    "Online rental requests are not yet connected."
+  );
+}
+</script>
+
+{% endblock %}
