@@ -1,5 +1,5 @@
 
-"""WE-SELL rental inventory sync extension for rental_portal.py (SQLite MVP)."""
+"""WE-SELL rental inventory sync extension (PostgreSQL)."""
 import hashlib
 import hmac
 import json
@@ -21,27 +21,30 @@ CATEGORIES = {"economy", "sedan", "suv", "luxury", "van"}
 
 
 def init_inventory_sync():
+    """Create inventory sync tables in PostgreSQL."""
     with db() as conn:
-        conn.executescript("""
-        CREATE TABLE IF NOT EXISTS rental_sync_connections (
-          company_id INTEGER PRIMARY KEY REFERENCES rental_companies(id) ON DELETE CASCADE,
-          token_hash TEXT NOT NULL,
-          feed_url TEXT,
-          last_success TEXT,
-          last_error TEXT,
-          last_count INTEGER NOT NULL DEFAULT 0
-        );
-
-        CREATE TABLE IF NOT EXISTS rental_sync_items (
-          company_id INTEGER NOT NULL REFERENCES rental_companies(id) ON DELETE CASCADE,
-          external_id TEXT NOT NULL,
-          vehicle_id INTEGER NOT NULL REFERENCES rental_vehicles(id) ON DELETE CASCADE,
-          PRIMARY KEY(company_id, external_id),
-          UNIQUE(vehicle_id)
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_rental_sync_vehicle_company
-          ON rental_vehicles(company_id, status);
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS rental_sync_connections (
+                company_id INTEGER PRIMARY KEY REFERENCES rental_companies(id) ON DELETE CASCADE,
+                token_hash TEXT NOT NULL,
+                feed_url TEXT,
+                last_success TEXT,
+                last_error TEXT,
+                last_count INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS rental_sync_items (
+                company_id INTEGER NOT NULL REFERENCES rental_companies(id) ON DELETE CASCADE,
+                external_id TEXT NOT NULL,
+                vehicle_id INTEGER NOT NULL REFERENCES rental_vehicles(id) ON DELETE CASCADE,
+                PRIMARY KEY(company_id, external_id),
+                UNIQUE(vehicle_id)
+            )
+        """)
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_rental_sync_vehicle_company
+            ON rental_vehicles(company_id, status)
         """)
 
 
@@ -286,6 +289,7 @@ def apply_snapshot(company_id, payload):
                         status
                     )
                     VALUES (?,?,?,?,?,?,?,?,?)
+                    RETURNING id
                 """, (
                     company_id,
                     year,
@@ -309,7 +313,7 @@ def apply_snapshot(company_id, payload):
                 """, (
                     company_id,
                     external_id,
-                    cur.lastrowid
+                    cur.fetchone()["id"]
                 ))
 
         ids = [v[0] for v in vehicles]
