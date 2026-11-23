@@ -2,7 +2,6 @@
 import os
 import sqlite3
 import logging
-import secrets
 
 from flask import (
     Blueprint,
@@ -13,6 +12,7 @@ from flask import (
     session,
     g,
 )
+
 from authlib.integrations.flask_client import OAuth
 from authlib.common.security import generate_token
 
@@ -24,9 +24,9 @@ PROVIDERS = ("google", "facebook")
 PORTALS = ("dealer", "rental")
 
 
-# --------------------------------------------------
+# ============================================
 # INITIALIZE GOOGLE AND FACEBOOK
-# --------------------------------------------------
+# ============================================
 
 def init_social_auth(app):
     oauth.init_app(app)
@@ -72,19 +72,14 @@ def init_social_auth(app):
             },
         )
 
-    # Create identity tables without altering existing users.
-    with app.app_context():
-        try:
-            initialize_identity_tables()
-        except sqlite3.Error:
-            logger.exception(
-                "Could not initialize social identity tables"
-            )
+    # Database tables are created on demand.
+    # Do not connect to rental database at startup.
+    # This prevents the previous Render startup crash.
 
 
-# --------------------------------------------------
+# ============================================
 # DATABASE CONNECTIONS
-# --------------------------------------------------
+# ============================================
 
 def dealer_db():
     path = os.environ.get(
@@ -99,63 +94,61 @@ def dealer_db():
 
 
 def rental_db():
-    from rental_portal import DB
+    """
+    Uses the rental portal's existing database
+    connection function instead of importing DB.
+    """
+    from rental_portal import db
 
-    conn = sqlite3.connect(DB, timeout=15)
+    conn = db()
+
+    if not isinstance(conn, sqlite3.Connection):
+        raise RuntimeError(
+            "rental_portal.db() must return "
+            "a SQLite connection"
+        )
+
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
+
     return conn
 
 
-def initialize_identity_tables():
-    conn = dealer_db()
+# ============================================
+# IDENTITY TABLES
+# ============================================
 
-    try:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS dealer_google_identities (
-                google_sub TEXT PRIMARY KEY,
-                user_id INTEGER NOT NULL UNIQUE
-            )
-        """)
+def ensure_identity_table(conn, portal, provider):
+    if portal not in PORTALS:
+        raise ValueError("Invalid portal")
 
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS dealer_facebook_identities (
-                facebook_id TEXT PRIMARY KEY,
-                user_id INTEGER NOT NULL UNIQUE
-            )
-        """)
+    if provider not in PROVIDERS:
+        raise ValueError("Invalid provider")
 
-        conn.commit()
-    finally:
-        conn.close()
+    table = identity_table(portal, provider)
+    identity_field = identity_column(provider)
+    account_field = account_column(portal)
 
-    conn = rental_db()
+    conn.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS {table} (
+            {identity_field} TEXT PRIMARY KEY,
+            {account_field} INTEGER NOT NULL UNIQUE
+        )
+        """
+    )
 
-    try:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS rental_google_identities (
-                google_sub TEXT PRIMARY KEY,
-                company_id INTEGER NOT NULL UNIQUE
-            )
-        """)
-
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS rental_facebook_identities (
-                facebook_id TEXT PRIMARY KEY,
-                company_id INTEGER NOT NULL UNIQUE
-            )
-        """)
-
-        conn.commit()
-    finally:
-        conn.close()
+    conn.commit()
 
 
-# --------------------------------------------------
+# ============================================
 # HELPERS
-# --------------------------------------------------
+# ============================================
 
 def provider_client(provider):
+    if provider not in PROVIDERS:
+        return None
+
     return oauth.create_client(provider)
 
 
@@ -179,7 +172,7 @@ def callback_url(provider="google"):
     elif provider == "facebook":
         endpoint = "social_auth.facebook_callback"
     else:
-        raise ValueError("Unsupported provider")
+        raise ValueError("Invalid provider")
 
     return url_for(
         endpoint,
@@ -190,7 +183,7 @@ def callback_url(provider="google"):
 
 def identity_table(portal, provider):
     if portal not in PORTALS or provider not in PROVIDERS:
-        raise ValueError("Invalid social identity")
+        raise ValueError("Invalid identity")
 
     return f"{portal}_{provider}_identities"
 
@@ -206,7 +199,10 @@ def identity_column(provider):
 
 
 def account_column(portal):
-    return "company_id" if portal == "rental" else "user_id"
+    if portal == "rental":
+        return "company_id"
+
+    return "user_id"
 
 
 def clear_oauth_session():
@@ -215,7 +211,6 @@ def clear_oauth_session():
         "social_portal",
         "social_intent",
         "social_link_id",
-        "social_nonce",
         "google_portal",
         "google_intent",
         "google_link_company_id",
@@ -252,9 +247,9 @@ def verify_link_session(portal, account_id):
     return True
 
 
-# --------------------------------------------------
+# ============================================
 # BEGIN SOCIAL LOGIN
-# --------------------------------------------------
+# ============================================
 
 def begin_social(provider, portal, intent):
     if provider not in PROVIDERS:
@@ -311,16 +306,17 @@ def begin_social(provider, portal, intent):
     except Exception:
         logger.exception("Unable to begin social login")
         clear_oauth_session()
+
         flash(
-            "Unable to start social login. Please try again.",
+            "Unable to start social login.",
             "error",
         )
         return redirect(portal_login_url(portal))
 
 
-# --------------------------------------------------
+# ============================================
 # LOGIN ROUTES
-# --------------------------------------------------
+# ============================================
 
 @social_auth.get("/auth/<provider>/<portal>")
 def start_login(provider, portal):
@@ -332,15 +328,14 @@ def start_social_link(provider, portal):
     return begin_social(provider, portal, "link")
 
 
-# Preserve the original Google link endpoint.
 @social_auth.get("/auth/google/connect/<portal>")
 def start_link(portal):
     return begin_social("google", portal, "link")
 
 
-# --------------------------------------------------
-# RETRIEVE VERIFIED PROVIDER IDENTITY
-# --------------------------------------------------
+# ============================================
+# GET GOOGLE IDENTITY
+# ============================================
 
 def get_google_identity(client):
     token = client.authorize_access_token()
@@ -366,12 +361,18 @@ def get_google_identity(client):
     return str(sub)
 
 
+# ============================================
+# GET FACEBOOK IDENTITY
+# ============================================
+
 def get_facebook_identity(client):
     token = client.authorize_access_token()
 
     response = client.get(
         "me",
-        params={"fields": "id,name,email"},
+        params={
+            "fields": "id,name,email"
+        },
         token=token,
     )
 
@@ -384,14 +385,12 @@ def get_facebook_identity(client):
     if not facebook_id:
         raise ValueError("Facebook identity unavailable")
 
-    # Facebook does not guarantee an email address.
-    # Never identify accounts by email alone.
     return str(facebook_id)
 
 
-# --------------------------------------------------
+# ============================================
 # VERIFY BUSINESS ACCOUNT
-# --------------------------------------------------
+# ============================================
 
 def valid_dealer_account(conn, user_id):
     row = conn.execute(
@@ -429,9 +428,9 @@ def valid_business_account(conn, portal, account_id):
     return valid_rental_account(conn, account_id)
 
 
-# --------------------------------------------------
+# ============================================
 # LINK SOCIAL ACCOUNT
-# --------------------------------------------------
+# ============================================
 
 def link_social_identity(
     conn,
@@ -441,7 +440,9 @@ def link_social_identity(
     account_id,
 ):
     if not valid_business_account(
-        conn, portal, account_id
+        conn,
+        portal,
+        account_id,
     ):
         return (
             "Business account not found or not approved.",
@@ -479,7 +480,7 @@ def link_social_identity(
 
     if existing and existing[identity_field] != provider_id:
         return (
-            "This business already has a different "
+            "This business already has another "
             f"{provider.title()} account connected.",
             409,
         )
@@ -496,16 +497,16 @@ def link_social_identity(
     conn.commit()
 
     flash(
-        f"{provider.title()} account connected successfully.",
+        f"{provider.title()} account connected.",
         "success",
     )
 
     return redirect(portal_dashboard_url(portal))
 
 
-# --------------------------------------------------
-# FIND EXISTING SOCIAL ACCOUNT
-# --------------------------------------------------
+# ============================================
+# FIND SOCIAL ACCOUNT
+# ============================================
 
 def find_social_account(
     conn,
@@ -532,16 +533,18 @@ def find_social_account(
     account_id = row[account_field]
 
     if not valid_business_account(
-        conn, portal, account_id
+        conn,
+        portal,
+        account_id,
     ):
         return None
 
     return account_id
 
 
-# --------------------------------------------------
-# COMPLETE LOGIN OR LINKING
-# --------------------------------------------------
+# ============================================
+# COMPLETE SOCIAL LOGIN
+# ============================================
 
 def complete_social_login(provider):
     expected_provider = session.get("social_provider")
@@ -555,7 +558,7 @@ def complete_social_login(provider):
         or intent not in ("login", "link")
     ):
         clear_oauth_session()
-        return "Invalid login session. Please try again.", 400
+        return "Invalid login session.", 400
 
     client = provider_client(provider)
 
@@ -574,8 +577,7 @@ def complete_social_login(provider):
         clear_oauth_session()
 
         flash(
-            f"{provider.title()} Login failed. "
-            "Please try again.",
+            f"{provider.title()} Login failed.",
             "error",
         )
         return redirect(portal_login_url(portal))
@@ -588,11 +590,20 @@ def complete_social_login(provider):
         )
 
         try:
+            ensure_identity_table(
+                conn,
+                portal,
+                provider,
+            )
+
             if intent == "link":
-                if not verify_link_session(portal, linking_id):
+                if not verify_link_session(
+                    portal,
+                    linking_id,
+                ):
                     return (
-                        "Please sign in with your business "
-                        "password before connecting this account.",
+                        "Please sign in with your "
+                        "business password first.",
                         403,
                     )
 
@@ -614,9 +625,12 @@ def complete_social_login(provider):
         finally:
             conn.close()
 
-    except sqlite3.Error:
+    except (sqlite3.Error, RuntimeError, TypeError):
         logger.exception("Social login database error")
-        return "Social Login is temporarily unavailable.", 503
+        return (
+            "Social Login is temporarily unavailable.",
+            503,
+        )
 
     finally:
         clear_oauth_session()
@@ -625,13 +639,12 @@ def complete_social_login(provider):
         flash(
             "No approved business account is connected "
             f"to this {provider.title()} account. "
-            "Sign in with your password first, then "
-            "connect your social account.",
+            "Sign in with your password first, "
+            "then connect your social account.",
             "error",
         )
         return redirect(portal_login_url(portal))
 
-    # Do not retain authentication from another portal.
     session.clear()
 
     if portal == "dealer":
@@ -649,18 +662,18 @@ def complete_social_login(provider):
     return redirect(portal_dashboard_url(portal))
 
 
-# --------------------------------------------------
+# ============================================
 # GOOGLE CALLBACK
-# --------------------------------------------------
+# ============================================
 
 @social_auth.get("/auth/google/callback")
 def google_callback():
     return complete_social_login("google")
 
 
-# --------------------------------------------------
+# ============================================
 # FACEBOOK CALLBACK
-# --------------------------------------------------
+# ============================================
 
 @social_auth.get("/auth/facebook/callback")
 def facebook_callback():
