@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 
 {% block title %}
@@ -266,6 +265,28 @@ body:has(.ws-dealer-page) .navbar {
     cursor: pointer;
 }
 
+/* FORGOT PASSWORD */
+
+.ws-dealer-forgot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -7px;
+    margin-bottom: 20px;
+}
+
+.ws-dealer-forgot a {
+    color: #008b91;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: color .2s ease;
+}
+
+.ws-dealer-forgot a:hover {
+    color: #005c70;
+    text-decoration: underline;
+}
+
 .ws-dealer-submit {
     width: 100%;
     min-height: 50px;
@@ -451,6 +472,7 @@ body:has(.ws-dealer-page) .navbar {
         <span class="ws-dealer-topbar-logo">
             WE-SELL
         </span>
+
         <span class="ws-dealer-topbar-name">
             Dealership Portal
         </span>
@@ -467,6 +489,7 @@ body:has(.ws-dealer-page) .navbar {
     <div class="ws-dealer-shell">
 
         <aside class="ws-dealer-left">
+
             <div class="ws-dealer-brand">
                 WE-SELL
                 <small>DEALERSHIP BUSINESS PORTAL</small>
@@ -490,6 +513,7 @@ body:has(.ws-dealer-page) .navbar {
                 </p>
 
                 <div class="ws-dealer-benefits">
+
                     <div class="ws-dealer-benefit">
                         <span class="ws-dealer-check">✓</span>
                         Advertise your dealership inventory
@@ -509,12 +533,14 @@ body:has(.ws-dealer-page) .navbar {
                         <span class="ws-dealer-check">✓</span>
                         Manage your dealership profile
                     </div>
+
                 </div>
             </div>
 
             <div class="ws-dealer-bottom">
                 WE-SELL | Connecting Dealerships With Buyers
             </div>
+
         </aside>
 
         <div class="ws-dealer-right">
@@ -524,21 +550,27 @@ body:has(.ws-dealer-page) .navbar {
             </div>
 
             {% if mode == 'register' %}
+
                 <h2 class="ws-dealer-title">
                     Register Your Dealership
                 </h2>
+
                 <p class="ws-dealer-subtitle">
                     Create your dealership account
                     to get started with WE-SELL.
                 </p>
+
             {% else %}
+
                 <h2 class="ws-dealer-title">
                     Welcome Back, Dealer!
                 </h2>
+
                 <p class="ws-dealer-subtitle">
                     Sign in to access your WE-SELL
                     dealership account.
                 </p>
+
             {% endif %}
 
             <form
@@ -551,10 +583,12 @@ body:has(.ws-dealer-page) .navbar {
                     value="{{ csrf }}">
 
                 {% if mode == 'register' %}
+
                 <div class="ws-dealer-field">
                     <label for="ws-name">
                         Dealer / Contact Name
                     </label>
+
                     <input
                         id="ws-name"
                         type="text"
@@ -569,6 +603,7 @@ body:has(.ws-dealer-page) .navbar {
                     <label for="ws-phone">
                         Business Phone Number
                     </label>
+
                     <input
                         id="ws-phone"
                         type="tel"
@@ -577,12 +612,14 @@ body:has(.ws-dealer-page) .navbar {
                         autocomplete="tel"
                         maxlength="30">
                 </div>
+
                 {% endif %}
 
                 <div class="ws-dealer-field">
                     <label for="ws-email">
                         Business Email Address
                     </label>
+
                     <input
                         id="ws-email"
                         type="email"
@@ -599,6 +636,7 @@ body:has(.ws-dealer-page) .navbar {
                     </label>
 
                     <div class="ws-dealer-password">
+
                         <input
                             id="ws-password"
                             type="password"
@@ -616,18 +654,34 @@ body:has(.ws-dealer-page) .navbar {
                             onclick="toggleDealerPassword()">
                             Show
                         </button>
+
                     </div>
                 </div>
+
+                <!-- FORGOT PASSWORD LINK -->
+                {% if mode != 'register' %}
+
+                <div class="ws-dealer-forgot">
+                    <a href="{{ url_for('forgot_password') }}">
+                        Forgot Password?
+                    </a>
+                </div>
+
+                {% endif %}
+                <!-- END FORGOT PASSWORD LINK -->
 
                 <button
                     type="submit"
                     class="ws-dealer-submit">
+
                     {% if mode == 'register' %}
                         Create Dealership Account →
                     {% else %}
                         Sign In to Dealer Portal →
                     {% endif %}
+
                 </button>
+
             </form>
 
             <div class="ws-dealer-divider">
@@ -637,44 +691,59 @@ body:has(.ws-dealer-page) .navbar {
             <div class="ws-dealer-social">
 
                 {% if mode == 'login' %}
+
                 <a
                     href="{{ url_for('dealer_google_login') }}"
                     aria-label="Continue with Google">
+
                     <strong class="google">G</strong>
                     Continue with Google
+
                 </a>
+
                 {% else %}
+
                 <a
                     href="{{ url_for('login') }}"
                     title="Create an account first, then connect Google">
+
                     <strong class="google">G</strong>
                     Google (after signup)
+
                 </a>
+
                 {% endif %}
 
                 <button
                     type="button"
                     disabled
                     title="Facebook sign-in coming soon">
+
                     <strong class="facebook">f</strong>
                     Facebook
+
                 </button>
 
                 <button
                     type="button"
                     disabled
                     title="LinkedIn sign-in coming soon">
+
                     <strong class="linkedin">in</strong>
                     LinkedIn
+
                 </button>
 
                 <button
                     type="button"
                     disabled
                     title="Apple sign-in coming soon">
+
                     <strong class="apple">&#63743;</strong>
                     Apple
+
                 </button>
+
             </div>
 
             <p class="ws-dealer-social-note">
@@ -684,23 +753,33 @@ body:has(.ws-dealer-page) .navbar {
             </p>
 
             <div class="ws-dealer-switch">
+
                 {% if mode == 'register' %}
+
                     Already registered your dealership?
+
                     <a href="{{ url_for('login') }}">
                         Sign In
                     </a>
+
                 {% else %}
+
                     New dealership?
+
                     <a href="{{ url_for('register') }}">
                         Register Your Dealership
                     </a>
+
                 {% endif %}
+
             </div>
 
             <div class="ws-dealer-home">
+
                 <a href="{{ url_for('home') }}">
                     ← Return to WE-SELL Main Website
                 </a>
+
             </div>
 
         </div>
