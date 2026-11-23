@@ -3,6 +3,11 @@ import os
 import re
 import sqlite3
 import secrets
+import smtplib
+import ssl
+from email.message import EmailMessage
+from flask import current_app
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 from decimal import Decimal, InvalidOperation
 from contextlib import contextmanager
@@ -123,6 +128,41 @@ def csrf_token():
         session["csrf"] = secrets.token_urlsafe(32)
 
     return session["csrf"]
+
+
+def rental_reset_serializer():
+    return URLSafeTimedSerializer(current_app.secret_key, salt="wesell-rental-password-reset-v1")
+
+
+def send_rental_reset_email(address, reset_url):
+    host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+    port = int(os.environ.get("SMTP_PORT", "587"))
+    username = os.environ.get("SMTP_USER", "")
+    password = os.environ.get("SMTP_PASSWORD", "")
+    sender = os.environ.get("SMTP_FROM", username)
+    if not username or not password or not sender:
+        current_app.logger.error("Rental reset email: SMTP credentials are missing")
+        return False
+    msg = EmailMessage()
+    msg["Subject"] = "Reset your WE-SELL rental company password"
+    msg["From"] = sender
+    msg["To"] = address
+    msg.set_content(
+        "A password reset was requested for your WE-SELL rental company account.\n\n"
+        f"Reset your password using this link (valid for 30 minutes):\n{reset_url}\n\n"
+        "If you did not request this, you can ignore this email."
+    )
+    try:
+        with smtplib.SMTP(host, port, timeout=12) as server:
+            server.ehlo()
+            server.starttls(context=ssl.create_default_context())
+            server.ehlo()
+            server.login(username, password)
+            server.send_message(msg)
+        return True
+    except Exception:
+        current_app.logger.exception("Rental password reset email could not be sent")
+        return False
 
 
 def rental_login_required(func):
@@ -718,6 +758,16 @@ def login():
             box-shadow: 0 0 0 3px rgba(0,169,157,.12);
         }
 
+         .rental-password-wrap { position: relative; }
+         .rental-password-wrap input { padding-right: 88px; }
+         .rental-password-toggle {
+             position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+             margin: 0; padding: 9px 11px; background: #eef4fa;
+             color: #041b34; font-size: 12px; border-radius: 7px;
+         }
+         .rental-forgot { display: block; text-align: right; margin-top: 10px;
+             font-size: 13px; font-weight: 700; color: #007f91; text-decoration: none; }
+
         .rental-login-submit {
             display: block;
             width: 100%;
@@ -968,14 +1018,14 @@ def login():
                         Password
                     </label>
 
-                    <input
-                        id="rental-password"
-                        type="password"
-                        name="password"
-                        placeholder="Enter your password"
-                        autocomplete="current-password"
-                        required
-                    >
+                     <div class="rental-password-wrap">
+                         <input id="rental-password" type="password" name="password"
+                                placeholder="Enter your password" autocomplete="current-password" required>
+                         <button type="button" class="rental-password-toggle"
+                                 onclick="const f=document.getElementById('rental-password'); f.type=f.type==='password'?'text':'password'; this.textContent=f.type==='password'?'Show':'Hide';"
+                                 aria-label="Show or hide password">Show</button>
+                     </div>
+                     <a class="rental-forgot" href="{{ forgot_url }}">Forgot Password?</a>
 
                     <button
                         type="submit"
@@ -1077,8 +1127,101 @@ def login():
         register_url=url_for(
             "rental_portal.register"
         ),
+        forgot_url=url_for("rental_portal.forgot_password"),
         google_login_url=url_for("social_auth.start_login", provider="google", portal="rental")
     )
+
+# ==========================================
+# RENTAL COMPANY PASSWORD RECOVERY
+# ==========================================
+
+@rental_portal.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        if not secrets.compare_digest(request.form.get("csrf", ""), csrf_token()):
+            return "Invalid request. Refresh the page and try again.", 400
+        email = request.form.get("email", "").strip().lower()[:254]
+        # Same message whether the address exists or not.
+        if re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+            with db() as conn:
+                company = conn.execute("SELECT id, email, password_hash FROM rental_companies WHERE email=?", (email,)).fetchone()
+            if company:
+                # Including the password-hash fingerprint invalidates old links after a reset.
+                token = rental_reset_serializer().dumps([company["id"], company["password_hash"][-20:]])
+                link = url_for("rental_portal.reset_password", token=token, _external=True)
+                send_rental_reset_email(company["email"], link)
+        flash("If this email is registered, a password reset link will be sent shortly.")
+        return redirect(url_for("rental_portal.forgot_password"))
+
+    return page("Forgot Rental Password", """
+        <div class="panel" style="max-width:550px;margin:auto;">
+          <h1>Reset Your Rental Company Password</h1>
+          <p>Enter your registered business email address to receive a reset link.</p>
+          <form method="POST">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <label for="reset-email">Business Email Address</label>
+            <input id="reset-email" type="email" name="email" autocomplete="email" required>
+            <button type="submit">Send Reset Link</button>
+          </form>
+          <p><a href="{{ login_url }}">← Back to Rental Login</a></p>
+        </div>
+    """, csrf=csrf_token(), login_url=url_for("rental_portal.login"))
+
+
+@rental_portal.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    try:
+        company_id, hash_suffix = rental_reset_serializer().loads(token, max_age=1800)
+    except (BadSignature, SignatureExpired, ValueError, TypeError):
+        flash("This reset link is invalid or expired. Please request a new one.")
+        return redirect(url_for("rental_portal.forgot_password"))
+
+    with db() as conn:
+        company = conn.execute("SELECT id, password_hash FROM rental_companies WHERE id=?", (company_id,)).fetchone()
+    if not company or not secrets.compare_digest(company["password_hash"][-20:], hash_suffix):
+        flash("This reset link is no longer valid. Please request a new one.")
+        return redirect(url_for("rental_portal.forgot_password"))
+
+    if request.method == "POST":
+        if not secrets.compare_digest(request.form.get("csrf", ""), csrf_token()):
+            return "Invalid request. Refresh the page and try again.", 400
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        if len(password) < 10:
+            flash("Password must contain at least 10 characters.")
+        elif password != confirm:
+            flash("Passwords do not match.")
+        else:
+            with db() as conn:
+                result = conn.execute(
+                    "UPDATE rental_companies SET password_hash=? WHERE id=? AND password_hash=?",
+                    (generate_password_hash(password), company_id, company["password_hash"])
+                )
+            if result.rowcount == 1:
+                session.pop("rental_company_id", None)
+                flash("Your password has been updated. Please sign in.")
+                return redirect(url_for("rental_portal.login"))
+            flash("This reset link is no longer valid.")
+            return redirect(url_for("rental_portal.forgot_password"))
+
+    return page("New Rental Password", """
+        <div class="panel" style="max-width:550px;margin:auto;">
+          <h1>Create a New Password</h1>
+          <p>Choose a password with at least 10 characters.</p>
+          <form method="POST">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <label for="new-password">New Password</label>
+            <div style="position:relative;">
+              <input id="new-password" type="password" name="password" minlength="10" required style="padding-right:85px;">
+              <button type="button" onclick="const f=document.getElementById('new-password'); f.type=f.type==='password'?'text':'password';this.textContent=f.type==='password'?'Show':'Hide';" style="position:absolute;right:6px;top:0;margin:5px 0;padding:8px;">Show</button>
+            </div>
+            <label for="confirm-password">Confirm Password</label>
+            <input id="confirm-password" type="password" name="confirm_password" minlength="10" required>
+            <button type="submit">Save New Password</button>
+          </form>
+        </div>
+    """, csrf=csrf_token())
+
 
 # ==========================================
 # RENTAL COMPANY DASHBOARD
