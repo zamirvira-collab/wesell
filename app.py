@@ -5,6 +5,11 @@ import secrets
 import re
 import json
 import math
+import hashlib
+import smtplib
+import ssl
+from email.message import EmailMessage
+from datetime import timedelta, timezone
 
 from functools import lru_cache, wraps
 from urllib.request import urlopen
@@ -100,6 +105,16 @@ def init_db():
 
     conn.executescript("""
         PRAGMA foreign_keys=ON;
+
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token_hash TEXT NOT NULL UNIQUE,
+            expires_at TEXT NOT NULL,
+            used_at TEXT,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_reset_user ON password_reset_tokens(user_id);
 
         CREATE TABLE IF NOT EXISTS dealer_google_identities (
             google_sub TEXT PRIMARY KEY,
@@ -795,6 +810,131 @@ def login():
         "auth.html",
         mode="login"
     )
+
+
+# ==========================================
+# PASSWORD RECOVERY
+# ==========================================
+
+def send_password_reset_email(recipient, reset_url):
+    """Send through configured SMTP provider; never log reset URLs."""
+    host = os.environ.get("SMTP_HOST", "").strip()
+    username = os.environ.get("SMTP_USER", "").strip()
+    password = os.environ.get("SMTP_PASSWORD", "")
+    sender = os.environ.get("SMTP_FROM", "").strip()
+    if not all((host, username, password, sender)):
+        app.logger.error("Password reset email is not configured")
+        return False
+
+    try:
+        port = int(os.environ.get("SMTP_PORT", "587"))
+        msg = EmailMessage()
+        msg["Subject"] = "Reset your WE-SELL password"
+        msg["From"] = sender
+        msg["To"] = recipient
+        msg.set_content(
+            "We received a request to reset your WE-SELL password.\n\n"
+            f"Open this link within 30 minutes:\n{reset_url}\n\n"
+            "If you did not request this, ignore this email."
+        )
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, timeout=15,
+                                  context=ssl.create_default_context()) as smtp:
+                smtp.login(username, password)
+                smtp.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port, timeout=15) as smtp:
+                smtp.starttls(context=ssl.create_default_context())
+                smtp.login(username, password)
+                smtp.send_message(msg)
+        return True
+    except (OSError, smtplib.SMTPException, ValueError):
+        app.logger.exception("Could not deliver password reset email")
+        return False
+
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()[:254]
+        # Always give the same response, whether or not the account exists.
+        user = db().execute("SELECT id, email FROM users WHERE email=?", (email,)).fetchone()
+        if user:
+            now = datetime.now(timezone.utc)
+            last = db().execute(
+                "SELECT created_at FROM password_reset_tokens "
+                "WHERE user_id=? ORDER BY id DESC LIMIT 1", (user["id"],)
+            ).fetchone()
+            allowed = True
+            if last:
+                try:
+                    allowed = now - datetime.fromisoformat(last["created_at"]) >= timedelta(seconds=60)
+                except ValueError:
+                    allowed = False
+            if allowed:
+                token = secrets.token_urlsafe(32)
+                token_hash = hashlib.sha256(token.encode()).hexdigest()
+                expires = (now + timedelta(minutes=30)).isoformat()
+                db().execute(
+                    "INSERT INTO password_reset_tokens "
+                    "(user_id,token_hash,expires_at,created_at) VALUES (?,?,?,?)",
+                    (user["id"], token_hash, expires, now.isoformat())
+                )
+                db().commit()
+                reset_url = url_for("reset_password", token=token, _external=True)
+                send_password_reset_email(user["email"], reset_url)
+        flash("If that email has an account, a password reset link will be sent shortly.", "success")
+        return redirect(url_for("forgot_password"))
+    return render_template("password_recovery.html", mode="forgot")
+
+
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    if len(token) > 256:
+        abort(404)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    record = db().execute(
+        "SELECT * FROM password_reset_tokens WHERE token_hash=? AND used_at IS NULL",
+        (token_hash,)
+    ).fetchone()
+    valid = False
+    if record:
+        try:
+            valid = datetime.fromisoformat(record["expires_at"]) > datetime.now(timezone.utc)
+        except ValueError:
+            pass
+    if not valid:
+        flash("This reset link is invalid or expired. Please request a new one.", "error")
+        return redirect(url_for("forgot_password"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        if len(password) < 10 or len(password) > 128:
+            flash("Use a password between 10 and 128 characters.", "error")
+        elif password != confirm:
+            flash("Passwords do not match.", "error")
+        else:
+            now = datetime.now(timezone.utc).isoformat()
+            # Atomically claim the token so it cannot be used twice.
+            cur = db().execute(
+                "UPDATE password_reset_tokens SET used_at=? "
+                "WHERE id=? AND used_at IS NULL AND expires_at>?",
+                (now, record["id"], now)
+            )
+            if cur.rowcount != 1:
+                db().rollback()
+                flash("This link has already been used or expired.", "error")
+                return redirect(url_for("forgot_password"))
+            db().execute("UPDATE users SET password_hash=? WHERE id=?",
+                         (generate_password_hash(password), record["user_id"]))
+            db().execute("UPDATE password_reset_tokens SET used_at=? "
+                         "WHERE user_id=? AND used_at IS NULL", (now, record["user_id"]))
+            db().commit()
+            session.clear()
+            flash("Password updated. You can now sign in.", "success")
+            return redirect(url_for("login"))
+    return render_template("password_recovery.html", mode="reset")
 
 
 # ==========================================
