@@ -1,3 +1,4 @@
+
 import os
 import sqlite3
 import secrets
@@ -19,51 +20,54 @@ from werkzeug.security import (
     check_password_hash
 )
 
+from rental_portal import rental_portal, init_rental_portal
+from inventory_sync import inventory_sync, init_inventory_sync
+
 
 # ==========================================
-# WE-SELL CONFIGURATION
+# CONFIGURATION
 # ==========================================
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
 DB = os.environ.get(
-    'WESELL_DB',
-    os.path.join(ROOT, 'wesell.db')
+    "WESELL_DB",
+    os.path.join(ROOT, "wesell.db")
 )
 
 app = Flask(__name__)
 
 app.secret_key = os.environ.get(
-    'SECRET_KEY',
+    "SECRET_KEY",
     secrets.token_hex(32)
 )
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
-    SESSION_COOKIE_SECURE=os.environ.get('COOKIE_SECURE') == '1',
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE") == "1",
     MAX_CONTENT_LENGTH=1024 * 1024
 )
 
 STATUSES = [
-    'new',
-    'dealer_review',
-    'appointment_proposed',
-    'confirmed',
-    'visited',
-    'sold_pending',
-    'sold_verified',
-    'no_sale',
-    'cancelled'
+    "new",
+    "dealer_review",
+    "appointment_proposed",
+    "confirmed",
+    "visited",
+    "sold_pending",
+    "sold_verified",
+    "no_sale",
+    "cancelled"
 ]
 
 GAS = [
-    'Shell',
-    'Chevron',
-    '76',
-    'ARCO',
-    'ExxonMobil',
-    'Other'
+    "Shell",
+    "Chevron",
+    "76",
+    "ARCO",
+    "ExxonMobil",
+    "Other"
 ]
 
 
@@ -72,18 +76,16 @@ GAS = [
 # ==========================================
 
 def db():
-    if 'db' not in g:
+    if "db" not in g:
         g.db = sqlite3.connect(DB, timeout=15)
         g.db.row_factory = sqlite3.Row
-        g.db.execute('PRAGMA foreign_keys=ON')
-
+        g.db.execute("PRAGMA foreign_keys=ON")
     return g.db
 
 
 @app.teardown_appcontext
 def close_db(_):
-    conn = g.pop('db', None)
-
+    conn = g.pop("db", None)
     if conn:
         conn.close()
 
@@ -95,7 +97,7 @@ def close_db(_):
 def init_db():
     conn = sqlite3.connect(DB)
 
-    conn.executescript('''
+    conn.executescript("""
         PRAGMA foreign_keys=ON;
 
         CREATE TABLE IF NOT EXISTS users(
@@ -174,121 +176,123 @@ def init_db():
 
         CREATE INDEX IF NOT EXISTS idx_leads_buyer
             ON leads(buyer_id);
-    ''')
+    """)
 
     migrations = [
-        ('dealers', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
-        ('dealers', 'address', "TEXT NOT NULL DEFAULT ''"),
-        ('dealers', 'email', "TEXT NOT NULL DEFAULT ''"),
-        ('dealers', 'sales_phone', "TEXT NOT NULL DEFAULT ''"),
-        ('dealers', 'service_phone', "TEXT NOT NULL DEFAULT ''"),
-        ('vehicles', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
-        ('vehicles', 'condition', "TEXT NOT NULL DEFAULT 'used'")
+        ("dealers", "zip_code", "TEXT NOT NULL DEFAULT ''"),
+        ("dealers", "address", "TEXT NOT NULL DEFAULT ''"),
+        ("dealers", "email", "TEXT NOT NULL DEFAULT ''"),
+        ("dealers", "sales_phone", "TEXT NOT NULL DEFAULT ''"),
+        ("dealers", "service_phone", "TEXT NOT NULL DEFAULT ''"),
+        ("vehicles", "zip_code", "TEXT NOT NULL DEFAULT ''"),
+        ("vehicles", "condition", "TEXT NOT NULL DEFAULT 'used'")
     ]
 
     for table, column, definition in migrations:
         existing = {
             row[1]
             for row in conn.execute(
-                f'PRAGMA table_info({table})'
+                f"PRAGMA table_info({table})"
             )
         }
 
         if column not in existing:
             conn.execute(
-                f'ALTER TABLE {table} '
-                f'ADD COLUMN {column} {definition}'
+                f"ALTER TABLE {table} "
+                f"ADD COLUMN {column} {definition}"
             )
 
     if conn.execute(
-        'SELECT COUNT(*) FROM dealers'
+        "SELECT COUNT(*) FROM dealers"
     ).fetchone()[0] == 0:
 
-        conn.execute('''
+        conn.execute("""
             INSERT INTO dealers(name, city)
             VALUES
             ('Pacific Coast Auto Group', 'San Diego, CA'),
             ('Mission Valley Motors', 'San Diego, CA')
-        ''')
+        """)
 
         vehicles = [
             (
-                1, 2019, 'Nissan', 'Pathfinder', 'SV',
-                15995, 111349, '5N1DR2MM3KC637462',
-                'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=900&q=85',
-                'Family-friendly SUV', '', 'used'
+                1, 2019, "Nissan", "Pathfinder", "SV",
+                15995, 111349, "5N1DR2MM3KC637462",
+                "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=900&q=85",
+                "Family-friendly SUV", "", "used"
             ),
             (
-                1, 2020, 'Mercedes-Benz', 'C-Class', 'C 300',
-                21995, 117155, '',
-                'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=900&q=85',
-                'Luxury sedan', '', 'used'
+                1, 2020, "Mercedes-Benz", "C-Class", "C 300",
+                21995, 117155, "",
+                "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=900&q=85",
+                "Luxury sedan", "", "used"
             ),
             (
-                2, 2018, 'Ford', 'Explorer', 'Sport',
-                17995, 113624, '',
-                'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=900&q=85',
-                'Spacious SUV', '', 'used'
+                2, 2018, "Ford", "Explorer", "Sport",
+                17995, 113624, "",
+                "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=900&q=85",
+                "Spacious SUV", "", "used"
             ),
             (
-                2, 2017, 'Jeep', 'Compass', 'High Altitude',
-                11995, 93168, '',
-                'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85',
-                'Versatile crossover', '', 'used'
+                2, 2017, "Jeep", "Compass", "High Altitude",
+                11995, 93168, "",
+                "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85",
+                "Versatile crossover", "", "used"
             ),
             (
-                1, 2019, 'Jeep', 'Renegade', 'Altitude',
-                14995, 81381, '',
-                'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=900&q=85',
-                'Compact SUV', '', 'used'
+                1, 2019, "Jeep", "Renegade", "Altitude",
+                14995, 81381, "",
+                "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=900&q=85",
+                "Compact SUV", "", "used"
             ),
             (
-                2, 2018, 'Volkswagen', 'Tiguan', '2.0T',
-                13995, 115385, '',
-                'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=900&q=85',
-                'Comfortable daily driver', '', 'used'
+                2, 2018, "Volkswagen", "Tiguan", "2.0T",
+                13995, 115385, "",
+                "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=900&q=85",
+                "Comfortable daily driver", "", "used"
             )
         ]
 
-        conn.executemany('''
+        conn.executemany("""
             INSERT INTO vehicles(
                 dealer_id, year, make, model, trim,
                 price, mileage, vin, image_url,
                 description, zip_code, condition
             )
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-        ''', vehicles)
+        """, vehicles)
 
-    if os.environ.get('WESELL_SEED_DEMO') == '1':
-        for email, pw, name, role, dealer_id in [
+    if os.environ.get("WESELL_SEED_DEMO") == "1":
+        demo_users = [
             (
-                'admin@wesell.local',
-                'AdminDemo123!',
-                'WE-SELL Admin',
-                'admin',
+                "admin@wesell.local",
+                "AdminDemo123!",
+                "WE-SELL Admin",
+                "admin",
                 None
             ),
             (
-                'dealer@wesell.local',
-                'DealerDemo123!',
-                'Dealer Manager',
-                'dealer',
+                "dealer@wesell.local",
+                "DealerDemo123!",
+                "Dealer Manager",
+                "dealer",
                 1
             ),
             (
-                'buyer@wesell.local',
-                'BuyerDemo123!',
-                'Demo Buyer',
-                'buyer',
+                "buyer@wesell.local",
+                "BuyerDemo123!",
+                "Demo Buyer",
+                "buyer",
                 None
             )
-        ]:
-            conn.execute('''
+        ]
+
+        for email, pw, name, role, dealer_id in demo_users:
+            conn.execute("""
                 INSERT OR IGNORE INTO users(
                     email, password_hash, name, role, dealer_id
                 )
                 VALUES(?,?,?,?,?)
-            ''', (
+            """, (
                 email,
                 generate_password_hash(pw),
                 name,
@@ -308,41 +312,41 @@ def init_db():
 def load_user():
     g.user = None
 
-    if session.get('uid'):
+    if session.get("uid"):
         g.user = db().execute(
-            'SELECT * FROM users WHERE id=?',
-            (session['uid'],)
+            "SELECT * FROM users WHERE id=?",
+            (session["uid"],)
         ).fetchone()
 
         if not g.user:
             session.clear()
 
-    if request.method == 'POST':
-        token = request.form.get('csrf', '')
-        saved_token = session.get('csrf', '')
+    if (
+        request.method == "POST"
+        and request.endpoint != "inventory_sync.push_inventory"
+    ):
+        token = request.form.get("csrf", "")
+        saved_token = session.get("csrf", "")
 
         if (
             not saved_token
-            or not secrets.compare_digest(
-                token,
-                saved_token
-            )
+            or not secrets.compare_digest(token, saved_token)
         ):
             abort(
                 400,
-                'Invalid form token. Reload and try again.'
+                "Invalid form token. Reload and try again."
             )
 
 
 @app.context_processor
 def inject():
-    if 'csrf' not in session:
-        session['csrf'] = secrets.token_urlsafe(32)
+    if "csrf" not in session:
+        session["csrf"] = secrets.token_urlsafe(32)
 
     return {
-        'me': g.get('user'),
-        'csrf': session['csrf'],
-        'statuses': STATUSES
+        "me": g.get("user"),
+        "csrf": session["csrf"],
+        "statuses": STATUSES
     }
 
 
@@ -352,10 +356,10 @@ def login_required(role=None):
         def wrapper(*args, **kwargs):
             if not g.user:
                 return redirect(
-                    url_for('login', next=request.path)
+                    url_for("login", next=request.path)
                 )
 
-            if role and g.user['role'] != role:
+            if role and g.user["role"] != role:
                 abort(403)
 
             return fn(*args, **kwargs)
@@ -370,16 +374,16 @@ def login_required(role=None):
 # ==========================================
 
 def event(lead_id, role, message):
-    db().execute('''
+    db().execute("""
         INSERT INTO lead_events(
             lead_id, actor_role, message
         )
         VALUES(?,?,?)
-    ''', (lead_id, role, message))
+    """, (lead_id, role, message))
 
 
 def lead_for_role(lead_id):
-    lead = db().execute('''
+    lead = db().execute("""
         SELECT
             l.*,
             v.year,
@@ -398,22 +402,22 @@ def lead_for_role(lead_id):
         JOIN dealers d ON l.dealer_id=d.id
         JOIN users u ON l.buyer_id=u.id
         WHERE l.id=?
-    ''', (lead_id,)).fetchone()
+    """, (lead_id,)).fetchone()
 
     if not lead:
         abort(404)
 
-    role = g.user['role']
+    role = g.user["role"]
 
     if (
-        role == 'buyer'
-        and lead['buyer_id'] != g.user['id']
+        role == "buyer"
+        and lead["buyer_id"] != g.user["id"]
     ):
         abort(403)
 
     if (
-        role == 'dealer'
-        and lead['dealer_id'] != g.user['dealer_id']
+        role == "dealer"
+        and lead["dealer_id"] != g.user["dealer_id"]
     ):
         abort(403)
 
@@ -426,21 +430,21 @@ def lead_for_role(lead_id):
 
 @lru_cache(maxsize=4096)
 def zip_coordinates(zip_code):
-    if not re.fullmatch(r'\d{5}', zip_code or ''):
+    if not re.fullmatch(r"\d{5}", zip_code or ""):
         return None
 
     try:
         with urlopen(
-            f'https://api.zippopotam.us/us/{zip_code}',
+            f"https://api.zippopotam.us/us/{zip_code}",
             timeout=4
         ) as response:
             data = json.load(response)
 
-        place = data['places'][0]
+        place = data["places"][0]
 
         return (
-            float(place['latitude']),
-            float(place['longitude'])
+            float(place["latitude"]),
+            float(place["longitude"])
         )
 
     except (
@@ -476,45 +480,45 @@ def distance_miles(point_a, point_b):
 # HOME PAGE AND VEHICLE SEARCH
 # ==========================================
 
-@app.get('/')
+@app.get("/")
 def home():
-    q = request.args.get('q', '').strip()[:100]
-    make = request.args.get('make', '').strip()[:50]
+    q = request.args.get("q", "").strip()[:100]
+    make = request.args.get("make", "").strip()[:50]
 
     selected_condition = request.args.get(
-        'condition', 'used'
+        "condition", "used"
     ).strip().lower()
 
-    if selected_condition not in ('new', 'used'):
-        selected_condition = 'used'
+    if selected_condition not in ("new", "used"):
+        selected_condition = "used"
 
     selected_zip = request.args.get(
-        'zip', ''
+        "zip", ""
     ).strip()[:5]
 
     selected_distance = request.args.get(
-        'distance', '50'
+        "distance", "50"
     ).strip().lower()
 
     allowed_distances = (
-        '10', '25', '50', '100', '250', '300',
-        '400', '500', '750', '1000', 'nationwide'
+        "10", "25", "50", "100", "250", "300",
+        "400", "500", "750", "1000", "nationwide"
     )
 
     if selected_distance not in allowed_distances:
-        selected_distance = '50'
+        selected_distance = "50"
 
     if (
         selected_zip
-        and not re.fullmatch(r'\d{5}', selected_zip)
+        and not re.fullmatch(r"\d{5}", selected_zip)
     ):
         flash(
-            'Enter a valid 5-digit ZIP code.',
-            'error'
+            "Enter a valid 5-digit ZIP code.",
+            "error"
         )
-        selected_zip = ''
+        selected_zip = ""
 
-    sql = '''
+    sql = """
         SELECT
             v.*,
             d.name AS dealer_name,
@@ -525,26 +529,26 @@ def home():
         WHERE v.active=1
           AND d.approved=1
           AND v.condition=?
-    '''
+    """
 
     args = [selected_condition]
 
     if q:
-        sql += '''
+        sql += """
             AND (
                 v.make LIKE ?
                 OR v.model LIKE ?
                 OR v.trim LIKE ?
                 OR CAST(v.year AS TEXT) LIKE ?
             )
-        '''
-        args += ['%' + q + '%'] * 4
+        """
+        args += ["%" + q + "%"] * 4
 
     if make:
-        sql += ' AND v.make=?'
+        sql += " AND v.make=?"
         args.append(make)
 
-    sql += ' ORDER BY v.created_at DESC, v.id DESC'
+    sql += " ORDER BY v.created_at DESC, v.id DESC"
 
     all_vehicles = db().execute(
         sql,
@@ -553,14 +557,14 @@ def home():
 
     vehicles = all_vehicles
 
-    if selected_zip and selected_distance != 'nationwide':
+    if selected_zip and selected_distance != "nationwide":
         origin = zip_coordinates(selected_zip)
 
         if origin is None:
             flash(
-                'ZIP code could not be located. '
-                'Please try another ZIP code.',
-                'error'
+                "ZIP code could not be located. "
+                "Please try another ZIP code.",
+                "error"
             )
             vehicles = []
 
@@ -569,8 +573,8 @@ def home():
 
             for vehicle in all_vehicles:
                 vehicle_zip = (
-                    vehicle['zip_code']
-                    or vehicle['dealer_zip_code']
+                    vehicle["zip_code"]
+                    or vehicle["dealer_zip_code"]
                 )
 
                 coords = (
@@ -590,15 +594,15 @@ def home():
 
             vehicles = nearby
 
-    makes = db().execute('''
+    makes = db().execute("""
         SELECT DISTINCT make
         FROM vehicles
         WHERE active=1
         ORDER BY make
-    ''').fetchall()
+    """).fetchall()
 
     return render_template(
-        'home.html',
+        "home.html",
         vehicles=vehicles,
         makes=makes,
         q=q,
@@ -613,36 +617,36 @@ def home():
 # SELL YOUR CAR
 # ==========================================
 
-@app.get('/sell-your-car')
+@app.get("/sell-your-car")
 def sell_car():
-    return render_template('sell_car.html')
+    return render_template("sell_car.html")
 
 
 # ==========================================
 # SAVED CARS
 # ==========================================
 
-@app.get('/saved-cars')
+@app.get("/saved-cars")
 def saved_cars():
-    return render_template('saved_cars.html')
+    return render_template("saved_cars.html")
 
 
 # ==========================================
 # RENTAL CARS
 # ==========================================
 
-@app.get('/rentals')
+@app.get("/rentals")
 def rentals():
-    return render_template('rental_cars.html')
+    return render_template("rental_cars.html")
 
 
 # ==========================================
 # VEHICLE DETAILS
 # ==========================================
 
-@app.get('/vehicle/<int:vid>')
+@app.get("/vehicle/<int:vid>")
 def vehicle(vid):
-    v = db().execute('''
+    v = db().execute("""
         SELECT
             v.*,
             d.name AS dealer_name,
@@ -652,13 +656,13 @@ def vehicle(vid):
         WHERE v.id=?
           AND v.active=1
           AND d.approved=1
-    ''', (vid,)).fetchone()
+    """, (vid,)).fetchone()
 
     if not v:
         abort(404)
 
     return render_template(
-        'vehicle.html',
+        "vehicle.html",
         v=v
     )
 
@@ -667,42 +671,42 @@ def vehicle(vid):
 # REGISTER
 # ==========================================
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == 'POST':
+    if request.method == "POST":
         name = request.form.get(
-            'name', ''
+            "name", ""
         ).strip()[:100]
 
         email = request.form.get(
-            'email', ''
+            "email", ""
         ).strip().lower()[:254]
 
         password = request.form.get(
-            'password', ''
+            "password", ""
         )
 
         phone = request.form.get(
-            'phone', ''
+            "phone", ""
         ).strip()[:30]
 
         if (
             not name
             or not re.fullmatch(
-                r'[^@\s]+@[^@\s]+\.[^@\s]+',
+                r"[^@\s]+@[^@\s]+\.[^@\s]+",
                 email
             )
             or len(password) < 10
         ):
             flash(
-                'Enter your name, valid email, '
-                'and a password of at least 10 characters.',
-                'error'
+                "Enter your name, valid email, "
+                "and a password of at least 10 characters.",
+                "error"
             )
 
         else:
             try:
-                cur = db().execute('''
+                cur = db().execute("""
                     INSERT INTO users(
                         email,
                         password_hash,
@@ -711,35 +715,35 @@ def register():
                         role
                     )
                     VALUES(?,?,?,?,?)
-                ''', (
+                """, (
                     email,
                     generate_password_hash(password),
                     name,
                     phone,
-                    'buyer'
+                    "buyer"
                 ))
 
                 db().commit()
 
                 session.clear()
-                session['uid'] = cur.lastrowid
+                session["uid"] = cur.lastrowid
 
                 flash(
-                    'Account created. Welcome to WE-SELL!',
-                    'success'
+                    "Account created. Welcome to WE-SELL!",
+                    "success"
                 )
 
-                return redirect(url_for('home'))
+                return redirect(url_for("home"))
 
             except sqlite3.IntegrityError:
                 flash(
-                    'This email is already registered.',
-                    'error'
+                    "This email is already registered.",
+                    "error"
                 )
 
     return render_template(
-        'auth.html',
-        mode='register'
+        "auth.html",
+        mode="register"
     )
 
 
@@ -747,42 +751,42 @@ def register():
 # LOGIN
 # ==========================================
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
+    if request.method == "POST":
         u = db().execute(
-            'SELECT * FROM users WHERE email=?',
+            "SELECT * FROM users WHERE email=?",
             (
                 request.form.get(
-                    'email', ''
+                    "email", ""
                 ).strip().lower(),
             )
         ).fetchone()
 
         if u and check_password_hash(
-            u['password_hash'],
-            request.form.get('password', '')
+            u["password_hash"],
+            request.form.get("password", "")
         ):
             session.clear()
-            session['uid'] = u['id']
+            session["uid"] = u["id"]
 
             flash(
-                'Welcome back!',
-                'success'
+                "Welcome back!",
+                "success"
             )
 
             return redirect(
-                url_for('dashboard')
+                url_for("dashboard")
             )
 
         flash(
-            'Incorrect email or password.',
-            'error'
+            "Incorrect email or password.",
+            "error"
         )
 
     return render_template(
-        'auth.html',
-        mode='login'
+        "auth.html",
+        mode="login"
     )
 
 
@@ -790,31 +794,31 @@ def login():
 # LOGOUT
 # ==========================================
 
-@app.post('/logout')
+@app.post("/logout")
 def logout():
     session.clear()
-    return redirect(url_for('home'))
+    return redirect(url_for("home"))
 
 
 # ==========================================
 # DASHBOARD ROUTING
 # ==========================================
 
-@app.get('/dashboard')
+@app.get("/dashboard")
 @login_required()
 def dashboard():
-    if g.user['role'] == 'buyer':
+    if g.user["role"] == "buyer":
         return redirect(
-            url_for('buyer_dashboard')
+            url_for("buyer_dashboard")
         )
 
-    if g.user['role'] == 'dealer':
+    if g.user["role"] == "dealer":
         return redirect(
-            url_for('dealer_dashboard')
+            url_for("dealer_dashboard")
         )
 
     return redirect(
-        url_for('admin_dashboard')
+        url_for("admin_dashboard")
     )
 
 
@@ -822,34 +826,34 @@ def dashboard():
 # BUYER VEHICLE INQUIRY
 # ==========================================
 
-@app.post('/inquire/<int:vid>')
-@login_required('buyer')
+@app.post("/inquire/<int:vid>")
+@login_required("buyer")
 def inquire(vid):
-    v = db().execute('''
+    v = db().execute("""
         SELECT v.*
         FROM vehicles v
         JOIN dealers d ON d.id=v.dealer_id
         WHERE v.id=?
           AND v.active=1
           AND d.approved=1
-    ''', (vid,)).fetchone()
+    """, (vid,)).fetchone()
 
     if not v:
         abort(404)
 
     station = request.form.get(
-        'gas_station',
-        'Shell'
+        "gas_station",
+        "Shell"
     )
 
     if station not in GAS:
         abort(400)
 
     note = request.form.get(
-        'note', ''
+        "note", ""
     ).strip()[:1000]
 
-    cur = db().execute('''
+    cur = db().execute("""
         INSERT INTO leads(
             vehicle_id,
             buyer_id,
@@ -859,33 +863,33 @@ def inquire(vid):
             status
         )
         VALUES(?,?,?,?,?,?)
-    ''', (
+    """, (
         vid,
-        g.user['id'],
-        v['dealer_id'],
+        g.user["id"],
+        v["dealer_id"],
         note,
         station,
-        'new'
+        "new"
     ))
 
     event(
         cur.lastrowid,
-        'system',
-        'Buyer inquiry received by WE-SELL. '
-        'Awaiting dealership review.'
+        "system",
+        "Buyer inquiry received by WE-SELL. "
+        "Awaiting dealership review."
     )
 
     db().commit()
 
     flash(
-        'Your inquiry was received. '
-        'WE-SELL will coordinate with the dealership.',
-        'success'
+        "Your inquiry was received. "
+        "WE-SELL will coordinate with the dealership.",
+        "success"
     )
 
     return redirect(
         url_for(
-            'lead_detail',
+            "lead_detail",
             lead_id=cur.lastrowid
         )
     )
@@ -895,10 +899,10 @@ def inquire(vid):
 # BUYER DASHBOARD
 # ==========================================
 
-@app.get('/buyer')
-@login_required('buyer')
+@app.get("/buyer")
+@login_required("buyer")
 def buyer_dashboard():
-    leads = db().execute('''
+    leads = db().execute("""
         SELECT
             l.*,
             v.year,
@@ -909,10 +913,10 @@ def buyer_dashboard():
         JOIN vehicles v ON v.id=l.vehicle_id
         WHERE l.buyer_id=?
         ORDER BY l.id DESC
-    ''', (g.user['id'],)).fetchall()
+    """, (g.user["id"],)).fetchall()
 
     return render_template(
-        'buyer.html',
+        "buyer.html",
         leads=leads
     )
 
@@ -921,10 +925,10 @@ def buyer_dashboard():
 # DEALER DASHBOARD
 # ==========================================
 
-@app.get('/dealer')
-@login_required('dealer')
+@app.get("/dealer")
+@login_required("dealer")
 def dealer_dashboard():
-    leads = db().execute('''
+    leads = db().execute("""
         SELECT
             l.*,
             v.year,
@@ -937,21 +941,21 @@ def dealer_dashboard():
         JOIN users u ON u.id=l.buyer_id
         WHERE l.dealer_id=?
         ORDER BY l.id DESC
-    ''', (
-        g.user['dealer_id'],
+    """, (
+        g.user["dealer_id"],
     )).fetchall()
 
-    vehicles = db().execute('''
+    vehicles = db().execute("""
         SELECT *
         FROM vehicles
         WHERE dealer_id=?
         ORDER BY id DESC
-    ''', (
-        g.user['dealer_id'],
+    """, (
+        g.user["dealer_id"],
     )).fetchall()
 
     return render_template(
-        'dealer.html',
+        "dealer.html",
         leads=leads,
         vehicles=vehicles
     )
@@ -962,92 +966,92 @@ def dealer_dashboard():
 # ==========================================
 
 @app.route(
-    '/dealer/profile',
-    methods=['GET', 'POST']
+    "/dealer/profile",
+    methods=["GET", "POST"]
 )
-@login_required('dealer')
+@login_required("dealer")
 def dealer_profile():
-    dealer_id = g.user['dealer_id']
+    dealer_id = g.user["dealer_id"]
 
     if dealer_id is None:
         abort(403)
 
     dealer = db().execute(
-        'SELECT * FROM dealers WHERE id=?',
+        "SELECT * FROM dealers WHERE id=?",
         (dealer_id,)
     ).fetchone()
 
     if dealer is None:
         abort(404)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         name = request.form.get(
-            'name', ''
+            "name", ""
         ).strip()[:120]
 
         city = request.form.get(
-            'city', ''
+            "city", ""
         ).strip()[:120]
 
         address = request.form.get(
-            'address', ''
+            "address", ""
         ).strip()[:250]
 
         zip_code = request.form.get(
-            'zip_code', ''
+            "zip_code", ""
         ).strip()[:5]
 
         email = request.form.get(
-            'email', ''
+            "email", ""
         ).strip().lower()[:254]
 
         sales_phone = request.form.get(
-            'sales_phone', ''
+            "sales_phone", ""
         ).strip()[:30]
 
         service_phone = request.form.get(
-            'service_phone', ''
+            "service_phone", ""
         ).strip()[:30]
 
         if not name or not city:
             flash(
-                'Dealership name and city are required.',
-                'error'
+                "Dealership name and city are required.",
+                "error"
             )
 
         elif (
             zip_code
-            and not re.fullmatch(r'\d{5}', zip_code)
+            and not re.fullmatch(r"\d{5}", zip_code)
         ):
             flash(
-                'ZIP code must contain five digits.',
-                'error'
+                "ZIP code must contain five digits.",
+                "error"
             )
 
         elif (
             email
             and not re.fullmatch(
-                r'[^@\s]+@[^@\s]+\.[^@\s]+',
+                r"[^@\s]+@[^@\s]+\.[^@\s]+",
                 email
             )
         ):
             flash(
-                'Enter a valid dealership email address.',
-                'error'
+                "Enter a valid dealership email address.",
+                "error"
             )
 
         elif any(
             ch in address
-            for ch in '\r\n'
+            for ch in "\r\n"
         ):
             flash(
-                'Enter a single-line street address.',
-                'error'
+                "Enter a single-line street address.",
+                "error"
             )
 
         elif any(
             not re.fullmatch(
-                r'[0-9+(). \-]{7,30}',
+                r"[0-9+(). \-]{7,30}",
                 phone
             )
             for phone in (
@@ -1057,12 +1061,12 @@ def dealer_profile():
             if phone
         ):
             flash(
-                'Enter valid sales and service phone numbers.',
-                'error'
+                "Enter valid sales and service phone numbers.",
+                "error"
             )
 
         else:
-            db().execute('''
+            db().execute("""
                 UPDATE dealers
                 SET
                     name=?,
@@ -1073,7 +1077,7 @@ def dealer_profile():
                     sales_phone=?,
                     service_phone=?
                 WHERE id=?
-            ''', (
+            """, (
                 name,
                 city,
                 address,
@@ -1087,16 +1091,16 @@ def dealer_profile():
             db().commit()
 
             flash(
-                'Dealership contact information updated.',
-                'success'
+                "Dealership contact information updated.",
+                "success"
             )
 
             return redirect(
-                url_for('dealer_profile')
+                url_for("dealer_profile")
             )
 
     return render_template(
-        'dealer_profile.html',
+        "dealer_profile.html",
         dealer=dealer
     )
 
@@ -1106,16 +1110,16 @@ def dealer_profile():
 # ==========================================
 
 @app.route(
-    '/dealer/vehicles/new',
-    methods=['GET', 'POST']
+    "/dealer/vehicles/new",
+    methods=["GET", "POST"]
 )
-@login_required('dealer')
+@login_required("dealer")
 def add_vehicle():
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
-            year = int(request.form['year'])
-            price = int(request.form['price'])
-            mileage = int(request.form['mileage'])
+            year = int(request.form["year"])
+            price = int(request.form["price"])
+            mileage = int(request.form["mileage"])
 
             assert (
                 1980 <= year
@@ -1126,32 +1130,32 @@ def add_vehicle():
             assert 0 <= mileage <= 2000000
 
             make = request.form[
-                'make'
+                "make"
             ].strip()[:50]
 
             model = request.form[
-                'model'
+                "model"
             ].strip()[:50]
 
             assert make and model
 
             vehicle_zip = request.form.get(
-                'zip_code', ''
+                "zip_code", ""
             ).strip()
 
             assert (
                 not vehicle_zip
                 or re.fullmatch(
-                    r'\d{5}',
+                    r"\d{5}",
                     vehicle_zip
                 )
             )
 
             condition = request.form.get(
-                'condition', 'used'
+                "condition", "used"
             ).strip().lower()
 
-            assert condition in ('new', 'used')
+            assert condition in ("new", "used")
 
         except (
             ValueError,
@@ -1159,16 +1163,16 @@ def add_vehicle():
             AssertionError
         ):
             flash(
-                'Check required vehicle fields '
-                'and numeric values.',
-                'error'
+                "Check required vehicle fields "
+                "and numeric values.",
+                "error"
             )
 
             return render_template(
-                'add_vehicle.html'
+                "add_vehicle.html"
             )
 
-        db().execute('''
+        db().execute("""
             INSERT INTO vehicles(
                 dealer_id,
                 year,
@@ -1184,24 +1188,24 @@ def add_vehicle():
                 condition
             )
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-        ''', (
-            g.user['dealer_id'],
+        """, (
+            g.user["dealer_id"],
             year,
             make,
             model,
             request.form.get(
-                'trim', ''
+                "trim", ""
             ).strip()[:80],
             price,
             mileage,
             request.form.get(
-                'vin', ''
+                "vin", ""
             ).strip().upper()[:17],
             request.form.get(
-                'image_url', ''
+                "image_url", ""
             ).strip()[:500],
             request.form.get(
-                'description', ''
+                "description", ""
             ).strip()[:2000],
             vehicle_zip,
             condition
@@ -1210,16 +1214,16 @@ def add_vehicle():
         db().commit()
 
         flash(
-            'Vehicle listed.',
-            'success'
+            "Vehicle listed.",
+            "success"
         )
 
         return redirect(
-            url_for('dealer_dashboard')
+            url_for("dealer_dashboard")
         )
 
     return render_template(
-        'add_vehicle.html'
+        "add_vehicle.html"
     )
 
 
@@ -1228,26 +1232,26 @@ def add_vehicle():
 # ==========================================
 
 @app.post(
-    '/dealer/vehicles/<int:vid>/toggle'
+    "/dealer/vehicles/<int:vid>/toggle"
 )
-@login_required('dealer')
+@login_required("dealer")
 def toggle_vehicle(vid):
-    v = db().execute('''
+    v = db().execute("""
         SELECT *
         FROM vehicles
         WHERE id=? AND dealer_id=?
-    ''', (
+    """, (
         vid,
-        g.user['dealer_id']
+        g.user["dealer_id"]
     )).fetchone()
 
     if not v:
         abort(404)
 
     db().execute(
-        'UPDATE vehicles SET active=? WHERE id=?',
+        "UPDATE vehicles SET active=? WHERE id=?",
         (
-            0 if v['active'] else 1,
+            0 if v["active"] else 1,
             vid
         )
     )
@@ -1255,7 +1259,7 @@ def toggle_vehicle(vid):
     db().commit()
 
     return redirect(
-        url_for('dealer_dashboard')
+        url_for("dealer_dashboard")
     )
 
 
@@ -1263,25 +1267,25 @@ def toggle_vehicle(vid):
 # LEAD DETAILS
 # ==========================================
 
-@app.get('/leads/<int:lead_id>')
+@app.get("/leads/<int:lead_id>")
 @login_required()
 def lead_detail(lead_id):
     lead = lead_for_role(lead_id)
 
-    events = db().execute('''
+    events = db().execute("""
         SELECT *
         FROM lead_events
         WHERE lead_id=?
         ORDER BY id DESC
-    ''', (lead_id,)).fetchall()
+    """, (lead_id,)).fetchall()
 
     reward = db().execute(
-        'SELECT * FROM rewards WHERE lead_id=?',
+        "SELECT * FROM rewards WHERE lead_id=?",
         (lead_id,)
     ).fetchone()
 
     return render_template(
-        'lead.html',
+        "lead.html",
         lead=lead,
         events=events,
         reward=reward,
@@ -1294,31 +1298,31 @@ def lead_detail(lead_id):
 # ==========================================
 
 @app.post(
-    '/leads/<int:lead_id>/dealer-response'
+    "/leads/<int:lead_id>/dealer-response"
 )
-@login_required('dealer')
+@login_required("dealer")
 def dealer_response(lead_id):
     lead = lead_for_role(lead_id)
 
-    if lead['status'] not in (
-        'new',
-        'dealer_review',
-        'appointment_proposed'
+    if lead["status"] not in (
+        "new",
+        "dealer_review",
+        "appointment_proposed"
     ):
         abort(
             400,
-            'This lead is not awaiting dealer response.'
+            "This lead is not awaiting dealer response."
         )
 
-    action = request.form.get('action')
+    action = request.form.get("action")
 
     note = request.form.get(
-        'note', ''
+        "note", ""
     ).strip()[:1000]
 
-    if action == 'propose':
+    if action == "propose":
         appt = request.form.get(
-            'appointment_time', ''
+            "appointment_time", ""
         ).strip()
 
         try:
@@ -1331,26 +1335,26 @@ def dealer_response(lead_id):
             AssertionError
         ):
             flash(
-                'Provide a future appointment time.',
-                'error'
+                "Provide a future appointment time.",
+                "error"
             )
 
             return redirect(
                 url_for(
-                    'lead_detail',
+                    "lead_detail",
                     lead_id=lead_id
                 )
             )
 
-        db().execute('''
+        db().execute("""
             UPDATE leads
             SET
                 status=?,
                 appointment_time=?,
                 dealer_note=?
             WHERE id=?
-        ''', (
-            'appointment_proposed',
+        """, (
+            "appointment_proposed",
             appt,
             note,
             lead_id
@@ -1358,29 +1362,29 @@ def dealer_response(lead_id):
 
         event(
             lead_id,
-            'dealer',
-            'Dealer confirmed availability '
-            'and proposed appointment: '
-            + appt + '. ' + note
+            "dealer",
+            "Dealer confirmed availability "
+            "and proposed appointment: "
+            + appt + ". " + note
         )
 
-    elif action == 'unavailable':
-        db().execute('''
+    elif action == "unavailable":
+        db().execute("""
             UPDATE leads
             SET
                 status=?,
                 dealer_note=?
             WHERE id=?
-        ''', (
-            'cancelled',
+        """, (
+            "cancelled",
             note,
             lead_id
         ))
 
         event(
             lead_id,
-            'dealer',
-            'Vehicle unavailable. ' + note
+            "dealer",
+            "Vehicle unavailable. " + note
         )
 
     else:
@@ -1389,13 +1393,13 @@ def dealer_response(lead_id):
     db().commit()
 
     flash(
-        'Response saved for the buyer in WE-SELL.',
-        'success'
+        "Response saved for the buyer in WE-SELL.",
+        "success"
     )
 
     return redirect(
         url_for(
-            'lead_detail',
+            "lead_detail",
             lead_id=lead_id
         )
     )
@@ -1406,22 +1410,22 @@ def dealer_response(lead_id):
 # ==========================================
 
 @app.post(
-    '/leads/<int:lead_id>/buyer-response'
+    "/leads/<int:lead_id>/buyer-response"
 )
-@login_required('buyer')
+@login_required("buyer")
 def buyer_response(lead_id):
     lead = lead_for_role(lead_id)
 
-    if lead['status'] != 'appointment_proposed':
+    if lead["status"] != "appointment_proposed":
         abort(400)
 
-    action = request.form.get('action')
+    action = request.form.get("action")
 
     status = (
-        'confirmed'
-        if action == 'accept'
-        else 'cancelled'
-        if action == 'decline'
+        "confirmed"
+        if action == "accept"
+        else "cancelled"
+        if action == "decline"
         else None
     )
 
@@ -1429,7 +1433,7 @@ def buyer_response(lead_id):
         abort(400)
 
     db().execute(
-        'UPDATE leads SET status=? WHERE id=?',
+        "UPDATE leads SET status=? WHERE id=?",
         (
             status,
             lead_id
@@ -1438,24 +1442,24 @@ def buyer_response(lead_id):
 
     event(
         lead_id,
-        'buyer',
-        'Buyer ' + (
-            'accepted appointment.'
-            if status == 'confirmed'
-            else 'declined appointment.'
+        "buyer",
+        "Buyer " + (
+            "accepted appointment."
+            if status == "confirmed"
+            else "declined appointment."
         )
     )
 
     db().commit()
 
     flash(
-        'Appointment response saved.',
-        'success'
+        "Appointment response saved.",
+        "success"
     )
 
     return redirect(
         url_for(
-            'lead_detail',
+            "lead_detail",
             lead_id=lead_id
         )
     )
@@ -1465,45 +1469,45 @@ def buyer_response(lead_id):
 # DEALER REPORTS SALE
 # ==========================================
 
-@app.post('/leads/<int:lead_id>/sale')
-@login_required('dealer')
+@app.post("/leads/<int:lead_id>/sale")
+@login_required("dealer")
 def sale(lead_id):
     lead = lead_for_role(lead_id)
 
-    if lead['status'] not in (
-        'confirmed',
-        'visited'
+    if lead["status"] not in (
+        "confirmed",
+        "visited"
     ):
         abort(
             400,
-            'An appointment must be confirmed first.'
+            "An appointment must be confirmed first."
         )
 
     db().execute(
-        'UPDATE leads SET status=? WHERE id=?',
+        "UPDATE leads SET status=? WHERE id=?",
         (
-            'sold_pending',
+            "sold_pending",
             lead_id
         )
     )
 
     event(
         lead_id,
-        'dealer',
-        'Dealership reported completed purchase. '
-        'Awaiting WE-SELL verification.'
+        "dealer",
+        "Dealership reported completed purchase. "
+        "Awaiting WE-SELL verification."
     )
 
     db().commit()
 
     flash(
-        'Sale reported for WE-SELL verification.',
-        'success'
+        "Sale reported for WE-SELL verification.",
+        "success"
     )
 
     return redirect(
         url_for(
-            'lead_detail',
+            "lead_detail",
             lead_id=lead_id
         )
     )
@@ -1513,10 +1517,10 @@ def sale(lead_id):
 # ADMIN DASHBOARD
 # ==========================================
 
-@app.get('/admin')
-@login_required('admin')
+@app.get("/admin")
+@login_required("admin")
 def admin_dashboard():
-    leads = db().execute('''
+    leads = db().execute("""
         SELECT
             l.*,
             v.year,
@@ -1529,26 +1533,26 @@ def admin_dashboard():
         JOIN dealers d ON d.id=l.dealer_id
         JOIN users u ON u.id=l.buyer_id
         ORDER BY l.id DESC
-    ''').fetchall()
+    """).fetchall()
 
     stats = {
         key: db().execute(
-            'SELECT COUNT(*) FROM ' + table
+            "SELECT COUNT(*) FROM " + table
         ).fetchone()[0]
 
         for key, table in [
-            ('vehicles', 'vehicles'),
-            ('dealers', 'dealers'),
+            ("vehicles", "vehicles"),
+            ("dealers", "dealers"),
             (
-                'buyers',
+                "buyers",
                 'users WHERE role="buyer"'
             ),
-            ('leads', 'leads')
+            ("leads", "leads")
         ]
     }
 
     return render_template(
-        'admin.html',
+        "admin.html",
         leads=leads,
         stats=stats
     )
@@ -1559,30 +1563,30 @@ def admin_dashboard():
 # ==========================================
 
 @app.post(
-    '/admin/leads/<int:lead_id>/verify'
+    "/admin/leads/<int:lead_id>/verify"
 )
-@login_required('admin')
+@login_required("admin")
 def verify_sale(lead_id):
     lead = lead_for_role(lead_id)
 
-    if lead['status'] != 'sold_pending':
+    if lead["status"] != "sold_pending":
         abort(
             400,
-            'Sale must first be reported by dealer.'
+            "Sale must first be reported by dealer."
         )
 
-    db().execute('''
+    db().execute("""
         UPDATE leads
         SET
             status=?,
             purchase_verified_at=CURRENT_TIMESTAMP
         WHERE id=?
-    ''', (
-        'sold_verified',
+    """, (
+        "sold_verified",
         lead_id
     ))
 
-    db().execute('''
+    db().execute("""
         INSERT OR IGNORE INTO rewards(
             lead_id,
             station,
@@ -1590,29 +1594,29 @@ def verify_sale(lead_id):
             status
         )
         VALUES(?,?,25,?)
-    ''', (
+    """, (
         lead_id,
-        lead['gas_station'],
-        'pending'
+        lead["gas_station"],
+        "pending"
     ))
 
     event(
         lead_id,
-        'admin',
-        'WE-SELL verified the purchase. '
-        '$25 gas reward eligible; issuance pending.'
+        "admin",
+        "WE-SELL verified the purchase. "
+        "$25 gas reward eligible; issuance pending."
     )
 
     db().commit()
 
     flash(
-        'Purchase verified; gift-card reward queued.',
-        'success'
+        "Purchase verified; gift-card reward queued.",
+        "success"
     )
 
     return redirect(
         url_for(
-            'lead_detail',
+            "lead_detail",
             lead_id=lead_id
         )
     )
@@ -1623,51 +1627,51 @@ def verify_sale(lead_id):
 # ==========================================
 
 @app.post(
-    '/admin/leads/<int:lead_id>/issue-reward'
+    "/admin/leads/<int:lead_id>/issue-reward"
 )
-@login_required('admin')
+@login_required("admin")
 def issue_reward(lead_id):
     lead = lead_for_role(lead_id)
 
-    if lead['status'] != 'sold_verified':
+    if lead["status"] != "sold_verified":
         abort(400)
 
     reward = db().execute(
-        'SELECT * FROM rewards WHERE lead_id=?',
+        "SELECT * FROM rewards WHERE lead_id=?",
         (lead_id,)
     ).fetchone()
 
     if (
         not reward
-        or reward['status'] == 'issued'
+        or reward["status"] == "issued"
     ):
         abort(400)
 
-    db().execute('''
+    db().execute("""
         UPDATE rewards
         SET
             status='issued',
             issued_at=CURRENT_TIMESTAMP
         WHERE lead_id=?
-    ''', (lead_id,))
+    """, (lead_id,))
 
     event(
         lead_id,
-        'admin',
-        'Gift-card delivery marked complete '
-        'by administrator.'
+        "admin",
+        "Gift-card delivery marked complete "
+        "by administrator."
     )
 
     db().commit()
 
     flash(
-        'Reward marked issued.',
-        'success'
+        "Reward marked issued.",
+        "success"
     )
 
     return redirect(
         url_for(
-            'lead_detail',
+            "lead_detail",
             lead_id=lead_id
         )
     )
@@ -1677,19 +1681,19 @@ def issue_reward(lead_id):
 # HOW IT WORKS
 # ==========================================
 
-@app.get('/how-it-works')
+@app.get("/how-it-works")
 def how_it_works():
-    return render_template('how.html')
+    return render_template("how.html")
 
 
 # ==========================================
 # DEALERS INFORMATION PAGE
 # ==========================================
 
-@app.get('/dealers')
+@app.get("/dealers")
 def dealers_page():
     return render_template(
-        'dealers_info.html'
+        "dealers_info.html"
     )
 
 
@@ -1697,9 +1701,9 @@ def dealers_page():
 # PUBLIC DEALERSHIP DIRECTORY
 # ==========================================
 
-@app.get('/dealers/all')
+@app.get("/dealers/all")
 def dealer_directory():
-    dealers = db().execute('''
+    dealers = db().execute("""
         SELECT
             d.*,
             COUNT(v.id) AS vehicle_count,
@@ -1711,10 +1715,10 @@ def dealer_directory():
         WHERE d.approved=1
         GROUP BY d.id
         ORDER BY d.name COLLATE NOCASE
-    ''').fetchall()
+    """).fetchall()
 
     return render_template(
-        'dealer_directory.html',
+        "dealer_directory.html",
         dealers=dealers
     )
 
@@ -1724,34 +1728,34 @@ def dealer_directory():
 # ==========================================
 
 @app.get(
-    '/dealers/<int:dealer_id>/inventory'
+    "/dealers/<int:dealer_id>/inventory"
 )
 def dealer_inventory(dealer_id):
-    dealer = db().execute('''
+    dealer = db().execute("""
         SELECT *
         FROM dealers
         WHERE id=? AND approved=1
-    ''', (dealer_id,)).fetchone()
+    """, (dealer_id,)).fetchone()
 
     if dealer is None:
         abort(404)
 
     q = request.args.get(
-        'q', ''
+        "q", ""
     ).strip()[:80]
 
     make = request.args.get(
-        'make', ''
+        "make", ""
     ).strip()[:50]
 
     sort = request.args.get(
-        'sort',
-        'newest'
+        "sort",
+        "newest"
     )
 
     def optional_nonnegative_int(field):
         raw = request.args.get(
-            field, ''
+            field, ""
         ).strip()
 
         try:
@@ -1766,88 +1770,88 @@ def dealer_inventory(dealer_id):
             return None
 
     min_price = optional_nonnegative_int(
-        'min_price'
+        "min_price"
     )
 
     max_price = optional_nonnegative_int(
-        'max_price'
+        "max_price"
     )
 
     max_mileage = optional_nonnegative_int(
-        'max_mileage'
+        "max_mileage"
     )
 
-    sql = '''
+    sql = """
         SELECT *
         FROM vehicles
         WHERE dealer_id=? AND active=1
-    '''
+    """
 
     params = [dealer_id]
 
     if q:
-        sql += '''
+        sql += """
             AND (
                 make LIKE ?
                 OR model LIKE ?
                 OR trim LIKE ?
                 OR CAST(year AS TEXT) LIKE ?
             )
-        '''
+        """
 
         params.extend(
-            ['%' + q + '%'] * 4
+            ["%" + q + "%"] * 4
         )
 
     if make:
-        sql += ' AND make=?'
+        sql += " AND make=?"
         params.append(make)
 
     if min_price is not None:
-        sql += ' AND price>=?'
+        sql += " AND price>=?"
         params.append(min_price)
 
     if max_price is not None:
-        sql += ' AND price<=?'
+        sql += " AND price<=?"
         params.append(max_price)
 
     if max_mileage is not None:
-        sql += ' AND mileage<=?'
+        sql += " AND mileage<=?"
         params.append(max_mileage)
 
     orders = {
-        'newest': 'created_at DESC, id DESC',
-        'price_low': 'price ASC, id DESC',
-        'price_high': 'price DESC, id DESC',
-        'mileage_low': 'mileage ASC, id DESC',
-        'year_new': 'year DESC, id DESC'
+        "newest": "created_at DESC, id DESC",
+        "price_low": "price ASC, id DESC",
+        "price_high": "price DESC, id DESC",
+        "mileage_low": "mileage ASC, id DESC",
+        "year_new": "year DESC, id DESC"
     }
 
     if sort not in orders:
-        sort = 'newest'
+        sort = "newest"
 
-    sql += ' ORDER BY ' + orders[sort]
+    sql += " ORDER BY " + orders[sort]
 
     vehicles = db().execute(
         sql,
         params
     ).fetchall()
 
-    makes = db().execute('''
+    makes = db().execute("""
         SELECT DISTINCT make
         FROM vehicles
         WHERE dealer_id=? AND active=1
         ORDER BY make
-    ''', (dealer_id,)).fetchall()
+    """, (dealer_id,)).fetchall()
 
-    total = db().execute('''
+    total = db().execute("""
         SELECT COUNT(*)
         FROM vehicles
         WHERE dealer_id=? AND active=1
-    ''', (dealer_id,)).fetchone()[0]
+    """, (dealer_id,)).fetchone()[0]
 
     return render_template(
-        'dealer_inventory.html',
+        "dealer_inventory.html",
         dealer=dealer,
         vehicles=vehicles,
         makes=makes,
@@ -1862,23 +1866,35 @@ def dealer_inventory(dealer_id):
 
 
 # ==========================================
-# INITIALIZE DATABASE
+# REGISTER RENTAL COMPANY PORTAL
+# ==========================================
+
+app.register_blueprint(rental_portal)
+
+
+# ==========================================
+# REGISTER INVENTORY SYNC API
+# ==========================================
+
+app.register_blueprint(inventory_sync)
+
+
+# ==========================================
+# INITIALIZE DATABASES
 # ==========================================
 
 init_db()
+init_rental_portal()
+init_inventory_sync()
 
 
 # ==========================================
 # START APPLICATION
 # ==========================================
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(
-        host='0.0.0.0',
-        port=int(
-            os.environ.get('PORT', 5000)
-        ),
-        debug=os.environ.get(
-            'FLASK_DEBUG'
-        ) == '1'
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=os.environ.get("FLASK_DEBUG") == "1"
     )
