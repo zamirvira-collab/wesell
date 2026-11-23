@@ -2084,6 +2084,127 @@ init_inventory_sync()
 
 
 # ==========================================
+# RENTAL COMPANY ADMINISTRATION
+# ==========================================
+
+@app.get("/admin/rental-companies")
+@login_required("admin")
+def admin_rental_companies():
+    # Rental accounts live in PostgreSQL, separately from the original
+    # SQLite-backed buyer/dealer/admin accounts.
+    from rental_portal import db as rental_db
+    from flask import render_template_string
+
+    with rental_db() as conn:
+        companies = conn.execute("""
+            SELECT id, company_name, contact_name, email, phone,
+                   city, website, approved, created_at
+            FROM rental_companies
+            ORDER BY CASE WHEN approved = 0 THEN 0 ELSE 1 END,
+                     created_at DESC, id DESC
+        """).fetchall()
+
+    return render_template_string("""
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Rental Company Approvals | WE-SELL</title>
+      <style>
+        *{box-sizing:border-box}
+        body{margin:0;background:#f3f6fa;color:#09223d;font-family:Arial,sans-serif}
+        header{background:#041b34;color:#fff;padding:23px max(22px,calc((100% - 1160px)/2));font-size:22px;font-weight:800}
+        header b{color:#ffc400}
+        main{max-width:1160px;margin:35px auto;padding:0 20px}
+        a{color:#075ba8;text-decoration:none}
+        .back{display:inline-block;margin-bottom:20px}
+        .panel{background:white;border-radius:14px;padding:24px;box-shadow:0 6px 25px #09223d13}
+        h1{margin:0 0 8px;font-size:27px}
+        .intro{color:#596b7e;margin:0 0 22px}
+        .table-wrap{overflow-x:auto}
+        table{border-collapse:collapse;width:100%;min-width:750px}
+        th,td{padding:13px 10px;border-bottom:1px solid #e5eaf0;text-align:left;vertical-align:middle;font-size:14px}
+        th{color:#516477;font-size:12px;text-transform:uppercase}
+        small{display:block;color:#65778a;margin-top:5px}
+        .pill{display:inline-block;border-radius:20px;padding:6px 10px;background:#fff3d2;color:#795300;font-weight:bold;font-size:12px}
+        .pill.yes{background:#e1f5e8;color:#17643b}
+        .actions{display:flex;gap:7px;flex-wrap:wrap}
+        button{border:0;border-radius:7px;padding:9px 12px;font-weight:bold;cursor:pointer}
+        .approve{background:#ffc400;color:#041b34}
+        .reject{background:#e8edf3;color:#263b50}
+        .messages{padding:12px 16px;background:#e8f3ff;border-radius:8px;margin-bottom:18px}
+      </style>
+    </head>
+    <body>
+      <header><b>WE-SELL</b> | Administration</header>
+      <main>
+        <a class="back" href="{{ url_for('admin_dashboard') }}">← Back to Admin Dashboard</a>
+        {% with messages=get_flashed_messages() %}
+          {% for message in messages %}<div class="messages">{{ message }}</div>{% endfor %}
+        {% endwith %}
+        <div class="panel">
+          <h1>Rental Company Approvals</h1>
+          <p class="intro">Review and manage businesses registered with WE-SELL.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Company</th><th>Contact</th><th>City</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for company in companies %}
+              <tr>
+                <td><strong>{{ company.company_name }}</strong><small>{{ company.email }}</small></td>
+                <td>{{ company.contact_name }}<small>{{ company.phone or '' }}</small></td>
+                <td>{{ company.city or '—' }}</td>
+                <td><span class="pill {{ 'yes' if company.approved else '' }}">{{ 'Approved' if company.approved else 'Pending / Not approved' }}</span></td>
+                <td><div class="actions">
+                  {% if not company.approved %}
+                    <form method="post" action="{{ url_for('admin_rental_company_status', company_id=company.id) }}">
+                      <input type="hidden" name="csrf" value="{{ csrf }}">
+                      <input type="hidden" name="action" value="approve">
+                      <button class="approve" type="submit">Approve</button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{{ url_for('admin_rental_company_status', company_id=company.id) }}">
+                      <input type="hidden" name="csrf" value="{{ csrf }}">
+                      <input type="hidden" name="action" value="reject">
+                      <button class="reject" type="submit" onclick="return confirm('Revoke approval for this company?')">Revoke approval</button>
+                    </form>
+                  {% endif %}
+                </div></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5">No rental companies have registered yet.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table></div>
+        </div>
+      </main>
+    </body></html>
+    """, companies=companies)
+
+
+@app.post("/admin/rental-companies/<int:company_id>/status")
+@login_required("admin")
+def admin_rental_company_status(company_id):
+    from rental_portal import db as rental_db
+
+    action = request.form.get("action", "")
+    if action not in ("approve", "reject"):
+        abort(400)
+
+    approved = 1 if action == "approve" else 0
+    with rental_db() as conn:
+        result = conn.execute(
+            "UPDATE rental_companies SET approved=? WHERE id=?",
+            (approved, company_id)
+        )
+        if result.rowcount != 1:
+            abort(404)
+
+    flash("Rental company approved." if approved else "Rental company approval revoked.", "success")
+    return redirect(url_for("admin_rental_companies"))
+
+
+# ==========================================
 # START APPLICATION
 # ==========================================
 
