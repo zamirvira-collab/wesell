@@ -68,27 +68,83 @@
       padding-bottom: 9px;
     }
 
-    .nav nav a.ws-login {
-      border: 1px solid white;
-      border-radius: 9px;
-      padding: 11px 23px;
+    /* PREMIUM CONNECTED LOGIN / SIGN UP */
+
+    .nav nav .ws-auth-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      flex-shrink: 0;
+      margin-left: 2px;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
     }
 
-    .nav nav a.ws-login:hover {
-      border-color: #ffc229;
-    }
-
-    .nav nav a.ws-signup {
-      background: linear-gradient(#ffe06a, #ffb900);
-      color: #071a30 !important;
-      border-radius: 9px;
-      padding: 12px 24px;
+    .nav nav .ws-auth-group a {
+      box-sizing: border-box;
+      height: 46px;
+      min-width: 108px;
+      padding: 0 19px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
       font-weight: 800;
+      line-height: 1;
+      text-decoration: none;
+      white-space: nowrap;
+      border-bottom: 0;
+      transition: background 0.2s ease,
+                  border-color 0.2s ease,
+                  box-shadow 0.2s ease,
+                  transform 0.2s ease;
     }
 
-    .nav nav a.ws-signup:hover {
-      background: linear-gradient(#ffeb92, #ffc229);
-      color: #071a30 !important;
+    .nav nav .ws-auth-group a.ws-login {
+      background: rgba(255, 255, 255, 0.045);
+      color: #ffffff !important;
+      border: 1px solid #71869b;
+      border-radius: 12px 0 0 12px;
+    }
+
+    .nav nav .ws-auth-group a.ws-login:hover {
+      background: rgba(255, 255, 255, 0.13);
+      border-color: #ffc229;
+      color: #ffffff !important;
+    }
+
+    .nav nav .ws-auth-group a.ws-signup {
+      background: linear-gradient(135deg, #ffe57a, #ffbe16);
+      color: #071b30 !important;
+      border: 1px solid #ffca32;
+      border-left: 0;
+      border-radius: 0 12px 12px 0;
+    }
+
+    .nav nav .ws-auth-group a.ws-signup:hover {
+      background: linear-gradient(135deg, #fff0a0, #ffd043);
+      color: #071b30 !important;
+      box-shadow: 0 4px 18px rgba(255, 190, 22, 0.24);
+    }
+
+    .ws-auth-icon {
+      width: 17px;
+      height: 17px;
+      display: inline-block;
+      flex-shrink: 0;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav nav .ws-auth-group a:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 3px;
+      position: relative;
+      z-index: 1;
     }
 
     .nav nav form {
@@ -178,17 +234,32 @@
         font-size: 13px;
       }
 
-      .nav nav a.ws-login {
-        padding: 9px 16px;
+      .nav nav .ws-auth-group {
+        margin-left: 0;
       }
 
-      .nav nav a.ws-signup {
-        padding: 10px 17px;
+      .nav nav .ws-auth-group a {
+        min-width: 96px;
+        height: 42px;
+        padding: 0 13px;
+        font-size: 13px;
       }
 
       .nav .brand img {
         height: 46px;
         max-width: 200px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .nav nav {
+        gap: 11px;
+      }
+
+      .nav nav .ws-auth-group a {
+        min-width: 86px;
+        padding: 0 10px;
+        font-size: 12px;
       }
     }
   </style>
@@ -224,7 +295,6 @@
         Find Cars
       </a>
 
-
       <!-- RENTAL CARS -->
 
       <a
@@ -234,7 +304,6 @@
       >
         Rental Cars
       </a>
-
 
       <!-- DEALERSHIP DIRECTORY -->
 
@@ -246,7 +315,6 @@
         Dealers
       </a>
 
-
       <!-- HOW IT WORKS -->
 
       <a
@@ -256,7 +324,6 @@
       >
         How It Works
       </a>
-
 
       <!-- DASHBOARD -->
 
@@ -270,7 +337,6 @@
         </a>
 
       {% endif %}
-
 
       <!-- SAVED CARS -->
 
@@ -298,7 +364,6 @@
 
       </a>
 
-
       <!-- LOGIN / LOGOUT -->
 
       {% if me %}
@@ -325,26 +390,46 @@
 
       {% else %}
 
-        <a
-          class="ws-login"
-          href="{{ url_for('login') }}"
-        >
-          Login
-        </a>
+        <!-- CONNECTED AUTHENTICATION BUTTONS -->
 
-        <a
-          class="ws-signup"
-          href="{{ url_for('register') }}"
-        >
-          Sign Up
-        </a>
+        <div class="ws-auth-group">
+
+          <a
+            class="ws-login"
+            href="{{ url_for('login') }}"
+          >
+            <svg class="ws-auth-icon"
+                 viewBox="0 0 24 24"
+                 aria-hidden="true">
+              <path d="M10 17l5-5-5-5"></path>
+              <path d="M15 12H3"></path>
+              <path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"></path>
+            </svg>
+            Login
+          </a>
+
+          <a
+            class="ws-signup"
+            href="{{ url_for('register') }}"
+          >
+            <svg class="ws-auth-icon"
+                 viewBox="0 0 24 24"
+                 aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M20 8v6"></path>
+              <path d="M17 11h6"></path>
+            </svg>
+            Sign Up
+          </a>
+
+        </div>
 
       {% endif %}
 
     </nav>
 
   </header>
-
 
   <!-- ===================================== -->
   <!-- FLASH MESSAGES -->
@@ -370,7 +455,6 @@
 
   {% endwith %}
 
-
   <!-- ===================================== -->
   <!-- MAIN PAGE CONTENT -->
   <!-- ===================================== -->
@@ -380,7 +464,6 @@
     {% block content %}{% endblock %}
 
   </main>
-
 
   <!-- ===================================== -->
   <!-- WE-SELL FOOTER -->
@@ -429,7 +512,6 @@
     </small>
 
   </footer>
-
 
   <!-- ===================================== -->
   <!-- SAVED CARS COUNTER -->
