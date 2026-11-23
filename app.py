@@ -1,16 +1,32 @@
 
-import os, sqlite3, secrets, re, json, math
+import os
+import sqlite3
+import secrets
+import re
+import json
+import math
+
 from functools import lru_cache, wraps
 from urllib.request import urlopen
-from datetime import datetime, timezone
-from flask import Flask, render_template, request, redirect, url_for, flash, session, g, abort
+from datetime import datetime
+
+from flask import (
+    Flask, render_template, request, redirect,
+    url_for, flash, session, g, abort
+)
 from werkzeug.security import generate_password_hash, check_password_hash
+
+
+# ==========================================
+# WE-SELL CONFIGURATION
+# ==========================================
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DB = os.environ.get('WESELL_DB', os.path.join(ROOT, 'wesell.db'))
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
@@ -27,6 +43,10 @@ STATUSES = [
 GAS = ['Shell', 'Chevron', '76', 'ARCO', 'ExxonMobil', 'Other']
 
 
+# ==========================================
+# DATABASE CONNECTION
+# ==========================================
+
 def db():
     if 'db' not in g:
         g.db = sqlite3.connect(DB, timeout=15)
@@ -42,89 +62,94 @@ def close_db(_):
         conn.close()
 
 
+# ==========================================
+# DATABASE INITIALIZATION
+# ==========================================
+
 def init_db():
     conn = sqlite3.connect(DB)
+
     conn.executescript('''
-    PRAGMA foreign_keys=ON;
+        PRAGMA foreign_keys=ON;
 
-    CREATE TABLE IF NOT EXISTS users(
-        id INTEGER PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        name TEXT NOT NULL,
-        phone TEXT DEFAULT '',
-        role TEXT NOT NULL CHECK(role IN ('buyer','dealer','admin')),
-        dealer_id INTEGER,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
+        CREATE TABLE IF NOT EXISTS users(
+            id INTEGER PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            name TEXT NOT NULL,
+            phone TEXT DEFAULT '',
+            role TEXT NOT NULL
+                CHECK(role IN ('buyer','dealer','admin')),
+            dealer_id INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-    CREATE TABLE IF NOT EXISTS dealers(
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        city TEXT NOT NULL,
-        approved INTEGER DEFAULT 1,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
+        CREATE TABLE IF NOT EXISTS dealers(
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            city TEXT NOT NULL,
+            approved INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-    CREATE TABLE IF NOT EXISTS vehicles(
-        id INTEGER PRIMARY KEY,
-        dealer_id INTEGER NOT NULL REFERENCES dealers(id),
-        year INTEGER NOT NULL,
-        make TEXT NOT NULL,
-        model TEXT NOT NULL,
-        trim TEXT DEFAULT '',
-        price INTEGER NOT NULL,
-        mileage INTEGER NOT NULL,
-        vin TEXT DEFAULT '',
-        image_url TEXT DEFAULT '',
-        description TEXT DEFAULT '',
-        active INTEGER DEFAULT 1,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
+        CREATE TABLE IF NOT EXISTS vehicles(
+            id INTEGER PRIMARY KEY,
+            dealer_id INTEGER NOT NULL REFERENCES dealers(id),
+            year INTEGER NOT NULL,
+            make TEXT NOT NULL,
+            model TEXT NOT NULL,
+            trim TEXT DEFAULT '',
+            price INTEGER NOT NULL,
+            mileage INTEGER NOT NULL,
+            vin TEXT DEFAULT '',
+            image_url TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-    CREATE TABLE IF NOT EXISTS leads(
-        id INTEGER PRIMARY KEY,
-        vehicle_id INTEGER NOT NULL REFERENCES vehicles(id),
-        buyer_id INTEGER NOT NULL REFERENCES users(id),
-        dealer_id INTEGER NOT NULL REFERENCES dealers(id),
-        status TEXT NOT NULL DEFAULT 'new',
-        buyer_note TEXT DEFAULT '',
-        dealer_note TEXT DEFAULT '',
-        appointment_time TEXT DEFAULT '',
-        gas_station TEXT DEFAULT 'Shell',
-        purchase_verified_at TEXT DEFAULT '',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
+        CREATE TABLE IF NOT EXISTS leads(
+            id INTEGER PRIMARY KEY,
+            vehicle_id INTEGER NOT NULL REFERENCES vehicles(id),
+            buyer_id INTEGER NOT NULL REFERENCES users(id),
+            dealer_id INTEGER NOT NULL REFERENCES dealers(id),
+            status TEXT NOT NULL DEFAULT 'new',
+            buyer_note TEXT DEFAULT '',
+            dealer_note TEXT DEFAULT '',
+            appointment_time TEXT DEFAULT '',
+            gas_station TEXT DEFAULT 'Shell',
+            purchase_verified_at TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-    CREATE TABLE IF NOT EXISTS lead_events(
-        id INTEGER PRIMARY KEY,
-        lead_id INTEGER NOT NULL REFERENCES leads(id),
-        actor_role TEXT NOT NULL,
-        message TEXT NOT NULL,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
+        CREATE TABLE IF NOT EXISTS lead_events(
+            id INTEGER PRIMARY KEY,
+            lead_id INTEGER NOT NULL REFERENCES leads(id),
+            actor_role TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
 
-    CREATE TABLE IF NOT EXISTS rewards(
-        id INTEGER PRIMARY KEY,
-        lead_id INTEGER UNIQUE NOT NULL REFERENCES leads(id),
-        station TEXT NOT NULL,
-        amount INTEGER DEFAULT 25,
-        status TEXT DEFAULT 'pending'
-            CHECK(status IN ('pending','issued')),
-        issued_at TEXT DEFAULT ''
-    );
+        CREATE TABLE IF NOT EXISTS rewards(
+            id INTEGER PRIMARY KEY,
+            lead_id INTEGER UNIQUE NOT NULL REFERENCES leads(id),
+            station TEXT NOT NULL,
+            amount INTEGER DEFAULT 25,
+            status TEXT DEFAULT 'pending'
+                CHECK(status IN ('pending','issued')),
+            issued_at TEXT DEFAULT ''
+        );
 
-    CREATE INDEX IF NOT EXISTS idx_vehicle_dealer
-        ON vehicles(dealer_id);
+        CREATE INDEX IF NOT EXISTS idx_vehicle_dealer
+            ON vehicles(dealer_id);
 
-    CREATE INDEX IF NOT EXISTS idx_leads_dealer
-        ON leads(dealer_id);
+        CREATE INDEX IF NOT EXISTS idx_leads_dealer
+            ON leads(dealer_id);
 
-    CREATE INDEX IF NOT EXISTS idx_leads_buyer
-        ON leads(buyer_id);
+        CREATE INDEX IF NOT EXISTS idx_leads_buyer
+            ON leads(buyer_id);
     ''')
 
-    # Safe schema updates for existing databases.
     for table, column, definition in [
         ('dealers', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
         ('vehicles', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
@@ -134,6 +159,7 @@ def init_db():
             row[1]
             for row in conn.execute(f'PRAGMA table_info({table})')
         }
+
         if column not in existing:
             conn.execute(
                 f'ALTER TABLE {table} ADD COLUMN {column} {definition}'
@@ -186,17 +212,14 @@ def init_db():
             )
         ]
 
-        conn.executemany(
-            '''
+        conn.executemany('''
             INSERT INTO vehicles(
                 dealer_id, year, make, model, trim,
                 price, mileage, vin, image_url,
                 description, zip_code, condition
             )
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-            ''',
-            vehicles
-        )
+        ''', vehicles)
 
     if os.environ.get('WESELL_SEED_DEMO') == '1':
         for email, pw, name, role, dealer_id in [
@@ -204,19 +227,26 @@ def init_db():
             ('dealer@wesell.local', 'DealerDemo123!', 'Dealer Manager', 'dealer', 1),
             ('buyer@wesell.local', 'BuyerDemo123!', 'Demo Buyer', 'buyer', None)
         ]:
-            conn.execute(
-                '''
+            conn.execute('''
                 INSERT OR IGNORE INTO users(
                     email, password_hash, name, role, dealer_id
                 )
                 VALUES(?,?,?,?,?)
-                ''',
-                (email, generate_password_hash(pw), name, role, dealer_id)
-            )
+            ''', (
+                email,
+                generate_password_hash(pw),
+                name,
+                role,
+                dealer_id
+            ))
 
     conn.commit()
     conn.close()
 
+
+# ==========================================
+# USER SESSION AND CSRF
+# ==========================================
 
 @app.before_request
 def load_user():
@@ -257,31 +287,37 @@ def login_required(role=None):
         def wrapper(*args, **kwargs):
             if not g.user:
                 return redirect(url_for('login', next=request.path))
+
             if role and g.user['role'] != role:
                 abort(403)
+
             return fn(*args, **kwargs)
+
         return wrapper
     return deco
 
 
+# ==========================================
+# LEAD HELPERS
+# ==========================================
+
 def event(lead_id, role, message):
-    db().execute(
-        '''
+    db().execute('''
         INSERT INTO lead_events(lead_id, actor_role, message)
         VALUES(?,?,?)
-        ''',
-        (lead_id, role, message)
-    )
+    ''', (lead_id, role, message))
 
 
 def lead_for_role(lead_id):
     lead = db().execute('''
-        SELECT l.*, v.year, v.make, v.model, v.trim,
-               v.vin, v.price, v.image_url,
-               d.name dealer_name,
-               u.name buyer_name,
-               u.email buyer_email,
-               u.phone buyer_phone
+        SELECT
+            l.*,
+            v.year, v.make, v.model, v.trim,
+            v.vin, v.price, v.image_url,
+            d.name AS dealer_name,
+            u.name AS buyer_name,
+            u.email AS buyer_email,
+            u.phone AS buyer_phone
         FROM leads l
         JOIN vehicles v ON l.vehicle_id=v.id
         JOIN dealers d ON l.dealer_id=d.id
@@ -303,7 +339,9 @@ def lead_for_role(lead_id):
     return lead
 
 
-# ZIP CODE LOOKUP
+# ==========================================
+# ZIP CODE AND DISTANCE
+# ==========================================
 
 @lru_cache(maxsize=4096)
 def zip_coordinates(zip_code):
@@ -328,11 +366,7 @@ def zip_coordinates(zip_code):
         return None
 
 
-# DISTANCE CALCULATION
-
 def distance_miles(point_a, point_b):
-    """Approximate straight-line distance between ZIP coordinates."""
-
     lat1, lon1 = map(math.radians, point_a)
     lat2, lon2 = map(math.radians, point_b)
 
@@ -350,11 +384,12 @@ def distance_miles(point_a, point_b):
     )
 
 
+# ==========================================
 # HOME PAGE AND VEHICLE SEARCH
+# ==========================================
 
 @app.get('/')
 def home():
-
     q = request.args.get('q', '').strip()[:100]
     make = request.args.get('make', '').strip()[:50]
 
@@ -371,20 +406,9 @@ def home():
         'distance', '50'
     ).strip().lower()
 
-    # SUPPORT SEARCH DISTANCES UP TO 1000 MILES
-
     allowed_distances = (
-        '10',
-        '25',
-        '50',
-        '100',
-        '250',
-        '300',
-        '400',
-        '500',
-        '750',
-        '1000',
-        'nationwide'
+        '10', '25', '50', '100', '250', '300',
+        '400', '500', '750', '1000', 'nationwide'
     )
 
     if selected_distance not in allowed_distances:
@@ -397,9 +421,9 @@ def home():
     sql = '''
         SELECT
             v.*,
-            d.name dealer_name,
+            d.name AS dealer_name,
             d.city,
-            d.zip_code dealer_zip_code
+            d.zip_code AS dealer_zip_code
         FROM vehicles v
         JOIN dealers d ON v.dealer_id=d.id
         WHERE v.active=1
@@ -427,13 +451,9 @@ def home():
     sql += ' ORDER BY v.created_at DESC, v.id DESC'
 
     all_vehicles = db().execute(sql, args).fetchall()
-
     vehicles = all_vehicles
 
-    # ZIP RADIUS FILTER
-
     if selected_zip and selected_distance != 'nationwide':
-
         origin = zip_coordinates(selected_zip)
 
         if origin is None:
@@ -447,7 +467,6 @@ def home():
             nearby = []
 
             for vehicle in all_vehicles:
-
                 vehicle_zip = (
                     vehicle['zip_code']
                     or vehicle['dealer_zip_code']
@@ -459,7 +478,6 @@ def home():
                 )
 
                 if coords is not None:
-
                     miles = distance_miles(origin, coords)
 
                     if miles <= int(selected_distance):
@@ -467,14 +485,12 @@ def home():
 
             vehicles = nearby
 
-    makes = db().execute(
-        '''
+    makes = db().execute('''
         SELECT DISTINCT make
         FROM vehicles
         WHERE active=1
         ORDER BY make
-        '''
-    ).fetchall()
+    ''').fetchall()
 
     return render_template(
         'home.html',
@@ -488,30 +504,40 @@ def home():
     )
 
 
+# ==========================================
 # SELL YOUR CAR
+# ==========================================
 
 @app.get('/sell-your-car')
 def sell_car():
     return render_template('sell_car.html')
 
 
+# ==========================================
 # SAVED CARS
+# ==========================================
 
 @app.get('/saved-cars')
 def saved_cars():
     return render_template('saved_cars.html')
 
 
+# ==========================================
 # VEHICLE DETAILS
+# ==========================================
 
 @app.get('/vehicle/<int:vid>')
 def vehicle(vid):
-
     v = db().execute('''
-        SELECT v.*, d.name dealer_name, d.city
+        SELECT
+            v.*,
+            d.name AS dealer_name,
+            d.city
         FROM vehicles v
         JOIN dealers d ON v.dealer_id=d.id
-        WHERE v.id=? AND v.active=1
+        WHERE v.id=?
+          AND v.active=1
+          AND d.approved=1
     ''', (vid,)).fetchone()
 
     if not v:
@@ -520,13 +546,13 @@ def vehicle(vid):
     return render_template('vehicle.html', v=v)
 
 
+# ==========================================
 # REGISTER
+# ==========================================
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-
     if request.method == 'POST':
-
         name = request.form.get('name', '').strip()[:100]
         email = request.form.get('email', '').strip().lower()[:254]
         password = request.form.get('password', '')
@@ -544,29 +570,24 @@ def register():
 
         else:
             try:
-                cur = db().execute(
-                    '''
+                cur = db().execute('''
                     INSERT INTO users(
                         email, password_hash, name, phone, role
                     )
                     VALUES(?,?,?,?,?)
-                    ''',
-                    (
-                        email,
-                        generate_password_hash(password),
-                        name,
-                        phone,
-                        'buyer'
-                    )
-                )
+                ''', (
+                    email,
+                    generate_password_hash(password),
+                    name,
+                    phone,
+                    'buyer'
+                ))
 
                 db().commit()
-
                 session.clear()
                 session['uid'] = cur.lastrowid
 
                 flash('Account created. Welcome to WE-SELL!', 'success')
-
                 return redirect(url_for('home'))
 
             except sqlite3.IntegrityError:
@@ -575,13 +596,13 @@ def register():
     return render_template('auth.html', mode='register')
 
 
+# ==========================================
 # LOGIN
+# ==========================================
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-
     if request.method == 'POST':
-
         u = db().execute(
             'SELECT * FROM users WHERE email=?',
             (request.form.get('email', '').strip().lower(),)
@@ -591,12 +612,10 @@ def login():
             u['password_hash'],
             request.form.get('password', '')
         ):
-
             session.clear()
             session['uid'] = u['id']
 
             flash('Welcome back!', 'success')
-
             return redirect(url_for('dashboard'))
 
         flash('Incorrect email or password.', 'error')
@@ -604,7 +623,9 @@ def login():
     return render_template('auth.html', mode='login')
 
 
+# ==========================================
 # LOGOUT
+# ==========================================
 
 @app.post('/logout')
 def logout():
@@ -612,12 +633,13 @@ def logout():
     return redirect(url_for('home'))
 
 
+# ==========================================
 # DASHBOARD ROUTING
+# ==========================================
 
 @app.get('/dashboard')
 @login_required()
 def dashboard():
-
     if g.user['role'] == 'buyer':
         return redirect(url_for('buyer_dashboard'))
 
@@ -627,16 +649,19 @@ def dashboard():
     return redirect(url_for('admin_dashboard'))
 
 
+# ==========================================
 # BUYER VEHICLE INQUIRY
+# ==========================================
 
 @app.post('/inquire/<int:vid>')
 @login_required('buyer')
 def inquire(vid):
-
-    v = db().execute(
-        'SELECT * FROM vehicles WHERE id=? AND active=1',
-        (vid,)
-    ).fetchone()
+    v = db().execute('''
+        SELECT v.*
+        FROM vehicles v
+        JOIN dealers d ON d.id=v.dealer_id
+        WHERE v.id=? AND v.active=1 AND d.approved=1
+    ''', (vid,)).fetchone()
 
     if not v:
         abort(404)
@@ -648,23 +673,20 @@ def inquire(vid):
 
     note = request.form.get('note', '').strip()[:1000]
 
-    cur = db().execute(
-        '''
+    cur = db().execute('''
         INSERT INTO leads(
             vehicle_id, buyer_id, dealer_id,
             buyer_note, gas_station, status
         )
         VALUES(?,?,?,?,?,?)
-        ''',
-        (
-            vid,
-            g.user['id'],
-            v['dealer_id'],
-            note,
-            station,
-            'new'
-        )
-    )
+    ''', (
+        vid,
+        g.user['id'],
+        v['dealer_id'],
+        note,
+        station,
+        'new'
+    ))
 
     event(
         cur.lastrowid,
@@ -684,14 +706,17 @@ def inquire(vid):
     )
 
 
+# ==========================================
 # BUYER DASHBOARD
+# ==========================================
 
 @app.get('/buyer')
 @login_required('buyer')
 def buyer_dashboard():
-
     leads = db().execute('''
-        SELECT l.*, v.year, v.make, v.model, v.image_url
+        SELECT
+            l.*,
+            v.year, v.make, v.model, v.image_url
         FROM leads l
         JOIN vehicles v ON v.id=l.vehicle_id
         WHERE l.buyer_id=?
@@ -701,15 +726,18 @@ def buyer_dashboard():
     return render_template('buyer.html', leads=leads)
 
 
+# ==========================================
 # DEALER DASHBOARD
+# ==========================================
 
 @app.get('/dealer')
 @login_required('dealer')
 def dealer_dashboard():
-
     leads = db().execute('''
-        SELECT l.*, v.year, v.make, v.model,
-               v.vin, u.name buyer_name
+        SELECT
+            l.*,
+            v.year, v.make, v.model, v.vin,
+            u.name AS buyer_name
         FROM leads l
         JOIN vehicles v ON v.id=l.vehicle_id
         JOIN users u ON u.id=l.buyer_id
@@ -717,15 +745,12 @@ def dealer_dashboard():
         ORDER BY l.id DESC
     ''', (g.user['dealer_id'],)).fetchall()
 
-    vehicles = db().execute(
-        '''
+    vehicles = db().execute('''
         SELECT *
         FROM vehicles
         WHERE dealer_id=?
         ORDER BY id DESC
-        ''',
-        (g.user['dealer_id'],)
-    ).fetchall()
+    ''', (g.user['dealer_id'],)).fetchall()
 
     return render_template(
         'dealer.html',
@@ -734,14 +759,14 @@ def dealer_dashboard():
     )
 
 
+# ==========================================
 # ADD VEHICLE
+# ==========================================
 
 @app.route('/dealer/vehicles/new', methods=['GET', 'POST'])
 @login_required('dealer')
 def add_vehicle():
-
     if request.method == 'POST':
-
         try:
             year = int(request.form['year'])
             price = int(request.form['price'])
@@ -772,62 +797,54 @@ def add_vehicle():
             assert condition in ('new', 'used')
 
         except (ValueError, KeyError, AssertionError):
-
             flash(
                 'Check required vehicle fields and numeric values.',
                 'error'
             )
-
             return render_template('add_vehicle.html')
 
-        db().execute(
-            '''
+        db().execute('''
             INSERT INTO vehicles(
                 dealer_id, year, make, model, trim,
                 price, mileage, vin, image_url,
                 description, zip_code, condition
             )
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-            ''',
-            (
-                g.user['dealer_id'],
-                year,
-                make,
-                model,
-                request.form.get('trim', '').strip()[:80],
-                price,
-                mileage,
-                request.form.get('vin', '').strip().upper()[:17],
-                request.form.get('image_url', '').strip()[:500],
-                request.form.get('description', '').strip()[:2000],
-                vehicle_zip,
-                condition
-            )
-        )
+        ''', (
+            g.user['dealer_id'],
+            year,
+            make,
+            model,
+            request.form.get('trim', '').strip()[:80],
+            price,
+            mileage,
+            request.form.get('vin', '').strip().upper()[:17],
+            request.form.get('image_url', '').strip()[:500],
+            request.form.get('description', '').strip()[:2000],
+            vehicle_zip,
+            condition
+        ))
 
         db().commit()
 
         flash('Vehicle listed.', 'success')
-
         return redirect(url_for('dealer_dashboard'))
 
     return render_template('add_vehicle.html')
 
 
+# ==========================================
 # ENABLE OR DISABLE VEHICLE
+# ==========================================
 
 @app.post('/dealer/vehicles/<int:vid>/toggle')
 @login_required('dealer')
 def toggle_vehicle(vid):
-
-    v = db().execute(
-        '''
+    v = db().execute('''
         SELECT *
         FROM vehicles
         WHERE id=? AND dealer_id=?
-        ''',
-        (vid, g.user['dealer_id'])
-    ).fetchone()
+    ''', (vid, g.user['dealer_id'])).fetchone()
 
     if not v:
         abort(404)
@@ -838,27 +855,24 @@ def toggle_vehicle(vid):
     )
 
     db().commit()
-
     return redirect(url_for('dealer_dashboard'))
 
 
+# ==========================================
 # LEAD DETAILS
+# ==========================================
 
 @app.get('/leads/<int:lead_id>')
 @login_required()
 def lead_detail(lead_id):
-
     lead = lead_for_role(lead_id)
 
-    events = db().execute(
-        '''
+    events = db().execute('''
         SELECT *
         FROM lead_events
         WHERE lead_id=?
         ORDER BY id DESC
-        ''',
-        (lead_id,)
-    ).fetchall()
+    ''', (lead_id,)).fetchall()
 
     reward = db().execute(
         'SELECT * FROM rewards WHERE lead_id=?',
@@ -874,12 +888,13 @@ def lead_detail(lead_id):
     )
 
 
+# ==========================================
 # DEALER RESPONSE
+# ==========================================
 
 @app.post('/leads/<int:lead_id>/dealer-response')
 @login_required('dealer')
 def dealer_response(lead_id):
-
     lead = lead_for_role(lead_id)
 
     if lead['status'] not in (
@@ -893,7 +908,6 @@ def dealer_response(lead_id):
     note = request.form.get('note', '').strip()[:1000]
 
     if action == 'propose':
-
         appt = request.form.get(
             'appointment_time', ''
         ).strip()
@@ -904,24 +918,20 @@ def dealer_response(lead_id):
 
         except (ValueError, AssertionError):
             flash('Provide a future appointment time.', 'error')
-
             return redirect(
                 url_for('lead_detail', lead_id=lead_id)
             )
 
-        db().execute(
-            '''
+        db().execute('''
             UPDATE leads
             SET status=?, appointment_time=?, dealer_note=?
             WHERE id=?
-            ''',
-            (
-                'appointment_proposed',
-                appt,
-                note,
-                lead_id
-            )
-        )
+        ''', (
+            'appointment_proposed',
+            appt,
+            note,
+            lead_id
+        ))
 
         event(
             lead_id,
@@ -931,15 +941,11 @@ def dealer_response(lead_id):
         )
 
     elif action == 'unavailable':
-
-        db().execute(
-            '''
+        db().execute('''
             UPDATE leads
             SET status=?, dealer_note=?
             WHERE id=?
-            ''',
-            ('cancelled', note, lead_id)
-        )
+        ''', ('cancelled', note, lead_id))
 
         event(
             lead_id,
@@ -962,12 +968,13 @@ def dealer_response(lead_id):
     )
 
 
+# ==========================================
 # BUYER APPOINTMENT RESPONSE
+# ==========================================
 
 @app.post('/leads/<int:lead_id>/buyer-response')
 @login_required('buyer')
 def buyer_response(lead_id):
-
     lead = lead_for_role(lead_id)
 
     if lead['status'] != 'appointment_proposed':
@@ -1008,12 +1015,13 @@ def buyer_response(lead_id):
     )
 
 
+# ==========================================
 # DEALER REPORTS SALE
+# ==========================================
 
 @app.post('/leads/<int:lead_id>/sale')
 @login_required('dealer')
 def sale(lead_id):
-
     lead = lead_for_role(lead_id)
 
     if lead['status'] not in ('confirmed', 'visited'):
@@ -1045,20 +1053,19 @@ def sale(lead_id):
     )
 
 
+# ==========================================
 # ADMIN DASHBOARD
+# ==========================================
 
 @app.get('/admin')
 @login_required('admin')
 def admin_dashboard():
-
     leads = db().execute('''
         SELECT
             l.*,
-            v.year,
-            v.make,
-            v.model,
-            d.name dealer_name,
-            u.name buyer_name
+            v.year, v.make, v.model,
+            d.name AS dealer_name,
+            u.name AS buyer_name
         FROM leads l
         JOIN vehicles v ON v.id=l.vehicle_id
         JOIN dealers d ON d.id=l.dealer_id
@@ -1086,12 +1093,13 @@ def admin_dashboard():
     )
 
 
-# VERIFY SALE
+# ==========================================
+# ADMIN VERIFY SALE
+# ==========================================
 
 @app.post('/admin/leads/<int:lead_id>/verify')
 @login_required('admin')
 def verify_sale(lead_id):
-
     lead = lead_for_role(lead_id)
 
     if lead['status'] != 'sold_pending':
@@ -1100,28 +1108,22 @@ def verify_sale(lead_id):
             'Sale must first be reported by dealer.'
         )
 
-    db().execute(
-        '''
+    db().execute('''
         UPDATE leads
         SET status=?, purchase_verified_at=CURRENT_TIMESTAMP
         WHERE id=?
-        ''',
-        ('sold_verified', lead_id)
-    )
+    ''', ('sold_verified', lead_id))
 
-    db().execute(
-        '''
+    db().execute('''
         INSERT OR IGNORE INTO rewards(
             lead_id, station, amount, status
         )
         VALUES(?,?,25,?)
-        ''',
-        (
-            lead_id,
-            lead['gas_station'],
-            'pending'
-        )
-    )
+    ''', (
+        lead_id,
+        lead['gas_station'],
+        'pending'
+    ))
 
     event(
         lead_id,
@@ -1141,12 +1143,13 @@ def verify_sale(lead_id):
     )
 
 
+# ==========================================
 # ISSUE GIFT CARD REWARD
+# ==========================================
 
 @app.post('/admin/leads/<int:lead_id>/issue-reward')
 @login_required('admin')
 def issue_reward(lead_id):
-
     lead = lead_for_role(lead_id)
 
     if lead['status'] != 'sold_verified':
@@ -1160,14 +1163,11 @@ def issue_reward(lead_id):
     if not reward or reward['status'] == 'issued':
         abort(400)
 
-    db().execute(
-        '''
+    db().execute('''
         UPDATE rewards
         SET status='issued', issued_at=CURRENT_TIMESTAMP
         WHERE lead_id=?
-        ''',
-        (lead_id,)
-    )
+    ''', (lead_id,))
 
     event(
         lead_id,
@@ -1184,26 +1184,173 @@ def issue_reward(lead_id):
     )
 
 
+# ==========================================
 # HOW IT WORKS
+# ==========================================
 
 @app.get('/how-it-works')
 def how_it_works():
     return render_template('how.html')
 
 
-# DEALERS PAGE
+# ==========================================
+# DEALERS INFORMATION PAGE
+# ==========================================
 
 @app.get('/dealers')
 def dealers_page():
     return render_template('dealers_info.html')
 
 
-# INITIALIZE DATABASE
+# ==========================================
+# PUBLIC DEALERSHIP DIRECTORY
+# ==========================================
+
+@app.get('/dealers/all')
+def dealer_directory():
+    dealers = db().execute('''
+        SELECT
+            d.*,
+            COUNT(v.id) AS vehicle_count,
+            MIN(v.price) AS lowest_price
+        FROM dealers d
+        LEFT JOIN vehicles v
+            ON v.dealer_id=d.id
+            AND v.active=1
+        WHERE d.approved=1
+        GROUP BY d.id
+        ORDER BY d.name COLLATE NOCASE
+    ''').fetchall()
+
+    return render_template(
+        'dealer_directory.html',
+        dealers=dealers
+    )
+
+
+# ==========================================
+# INDIVIDUAL DEALERSHIP INVENTORY
+# ==========================================
+
+@app.get('/dealers/<int:dealer_id>/inventory')
+def dealer_inventory(dealer_id):
+    dealer = db().execute('''
+        SELECT *
+        FROM dealers
+        WHERE id=? AND approved=1
+    ''', (dealer_id,)).fetchone()
+
+    if dealer is None:
+        abort(404)
+
+    q = request.args.get('q', '').strip()[:80]
+    make = request.args.get('make', '').strip()[:50]
+    sort = request.args.get('sort', 'newest')
+
+    def optional_nonnegative_int(field):
+        raw = request.args.get(field, '').strip()
+
+        try:
+            number = int(raw)
+            return number if 0 <= number <= 10000000 else None
+        except ValueError:
+            return None
+
+    min_price = optional_nonnegative_int('min_price')
+    max_price = optional_nonnegative_int('max_price')
+    max_mileage = optional_nonnegative_int('max_mileage')
+
+    sql = '''
+        SELECT *
+        FROM vehicles
+        WHERE dealer_id=? AND active=1
+    '''
+
+    params = [dealer_id]
+
+    if q:
+        sql += '''
+            AND (
+                make LIKE ?
+                OR model LIKE ?
+                OR trim LIKE ?
+                OR CAST(year AS TEXT) LIKE ?
+            )
+        '''
+        params.extend(['%' + q + '%'] * 4)
+
+    if make:
+        sql += ' AND make=?'
+        params.append(make)
+
+    if min_price is not None:
+        sql += ' AND price>=?'
+        params.append(min_price)
+
+    if max_price is not None:
+        sql += ' AND price<=?'
+        params.append(max_price)
+
+    if max_mileage is not None:
+        sql += ' AND mileage<=?'
+        params.append(max_mileage)
+
+    orders = {
+        'newest': 'created_at DESC, id DESC',
+        'price_low': 'price ASC, id DESC',
+        'price_high': 'price DESC, id DESC',
+        'mileage_low': 'mileage ASC, id DESC',
+        'year_new': 'year DESC, id DESC'
+    }
+
+    if sort not in orders:
+        sort = 'newest'
+
+    sql += ' ORDER BY ' + orders[sort]
+
+    vehicles = db().execute(
+        sql,
+        params
+    ).fetchall()
+
+    makes = db().execute('''
+        SELECT DISTINCT make
+        FROM vehicles
+        WHERE dealer_id=? AND active=1
+        ORDER BY make
+    ''', (dealer_id,)).fetchall()
+
+    total = db().execute('''
+        SELECT COUNT(*)
+        FROM vehicles
+        WHERE dealer_id=? AND active=1
+    ''', (dealer_id,)).fetchone()[0]
+
+    return render_template(
+        'dealer_inventory.html',
+        dealer=dealer,
+        vehicles=vehicles,
+        makes=makes,
+        total=total,
+        q=q,
+        selected_make=make,
+        sort=sort,
+        min_price=min_price,
+        max_price=max_price,
+        max_mileage=max_mileage
+    )
+
+
+# ==========================================
+# INITIALIZE DATABASE - ONCE ONLY
+# ==========================================
 
 init_db()
 
 
+# ==========================================
 # START APPLICATION
+# ==========================================
 
 if __name__ == '__main__':
     app.run(
