@@ -14,7 +14,11 @@ from flask import (
     Flask, render_template, request, redirect,
     url_for, flash, session, g, abort
 )
-from werkzeug.security import generate_password_hash, check_password_hash
+
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash
+)
 
 
 # ==========================================
@@ -22,10 +26,17 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # ==========================================
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-DB = os.environ.get('WESELL_DB', os.path.join(ROOT, 'wesell.db'))
+DB = os.environ.get(
+    'WESELL_DB',
+    os.path.join(ROOT, 'wesell.db')
+)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+
+app.secret_key = os.environ.get(
+    'SECRET_KEY',
+    secrets.token_hex(32)
+)
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -35,12 +46,25 @@ app.config.update(
 )
 
 STATUSES = [
-    'new', 'dealer_review', 'appointment_proposed',
-    'confirmed', 'visited', 'sold_pending',
-    'sold_verified', 'no_sale', 'cancelled'
+    'new',
+    'dealer_review',
+    'appointment_proposed',
+    'confirmed',
+    'visited',
+    'sold_pending',
+    'sold_verified',
+    'no_sale',
+    'cancelled'
 ]
 
-GAS = ['Shell', 'Chevron', '76', 'ARCO', 'ExxonMobil', 'Other']
+GAS = [
+    'Shell',
+    'Chevron',
+    '76',
+    'ARCO',
+    'ExxonMobil',
+    'Other'
+]
 
 
 # ==========================================
@@ -52,12 +76,14 @@ def db():
         g.db = sqlite3.connect(DB, timeout=15)
         g.db.row_factory = sqlite3.Row
         g.db.execute('PRAGMA foreign_keys=ON')
+
     return g.db
 
 
 @app.teardown_appcontext
 def close_db(_):
     conn = g.pop('db', None)
+
     if conn:
         conn.close()
 
@@ -150,28 +176,73 @@ def init_db():
             ON leads(buyer_id);
     ''')
 
-    for table, column, definition in [
-        ('dealers', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
-        ('vehicles', 'zip_code', "TEXT NOT NULL DEFAULT ''"),
-        ('vehicles', 'condition', "TEXT NOT NULL DEFAULT 'used'")
-    ]:
+    # Add new fields to existing databases.
+    # Existing dealership and vehicle data is retained.
+
+    migrations = [
+        (
+            'dealers',
+            'zip_code',
+            "TEXT NOT NULL DEFAULT ''"
+        ),
+        (
+            'dealers',
+            'address',
+            "TEXT NOT NULL DEFAULT ''"
+        ),
+        (
+            'dealers',
+            'email',
+            "TEXT NOT NULL DEFAULT ''"
+        ),
+        (
+            'dealers',
+            'sales_phone',
+            "TEXT NOT NULL DEFAULT ''"
+        ),
+        (
+            'dealers',
+            'service_phone',
+            "TEXT NOT NULL DEFAULT ''"
+        ),
+        (
+            'vehicles',
+            'zip_code',
+            "TEXT NOT NULL DEFAULT ''"
+        ),
+        (
+            'vehicles',
+            'condition',
+            "TEXT NOT NULL DEFAULT 'used'"
+        )
+    ]
+
+    for table, column, definition in migrations:
         existing = {
             row[1]
-            for row in conn.execute(f'PRAGMA table_info({table})')
+            for row in conn.execute(
+                f'PRAGMA table_info({table})'
+            )
         }
 
         if column not in existing:
             conn.execute(
-                f'ALTER TABLE {table} ADD COLUMN {column} {definition}'
+                f'ALTER TABLE {table} '
+                f'ADD COLUMN {column} {definition}'
             )
 
-    if conn.execute('SELECT COUNT(*) FROM dealers').fetchone()[0] == 0:
-        conn.execute("""
+    # Demo inventory only for an empty dealership database.
+
+    if conn.execute(
+        'SELECT COUNT(*) FROM dealers'
+    ).fetchone()[0] == 0:
+
+        conn.execute('''
             INSERT INTO dealers(name, city)
             VALUES
             ('Pacific Coast Auto Group', 'San Diego, CA'),
             ('Mission Valley Motors', 'San Diego, CA')
-        """)
+        ''')
 
         vehicles = [
             (
@@ -221,11 +292,32 @@ def init_db():
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
         ''', vehicles)
 
+    # Optional demo accounts.
+    # Do not enable demo accounts on a public production site.
+
     if os.environ.get('WESELL_SEED_DEMO') == '1':
         for email, pw, name, role, dealer_id in [
-            ('admin@wesell.local', 'AdminDemo123!', 'WE-SELL Admin', 'admin', None),
-            ('dealer@wesell.local', 'DealerDemo123!', 'Dealer Manager', 'dealer', 1),
-            ('buyer@wesell.local', 'BuyerDemo123!', 'Demo Buyer', 'buyer', None)
+            (
+                'admin@wesell.local',
+                'AdminDemo123!',
+                'WE-SELL Admin',
+                'admin',
+                None
+            ),
+            (
+                'dealer@wesell.local',
+                'DealerDemo123!',
+                'Dealer Manager',
+                'dealer',
+                1
+            ),
+            (
+                'buyer@wesell.local',
+                'BuyerDemo123!',
+                'Demo Buyer',
+                'buyer',
+                None
+            )
         ]:
             conn.execute('''
                 INSERT OR IGNORE INTO users(
@@ -262,11 +354,20 @@ def load_user():
             session.clear()
 
     if request.method == 'POST':
-        if not session.get('csrf') or not secrets.compare_digest(
-            request.form.get('csrf', ''),
-            session['csrf']
+        token = request.form.get('csrf', '')
+        saved_token = session.get('csrf', '')
+
+        if (
+            not saved_token
+            or not secrets.compare_digest(
+                token,
+                saved_token
+            )
         ):
-            abort(400, 'Invalid form token. Reload and try again.')
+            abort(
+                400,
+                'Invalid form token. Reload and try again.'
+            )
 
 
 @app.context_processor
@@ -286,7 +387,9 @@ def login_required(role=None):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             if not g.user:
-                return redirect(url_for('login', next=request.path))
+                return redirect(
+                    url_for('login', next=request.path)
+                )
 
             if role and g.user['role'] != role:
                 abort(403)
@@ -294,6 +397,7 @@ def login_required(role=None):
             return fn(*args, **kwargs)
 
         return wrapper
+
     return deco
 
 
@@ -303,7 +407,9 @@ def login_required(role=None):
 
 def event(lead_id, role, message):
     db().execute('''
-        INSERT INTO lead_events(lead_id, actor_role, message)
+        INSERT INTO lead_events(
+            lead_id, actor_role, message
+        )
         VALUES(?,?,?)
     ''', (lead_id, role, message))
 
@@ -312,8 +418,13 @@ def lead_for_role(lead_id):
     lead = db().execute('''
         SELECT
             l.*,
-            v.year, v.make, v.model, v.trim,
-            v.vin, v.price, v.image_url,
+            v.year,
+            v.make,
+            v.model,
+            v.trim,
+            v.vin,
+            v.price,
+            v.image_url,
             d.name AS dealer_name,
             u.name AS buyer_name,
             u.email AS buyer_email,
@@ -330,10 +441,16 @@ def lead_for_role(lead_id):
 
     role = g.user['role']
 
-    if role == 'buyer' and lead['buyer_id'] != g.user['id']:
+    if (
+        role == 'buyer'
+        and lead['buyer_id'] != g.user['id']
+    ):
         abort(403)
 
-    if role == 'dealer' and lead['dealer_id'] != g.user['dealer_id']:
+    if (
+        role == 'dealer'
+        and lead['dealer_id'] != g.user['dealer_id']
+    ):
         abort(403)
 
     return lead
@@ -362,7 +479,13 @@ def zip_coordinates(zip_code):
             float(place['longitude'])
         )
 
-    except (OSError, ValueError, KeyError, IndexError, TypeError):
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        IndexError,
+        TypeError
+    ):
         return None
 
 
@@ -375,7 +498,8 @@ def distance_miles(point_a, point_b):
 
     a = (
         math.sin(delta_lat / 2) ** 2
-        + math.cos(lat1) * math.cos(lat2)
+        + math.cos(lat1)
+        * math.cos(lat2)
         * math.sin(delta_lon / 2) ** 2
     )
 
@@ -400,7 +524,9 @@ def home():
     if selected_condition not in ('new', 'used'):
         selected_condition = 'used'
 
-    selected_zip = request.args.get('zip', '').strip()[:5]
+    selected_zip = request.args.get(
+        'zip', ''
+    ).strip()[:5]
 
     selected_distance = request.args.get(
         'distance', '50'
@@ -414,8 +540,14 @@ def home():
     if selected_distance not in allowed_distances:
         selected_distance = '50'
 
-    if selected_zip and not re.fullmatch(r'\d{5}', selected_zip):
-        flash('Enter a valid 5-digit ZIP code.', 'error')
+    if (
+        selected_zip
+        and not re.fullmatch(r'\d{5}', selected_zip)
+    ):
+        flash(
+            'Enter a valid 5-digit ZIP code.',
+            'error'
+        )
         selected_zip = ''
 
     sql = '''
@@ -450,7 +582,11 @@ def home():
 
     sql += ' ORDER BY v.created_at DESC, v.id DESC'
 
-    all_vehicles = db().execute(sql, args).fetchall()
+    all_vehicles = db().execute(
+        sql,
+        args
+    ).fetchall()
+
     vehicles = all_vehicles
 
     if selected_zip and selected_distance != 'nationwide':
@@ -458,7 +594,8 @@ def home():
 
         if origin is None:
             flash(
-                'ZIP code could not be located. Please try another ZIP code.',
+                'ZIP code could not be located. '
+                'Please try another ZIP code.',
                 'error'
             )
             vehicles = []
@@ -474,11 +611,15 @@ def home():
 
                 coords = (
                     zip_coordinates(vehicle_zip)
-                    if vehicle_zip else None
+                    if vehicle_zip
+                    else None
                 )
 
                 if coords is not None:
-                    miles = distance_miles(origin, coords)
+                    miles = distance_miles(
+                        origin,
+                        coords
+                    )
 
                     if miles <= int(selected_distance):
                         nearby.append(vehicle)
@@ -543,7 +684,10 @@ def vehicle(vid):
     if not v:
         abort(404)
 
-    return render_template('vehicle.html', v=v)
+    return render_template(
+        'vehicle.html',
+        v=v
+    )
 
 
 # ==========================================
@@ -553,18 +697,33 @@ def vehicle(vid):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()[:100]
-        email = request.form.get('email', '').strip().lower()[:254]
-        password = request.form.get('password', '')
-        phone = request.form.get('phone', '').strip()[:30]
+        name = request.form.get(
+            'name', ''
+        ).strip()[:100]
+
+        email = request.form.get(
+            'email', ''
+        ).strip().lower()[:254]
+
+        password = request.form.get(
+            'password', ''
+        )
+
+        phone = request.form.get(
+            'phone', ''
+        ).strip()[:30]
 
         if (
             not name
-            or not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email)
+            or not re.fullmatch(
+                r'[^@\s]+@[^@\s]+\.[^@\s]+',
+                email
+            )
             or len(password) < 10
         ):
             flash(
-                'Enter your name, valid email, and a password of at least 10 characters.',
+                'Enter your name, valid email, '
+                'and a password of at least 10 characters.',
                 'error'
             )
 
@@ -572,7 +731,11 @@ def register():
             try:
                 cur = db().execute('''
                     INSERT INTO users(
-                        email, password_hash, name, phone, role
+                        email,
+                        password_hash,
+                        name,
+                        phone,
+                        role
                     )
                     VALUES(?,?,?,?,?)
                 ''', (
@@ -584,16 +747,27 @@ def register():
                 ))
 
                 db().commit()
+
                 session.clear()
                 session['uid'] = cur.lastrowid
 
-                flash('Account created. Welcome to WE-SELL!', 'success')
+                flash(
+                    'Account created. Welcome to WE-SELL!',
+                    'success'
+                )
+
                 return redirect(url_for('home'))
 
             except sqlite3.IntegrityError:
-                flash('This email is already registered.', 'error')
+                flash(
+                    'This email is already registered.',
+                    'error'
+                )
 
-    return render_template('auth.html', mode='register')
+    return render_template(
+        'auth.html',
+        mode='register'
+    )
 
 
 # ==========================================
@@ -605,7 +779,11 @@ def login():
     if request.method == 'POST':
         u = db().execute(
             'SELECT * FROM users WHERE email=?',
-            (request.form.get('email', '').strip().lower(),)
+            (
+                request.form.get(
+                    'email', ''
+                ).strip().lower(),
+            )
         ).fetchone()
 
         if u and check_password_hash(
@@ -615,12 +793,24 @@ def login():
             session.clear()
             session['uid'] = u['id']
 
-            flash('Welcome back!', 'success')
-            return redirect(url_for('dashboard'))
+            flash(
+                'Welcome back!',
+                'success'
+            )
 
-        flash('Incorrect email or password.', 'error')
+            return redirect(
+                url_for('dashboard')
+            )
 
-    return render_template('auth.html', mode='login')
+        flash(
+            'Incorrect email or password.',
+            'error'
+        )
+
+    return render_template(
+        'auth.html',
+        mode='login'
+    )
 
 
 # ==========================================
@@ -641,12 +831,18 @@ def logout():
 @login_required()
 def dashboard():
     if g.user['role'] == 'buyer':
-        return redirect(url_for('buyer_dashboard'))
+        return redirect(
+            url_for('buyer_dashboard')
+        )
 
     if g.user['role'] == 'dealer':
-        return redirect(url_for('dealer_dashboard'))
+        return redirect(
+            url_for('dealer_dashboard')
+        )
 
-    return redirect(url_for('admin_dashboard'))
+    return redirect(
+        url_for('admin_dashboard')
+    )
 
 
 # ==========================================
@@ -660,23 +856,34 @@ def inquire(vid):
         SELECT v.*
         FROM vehicles v
         JOIN dealers d ON d.id=v.dealer_id
-        WHERE v.id=? AND v.active=1 AND d.approved=1
+        WHERE v.id=?
+          AND v.active=1
+          AND d.approved=1
     ''', (vid,)).fetchone()
 
     if not v:
         abort(404)
 
-    station = request.form.get('gas_station', 'Shell')
+    station = request.form.get(
+        'gas_station',
+        'Shell'
+    )
 
     if station not in GAS:
         abort(400)
 
-    note = request.form.get('note', '').strip()[:1000]
+    note = request.form.get(
+        'note', ''
+    ).strip()[:1000]
 
     cur = db().execute('''
         INSERT INTO leads(
-            vehicle_id, buyer_id, dealer_id,
-            buyer_note, gas_station, status
+            vehicle_id,
+            buyer_id,
+            dealer_id,
+            buyer_note,
+            gas_station,
+            status
         )
         VALUES(?,?,?,?,?,?)
     ''', (
@@ -691,18 +898,23 @@ def inquire(vid):
     event(
         cur.lastrowid,
         'system',
-        'Buyer inquiry received by WE-SELL. Awaiting dealership review.'
+        'Buyer inquiry received by WE-SELL. '
+        'Awaiting dealership review.'
     )
 
     db().commit()
 
     flash(
-        'Your inquiry was received. WE-SELL will coordinate with the dealership.',
+        'Your inquiry was received. '
+        'WE-SELL will coordinate with the dealership.',
         'success'
     )
 
     return redirect(
-        url_for('lead_detail', lead_id=cur.lastrowid)
+        url_for(
+            'lead_detail',
+            lead_id=cur.lastrowid
+        )
     )
 
 
@@ -716,14 +928,20 @@ def buyer_dashboard():
     leads = db().execute('''
         SELECT
             l.*,
-            v.year, v.make, v.model, v.image_url
+            v.year,
+            v.make,
+            v.model,
+            v.image_url
         FROM leads l
         JOIN vehicles v ON v.id=l.vehicle_id
         WHERE l.buyer_id=?
         ORDER BY l.id DESC
     ''', (g.user['id'],)).fetchall()
 
-    return render_template('buyer.html', leads=leads)
+    return render_template(
+        'buyer.html',
+        leads=leads
+    )
 
 
 # ==========================================
@@ -736,21 +954,28 @@ def dealer_dashboard():
     leads = db().execute('''
         SELECT
             l.*,
-            v.year, v.make, v.model, v.vin,
+            v.year,
+            v.make,
+            v.model,
+            v.vin,
             u.name AS buyer_name
         FROM leads l
         JOIN vehicles v ON v.id=l.vehicle_id
         JOIN users u ON u.id=l.buyer_id
         WHERE l.dealer_id=?
         ORDER BY l.id DESC
-    ''', (g.user['dealer_id'],)).fetchall()
+    ''', (
+        g.user['dealer_id'],
+    )).fetchall()
 
     vehicles = db().execute('''
         SELECT *
         FROM vehicles
         WHERE dealer_id=?
         ORDER BY id DESC
-    ''', (g.user['dealer_id'],)).fetchall()
+    ''', (
+        g.user['dealer_id'],
+    )).fetchall()
 
     return render_template(
         'dealer.html',
@@ -760,10 +985,157 @@ def dealer_dashboard():
 
 
 # ==========================================
+# DEALERSHIP CONTACT PROFILE
+# ==========================================
+
+@app.route(
+    '/dealer/profile',
+    methods=['GET', 'POST']
+)
+@login_required('dealer')
+def dealer_profile():
+    dealer_id = g.user['dealer_id']
+
+    if dealer_id is None:
+        abort(403)
+
+    dealer = db().execute(
+        'SELECT * FROM dealers WHERE id=?',
+        (dealer_id,)
+    ).fetchone()
+
+    if dealer is None:
+        abort(404)
+
+    if request.method == 'POST':
+        name = request.form.get(
+            'name', ''
+        ).strip()[:120]
+
+        city = request.form.get(
+            'city', ''
+        ).strip()[:120]
+
+        address = request.form.get(
+            'address', ''
+        ).strip()[:250]
+
+        zip_code = request.form.get(
+            'zip_code', ''
+        ).strip()[:5]
+
+        email = request.form.get(
+            'email', ''
+        ).strip().lower()[:254]
+
+        sales_phone = request.form.get(
+            'sales_phone', ''
+        ).strip()[:30]
+
+        service_phone = request.form.get(
+            'service_phone', ''
+        ).strip()[:30]
+
+        if not name or not city:
+            flash(
+                'Dealership name and city are required.',
+                'error'
+            )
+
+        elif (
+            zip_code
+            and not re.fullmatch(r'\d{5}', zip_code)
+        ):
+            flash(
+                'ZIP code must contain five digits.',
+                'error'
+            )
+
+        elif (
+            email
+            and not re.fullmatch(
+                r'[^@\s]+@[^@\s]+\.[^@\s]+',
+                email
+            )
+        ):
+            flash(
+                'Enter a valid dealership email address.',
+                'error'
+            )
+
+        elif any(
+            ch in address
+            for ch in '\r\n'
+        ):
+            flash(
+                'Enter a single-line street address.',
+                'error'
+            )
+
+        elif any(
+            not re.fullmatch(
+                r'[0-9+(). \-]{7,30}',
+                phone
+            )
+            for phone in (
+                sales_phone,
+                service_phone
+            )
+            if phone
+        ):
+            flash(
+                'Enter valid sales and service phone numbers.',
+                'error'
+            )
+
+        else:
+            db().execute('''
+                UPDATE dealers
+                SET
+                    name=?,
+                    city=?,
+                    address=?,
+                    zip_code=?,
+                    email=?,
+                    sales_phone=?,
+                    service_phone=?
+                WHERE id=?
+            ''', (
+                name,
+                city,
+                address,
+                zip_code,
+                email,
+                sales_phone,
+                service_phone,
+                dealer_id
+            ))
+
+            db().commit()
+
+            flash(
+                'Dealership contact information updated.',
+                'success'
+            )
+
+            return redirect(
+                url_for('dealer_profile')
+            )
+
+    return render_template(
+        'dealer_profile.html',
+        dealer=dealer
+    )
+
+
+# ==========================================
 # ADD VEHICLE
 # ==========================================
 
-@app.route('/dealer/vehicles/new', methods=['GET', 'POST'])
+@app.route(
+    '/dealer/vehicles/new',
+    methods=['GET', 'POST']
+)
 @login_required('dealer')
 def add_vehicle():
     if request.method == 'POST':
@@ -772,12 +1144,21 @@ def add_vehicle():
             price = int(request.form['price'])
             mileage = int(request.form['mileage'])
 
-            assert 1980 <= year <= datetime.now().year + 2
+            assert (
+                1980 <= year
+                <= datetime.now().year + 2
+            )
+
             assert 0 <= price <= 10000000
             assert 0 <= mileage <= 2000000
 
-            make = request.form['make'].strip()[:50]
-            model = request.form['model'].strip()[:50]
+            make = request.form[
+                'make'
+            ].strip()[:50]
+
+            model = request.form[
+                'model'
+            ].strip()[:50]
 
             assert make and model
 
@@ -787,7 +1168,10 @@ def add_vehicle():
 
             assert (
                 not vehicle_zip
-                or re.fullmatch(r'\d{5}', vehicle_zip)
+                or re.fullmatch(
+                    r'\d{5}',
+                    vehicle_zip
+                )
             )
 
             condition = request.form.get(
@@ -796,18 +1180,35 @@ def add_vehicle():
 
             assert condition in ('new', 'used')
 
-        except (ValueError, KeyError, AssertionError):
+        except (
+            ValueError,
+            KeyError,
+            AssertionError
+        ):
             flash(
-                'Check required vehicle fields and numeric values.',
+                'Check required vehicle fields '
+                'and numeric values.',
                 'error'
             )
-            return render_template('add_vehicle.html')
+
+            return render_template(
+                'add_vehicle.html'
+            )
 
         db().execute('''
             INSERT INTO vehicles(
-                dealer_id, year, make, model, trim,
-                price, mileage, vin, image_url,
-                description, zip_code, condition
+                dealer_id,
+                year,
+                make,
+                model,
+                trim,
+                price,
+                mileage,
+                vin,
+                image_url,
+                description,
+                zip_code,
+                condition
             )
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
         ''', (
@@ -815,47 +1216,74 @@ def add_vehicle():
             year,
             make,
             model,
-            request.form.get('trim', '').strip()[:80],
+            request.form.get(
+                'trim', ''
+            ).strip()[:80],
             price,
             mileage,
-            request.form.get('vin', '').strip().upper()[:17],
-            request.form.get('image_url', '').strip()[:500],
-            request.form.get('description', '').strip()[:2000],
+            request.form.get(
+                'vin', ''
+            ).strip().upper()[:17],
+            request.form.get(
+                'image_url', ''
+            ).strip()[:500],
+            request.form.get(
+                'description', ''
+            ).strip()[:2000],
             vehicle_zip,
             condition
         ))
 
         db().commit()
 
-        flash('Vehicle listed.', 'success')
-        return redirect(url_for('dealer_dashboard'))
+        flash(
+            'Vehicle listed.',
+            'success'
+        )
 
-    return render_template('add_vehicle.html')
+        return redirect(
+            url_for('dealer_dashboard')
+        )
+
+    return render_template(
+        'add_vehicle.html'
+    )
 
 
 # ==========================================
 # ENABLE OR DISABLE VEHICLE
 # ==========================================
 
-@app.post('/dealer/vehicles/<int:vid>/toggle')
+@app.post(
+    '/dealer/vehicles/<int:vid>/toggle'
+)
 @login_required('dealer')
 def toggle_vehicle(vid):
     v = db().execute('''
         SELECT *
         FROM vehicles
         WHERE id=? AND dealer_id=?
-    ''', (vid, g.user['dealer_id'])).fetchone()
+    ''', (
+        vid,
+        g.user['dealer_id']
+    )).fetchone()
 
     if not v:
         abort(404)
 
     db().execute(
         'UPDATE vehicles SET active=? WHERE id=?',
-        (0 if v['active'] else 1, vid)
+        (
+            0 if v['active'] else 1,
+            vid
+        )
     )
 
     db().commit()
-    return redirect(url_for('dealer_dashboard'))
+
+    return redirect(
+        url_for('dealer_dashboard')
+    )
 
 
 # ==========================================
@@ -892,7 +1320,9 @@ def lead_detail(lead_id):
 # DEALER RESPONSE
 # ==========================================
 
-@app.post('/leads/<int:lead_id>/dealer-response')
+@app.post(
+    '/leads/<int:lead_id>/dealer-response'
+)
 @login_required('dealer')
 def dealer_response(lead_id):
     lead = lead_for_role(lead_id)
@@ -902,10 +1332,16 @@ def dealer_response(lead_id):
         'dealer_review',
         'appointment_proposed'
     ):
-        abort(400, 'This lead is not awaiting dealer response.')
+        abort(
+            400,
+            'This lead is not awaiting dealer response.'
+        )
 
     action = request.form.get('action')
-    note = request.form.get('note', '').strip()[:1000]
+
+    note = request.form.get(
+        'note', ''
+    ).strip()[:1000]
 
     if action == 'propose':
         appt = request.form.get(
@@ -914,17 +1350,31 @@ def dealer_response(lead_id):
 
         try:
             parsed = datetime.fromisoformat(appt)
+
             assert parsed > datetime.now()
 
-        except (ValueError, AssertionError):
-            flash('Provide a future appointment time.', 'error')
+        except (
+            ValueError,
+            AssertionError
+        ):
+            flash(
+                'Provide a future appointment time.',
+                'error'
+            )
+
             return redirect(
-                url_for('lead_detail', lead_id=lead_id)
+                url_for(
+                    'lead_detail',
+                    lead_id=lead_id
+                )
             )
 
         db().execute('''
             UPDATE leads
-            SET status=?, appointment_time=?, dealer_note=?
+            SET
+                status=?,
+                appointment_time=?,
+                dealer_note=?
             WHERE id=?
         ''', (
             'appointment_proposed',
@@ -936,16 +1386,23 @@ def dealer_response(lead_id):
         event(
             lead_id,
             'dealer',
-            'Dealer confirmed availability and proposed appointment: '
+            'Dealer confirmed availability '
+            'and proposed appointment: '
             + appt + '. ' + note
         )
 
     elif action == 'unavailable':
         db().execute('''
             UPDATE leads
-            SET status=?, dealer_note=?
+            SET
+                status=?,
+                dealer_note=?
             WHERE id=?
-        ''', ('cancelled', note, lead_id))
+        ''', (
+            'cancelled',
+            note,
+            lead_id
+        ))
 
         event(
             lead_id,
@@ -964,7 +1421,10 @@ def dealer_response(lead_id):
     )
 
     return redirect(
-        url_for('lead_detail', lead_id=lead_id)
+        url_for(
+            'lead_detail',
+            lead_id=lead_id
+        )
     )
 
 
@@ -972,7 +1432,9 @@ def dealer_response(lead_id):
 # BUYER APPOINTMENT RESPONSE
 # ==========================================
 
-@app.post('/leads/<int:lead_id>/buyer-response')
+@app.post(
+    '/leads/<int:lead_id>/buyer-response'
+)
 @login_required('buyer')
 def buyer_response(lead_id):
     lead = lead_for_role(lead_id)
@@ -983,8 +1445,10 @@ def buyer_response(lead_id):
     action = request.form.get('action')
 
     status = (
-        'confirmed' if action == 'accept'
-        else 'cancelled' if action == 'decline'
+        'confirmed'
+        if action == 'accept'
+        else 'cancelled'
+        if action == 'decline'
         else None
     )
 
@@ -993,7 +1457,10 @@ def buyer_response(lead_id):
 
     db().execute(
         'UPDATE leads SET status=? WHERE id=?',
-        (status, lead_id)
+        (
+            status,
+            lead_id
+        )
     )
 
     event(
@@ -1008,10 +1475,16 @@ def buyer_response(lead_id):
 
     db().commit()
 
-    flash('Appointment response saved.', 'success')
+    flash(
+        'Appointment response saved.',
+        'success'
+    )
 
     return redirect(
-        url_for('lead_detail', lead_id=lead_id)
+        url_for(
+            'lead_detail',
+            lead_id=lead_id
+        )
     )
 
 
@@ -1024,7 +1497,10 @@ def buyer_response(lead_id):
 def sale(lead_id):
     lead = lead_for_role(lead_id)
 
-    if lead['status'] not in ('confirmed', 'visited'):
+    if lead['status'] not in (
+        'confirmed',
+        'visited'
+    ):
         abort(
             400,
             'An appointment must be confirmed first.'
@@ -1032,13 +1508,17 @@ def sale(lead_id):
 
     db().execute(
         'UPDATE leads SET status=? WHERE id=?',
-        ('sold_pending', lead_id)
+        (
+            'sold_pending',
+            lead_id
+        )
     )
 
     event(
         lead_id,
         'dealer',
-        'Dealership reported completed purchase. Awaiting WE-SELL verification.'
+        'Dealership reported completed purchase. '
+        'Awaiting WE-SELL verification.'
     )
 
     db().commit()
@@ -1049,7 +1529,10 @@ def sale(lead_id):
     )
 
     return redirect(
-        url_for('lead_detail', lead_id=lead_id)
+        url_for(
+            'lead_detail',
+            lead_id=lead_id
+        )
     )
 
 
@@ -1063,7 +1546,9 @@ def admin_dashboard():
     leads = db().execute('''
         SELECT
             l.*,
-            v.year, v.make, v.model,
+            v.year,
+            v.make,
+            v.model,
             d.name AS dealer_name,
             u.name AS buyer_name
         FROM leads l
@@ -1074,14 +1559,17 @@ def admin_dashboard():
     ''').fetchall()
 
     stats = {
-        k: db().execute(
-            'SELECT COUNT(*) FROM ' + t
+        key: db().execute(
+            'SELECT COUNT(*) FROM ' + table
         ).fetchone()[0]
 
-        for k, t in [
+        for key, table in [
             ('vehicles', 'vehicles'),
             ('dealers', 'dealers'),
-            ('buyers', 'users WHERE role="buyer"'),
+            (
+                'buyers',
+                'users WHERE role="buyer"'
+            ),
             ('leads', 'leads')
         ]
     }
@@ -1097,7 +1585,9 @@ def admin_dashboard():
 # ADMIN VERIFY SALE
 # ==========================================
 
-@app.post('/admin/leads/<int:lead_id>/verify')
+@app.post(
+    '/admin/leads/<int:lead_id>/verify'
+)
 @login_required('admin')
 def verify_sale(lead_id):
     lead = lead_for_role(lead_id)
@@ -1110,13 +1600,21 @@ def verify_sale(lead_id):
 
     db().execute('''
         UPDATE leads
-        SET status=?, purchase_verified_at=CURRENT_TIMESTAMP
+        SET
+            status=?,
+            purchase_verified_at=CURRENT_TIMESTAMP
         WHERE id=?
-    ''', ('sold_verified', lead_id))
+    ''', (
+        'sold_verified',
+        lead_id
+    ))
 
     db().execute('''
         INSERT OR IGNORE INTO rewards(
-            lead_id, station, amount, status
+            lead_id,
+            station,
+            amount,
+            status
         )
         VALUES(?,?,25,?)
     ''', (
@@ -1128,7 +1626,8 @@ def verify_sale(lead_id):
     event(
         lead_id,
         'admin',
-        'WE-SELL verified the purchase. $25 gas reward eligible; issuance pending.'
+        'WE-SELL verified the purchase. '
+        '$25 gas reward eligible; issuance pending.'
     )
 
     db().commit()
@@ -1139,7 +1638,10 @@ def verify_sale(lead_id):
     )
 
     return redirect(
-        url_for('lead_detail', lead_id=lead_id)
+        url_for(
+            'lead_detail',
+            lead_id=lead_id
+        )
     )
 
 
@@ -1147,7 +1649,9 @@ def verify_sale(lead_id):
 # ISSUE GIFT CARD REWARD
 # ==========================================
 
-@app.post('/admin/leads/<int:lead_id>/issue-reward')
+@app.post(
+    '/admin/leads/<int:lead_id>/issue-reward'
+)
 @login_required('admin')
 def issue_reward(lead_id):
     lead = lead_for_role(lead_id)
@@ -1160,27 +1664,39 @@ def issue_reward(lead_id):
         (lead_id,)
     ).fetchone()
 
-    if not reward or reward['status'] == 'issued':
+    if (
+        not reward
+        or reward['status'] == 'issued'
+    ):
         abort(400)
 
     db().execute('''
         UPDATE rewards
-        SET status='issued', issued_at=CURRENT_TIMESTAMP
+        SET
+            status='issued',
+            issued_at=CURRENT_TIMESTAMP
         WHERE lead_id=?
     ''', (lead_id,))
 
     event(
         lead_id,
         'admin',
-        'Gift-card delivery marked complete by administrator.'
+        'Gift-card delivery marked complete '
+        'by administrator.'
     )
 
     db().commit()
 
-    flash('Reward marked issued.', 'success')
+    flash(
+        'Reward marked issued.',
+        'success'
+    )
 
     return redirect(
-        url_for('lead_detail', lead_id=lead_id)
+        url_for(
+            'lead_detail',
+            lead_id=lead_id
+        )
     )
 
 
@@ -1199,7 +1715,9 @@ def how_it_works():
 
 @app.get('/dealers')
 def dealers_page():
-    return render_template('dealers_info.html')
+    return render_template(
+        'dealers_info.html'
+    )
 
 
 # ==========================================
@@ -1232,7 +1750,9 @@ def dealer_directory():
 # INDIVIDUAL DEALERSHIP INVENTORY
 # ==========================================
 
-@app.get('/dealers/<int:dealer_id>/inventory')
+@app.get(
+    '/dealers/<int:dealer_id>/inventory'
+)
 def dealer_inventory(dealer_id):
     dealer = db().execute('''
         SELECT *
@@ -1243,22 +1763,46 @@ def dealer_inventory(dealer_id):
     if dealer is None:
         abort(404)
 
-    q = request.args.get('q', '').strip()[:80]
-    make = request.args.get('make', '').strip()[:50]
-    sort = request.args.get('sort', 'newest')
+    q = request.args.get(
+        'q', ''
+    ).strip()[:80]
+
+    make = request.args.get(
+        'make', ''
+    ).strip()[:50]
+
+    sort = request.args.get(
+        'sort',
+        'newest'
+    )
 
     def optional_nonnegative_int(field):
-        raw = request.args.get(field, '').strip()
+        raw = request.args.get(
+            field, ''
+        ).strip()
 
         try:
             number = int(raw)
-            return number if 0 <= number <= 10000000 else None
+
+            if 0 <= number <= 10000000:
+                return number
+
+            return None
+
         except ValueError:
             return None
 
-    min_price = optional_nonnegative_int('min_price')
-    max_price = optional_nonnegative_int('max_price')
-    max_mileage = optional_nonnegative_int('max_mileage')
+    min_price = optional_nonnegative_int(
+        'min_price'
+    )
+
+    max_price = optional_nonnegative_int(
+        'max_price'
+    )
+
+    max_mileage = optional_nonnegative_int(
+        'max_mileage'
+    )
 
     sql = '''
         SELECT *
@@ -1277,7 +1821,10 @@ def dealer_inventory(dealer_id):
                 OR CAST(year AS TEXT) LIKE ?
             )
         '''
-        params.extend(['%' + q + '%'] * 4)
+
+        params.extend(
+            ['%' + q + '%'] * 4
+        )
 
     if make:
         sql += ' AND make=?'
@@ -1342,7 +1889,7 @@ def dealer_inventory(dealer_id):
 
 
 # ==========================================
-# INITIALIZE DATABASE - ONCE ONLY
+# INITIALIZE DATABASE
 # ==========================================
 
 init_db()
@@ -1355,6 +1902,10 @@ init_db()
 if __name__ == '__main__':
     app.run(
         host='0.0.0.0',
-        port=int(os.environ.get('PORT', 5000)),
-        debug=os.environ.get('FLASK_DEBUG') == '1'
+        port=int(
+            os.environ.get('PORT', 5000)
+        ),
+        debug=os.environ.get(
+            'FLASK_DEBUG'
+        ) == '1'
     )
