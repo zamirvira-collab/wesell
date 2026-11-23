@@ -289,6 +289,120 @@
     border-left: 0;
   }
 }
+
+/* LOCATION & DISTANCE SEARCH — BOTH USED AND NEW TABS */
+
+.ws-search-form.ws-location-search {
+  display: block;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 15px 18px;
+}
+
+.ws-search-top {
+  display: grid;
+  grid-template-columns: minmax(0,2fr) minmax(0,1fr);
+  border: 1px solid #d5dde6;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.ws-location-search .ws-search-top input,
+.ws-location-search .ws-search-top select {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  padding: 16px;
+  background: #fff;
+  color: #09243f;
+}
+
+.ws-location-search .ws-search-top input {
+  border-right: 1px solid #cbd5e1;
+}
+
+.ws-search-bottom {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto;
+  gap: 18px;
+  align-items: end;
+  margin-top: 16px;
+}
+
+.ws-location-field,
+.ws-distance-field {
+  min-width: 0;
+}
+
+.ws-location-field label,
+.ws-distance-field label {
+  display: block;
+  color: #09243f;
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+
+.ws-field-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 13px;
+  padding-left: 12px;
+  background: #fff;
+}
+
+.ws-field-control span {
+  font-size: 21px;
+  color: #09243f;
+}
+
+.ws-location-search .ws-field-control input,
+.ws-location-search .ws-field-control select {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  padding: 13px 10px;
+  color: #09243f;
+  background: transparent;
+  font-size: 16px;
+  box-shadow: none;
+}
+
+.ws-location-search .ws-field-control input {
+  border-right: 0;
+}
+
+.ws-location-search .ws-search-button {
+  padding: 16px 24px;
+  border-radius: 14px;
+  min-height: 50px;
+}
+
+@media(max-width:700px) {
+  .ws-search-form.ws-location-search {
+    border-radius: 18px;
+  }
+
+  .ws-search-top {
+    grid-template-columns: 1fr;
+  }
+
+  .ws-location-search .ws-search-top input {
+    border-right: 0;
+    border-bottom: 1px solid #cbd5e1;
+  }
+
+  .ws-search-bottom {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .ws-location-search .ws-search-button {
+    width: 100%;
+  }
+}
 </style>
 
 <!-- HERO SECTION -->
@@ -344,7 +458,7 @@
       </div>
 
       <form
-        class="ws-search-form"
+        class="ws-search-form ws-location-search"
         method="get"
         action="{{ url_for('home') }}">
 
@@ -352,34 +466,85 @@
           type="hidden"
           name="condition"
           id="ws-condition"
-          value="used">
+          value="{{ selected_condition|default('used') }}">
 
-        <input
-          type="search"
-          name="q"
-          aria-label="Search vehicles"
-          value="{{ q }}"
-          placeholder="Search make, model, or year">
+        <div class="ws-search-top">
 
-        <select name="make" aria-label="Vehicle make">
+          <input
+            type="search"
+            name="q"
+            aria-label="Search vehicles"
+            value="{{ q }}"
+            placeholder="Search make, model, or year">
 
-          <option value="">All Makes</option>
+          <select name="make" aria-label="Vehicle make">
+            <option value="">All Makes</option>
 
-          {% for m in makes %}
-          <option
-            value="{{ m.make }}"
-            {% if selected_make == m.make %}selected{% endif %}>
-            {{ m.make }}
-          </option>
-          {% endfor %}
+            {% for m in makes %}
+            <option
+              value="{{ m.make }}"
+              {% if selected_make == m.make %}selected{% endif %}>
+              {{ m.make }}
+            </option>
+            {% endfor %}
 
-        </select>
+          </select>
+        </div>
 
-        <button type="submit" class="ws-search-button">
-          Find Vehicles →
-        </button>
+        <div class="ws-search-bottom">
 
+          <div class="ws-location-field">
+            <label for="ws-zip">Location (ZIP Code)</label>
+
+            <div class="ws-field-control">
+              <span aria-hidden="true">📍</span>
+
+              <input
+                id="ws-zip"
+                type="text"
+                name="zip"
+                inputmode="numeric"
+                pattern="[0-9]{5}"
+                maxlength="5"
+                title="Enter a 5-digit ZIP code"
+                placeholder="Enter ZIP Code"
+                value="{{ selected_zip|default('') }}">
+            </div>
+          </div>
+
+          <div class="ws-distance-field">
+            <label for="ws-distance">Distance From Me</label>
+
+            <div class="ws-field-control">
+              <span aria-hidden="true">◎</span>
+
+              <select id="ws-distance" name="distance">
+
+                {% for miles in [10, 25, 50, 100, 250] %}
+                <option
+                  value="{{ miles }}"
+                  {% if selected_distance|default('50')|string == miles|string %}selected{% endif %}>
+                  {{ miles }} miles
+                </option>
+                {% endfor %}
+
+                <option
+                  value="nationwide"
+                  {% if selected_distance|default('50') == 'nationwide' %}selected{% endif %}>
+                  Nationwide
+                </option>
+
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="ws-search-button">
+            Find Vehicles →
+          </button>
+
+        </div>
       </form>
+
     </div>
 
     <!-- BENEFITS -->
@@ -599,6 +764,20 @@ function selectCarType(button) {
   document.getElementById('ws-condition').value =
     button.dataset.type;
 }
+
+/* KEEP THE SELECTED SEARCH TAB AFTER SUBMIT */
+
+document.addEventListener('DOMContentLoaded', function () {
+  const selected = new URLSearchParams(window.location.search).get('condition');
+
+  if (selected === 'used' || selected === 'new') {
+    const tab = document.querySelector(
+      '.ws-tab[data-type="' + selected + '"]'
+    );
+
+    if (tab) selectCarType(tab);
+  }
+});
 
 /* SAVED CARS FUNCTIONALITY */
 
