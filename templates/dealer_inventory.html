@@ -16,7 +16,8 @@
     --ws-border: #e3e9f0;
 }
 
-* {
+.showroom,
+.showroom * {
     box-sizing: border-box;
 }
 
@@ -100,10 +101,22 @@
     color: white;
 }
 
-.dealer-address {
+.dealer-contact-details {
+    display: grid;
+    gap: 7px;
+}
+
+.dealer-address,
+.dealer-contact-line {
     color: #c8d6e7;
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.dealer-contact-line strong {
+    color: white;
+    font-weight: 700;
 }
 
 .dealer-actions {
@@ -465,6 +478,7 @@
     padding: 65px 25px;
     text-align: center;
     color: var(--ws-muted);
+    grid-column: 1 / -1;
 }
 
 .inventory-empty h3 {
@@ -585,13 +599,51 @@
 
                     <h1>{{ dealer.name }}</h1>
 
-                    <div class="dealer-address">
-                        &#128205; {{ dealer.city }}
+                    <!-- DEALERSHIP CONTACT INFORMATION -->
 
-                        {% if dealer.zip_code %}
-                            {{ dealer.zip_code }}
+                    <div class="dealer-contact-details">
+
+                        <div class="dealer-address">
+                            &#128205;
+
+                            {% if dealer.address %}
+                                {{ dealer.address }},
+                            {% endif %}
+
+                            {{ dealer.city }}
+
+                            {% if dealer.zip_code %}
+                                {{ dealer.zip_code }}
+                            {% endif %}
+                        </div>
+
+                        {% if dealer.email %}
+                        <div class="dealer-contact-line">
+                            &#9993;
+                            <strong>Email:</strong>
+                            {{ dealer.email }}
+                        </div>
                         {% endif %}
+
+                        {% if dealer.sales_phone %}
+                        <div class="dealer-contact-line">
+                            &#9742;
+                            <strong>Sales:</strong>
+                            {{ dealer.sales_phone }}
+                        </div>
+                        {% endif %}
+
+                        {% if dealer.service_phone %}
+                        <div class="dealer-contact-line">
+                            &#9881;
+                            <strong>Service:</strong>
+                            {{ dealer.service_phone }}
+                        </div>
+                        {% endif %}
+
                     </div>
+
+                    <!-- SHOWROOM ACTION BUTTONS -->
 
                     <div class="dealer-actions">
 
@@ -608,6 +660,19 @@
                         >
                             How Appointments Work
                         </a>
+
+                        {% if me
+                              and me.role == 'dealer'
+                              and me.dealer_id == dealer.id %}
+
+                        <a
+                            href="{{ url_for('dealer_profile') }}"
+                            class="dealer-action secondary"
+                        >
+                            Edit Dealership Profile
+                        </a>
+
+                        {% endif %}
 
                     </div>
 
@@ -699,14 +764,14 @@
 
                             {% for item in makes %}
 
-                                <option
-                                    value="{{ item.make }}"
-                                    {% if selected_make == item.make %}
-                                        selected
-                                    {% endif %}
-                                >
-                                    {{ item.make }}
-                                </option>
+                            <option
+                                value="{{ item.make }}"
+                                {% if selected_make == item.make %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ item.make }}
+                            </option>
 
                             {% endfor %}
 
@@ -857,6 +922,8 @@
                 </div>
 
 
+                <!-- VEHICLE CARDS -->
+
                 <div class="vehicle-grid">
 
                     {% for v in vehicles %}
@@ -867,19 +934,19 @@
 
                             {% if v.image_url %}
 
-                                <img
-                                    src="{{ v.image_url }}"
-                                    alt="{{ v.year }} {{ v.make }} {{ v.model }}"
-                                    loading="lazy"
-                                    referrerpolicy="no-referrer"
-                                >
+                            <img
+                                src="{{ v.image_url }}"
+                                alt="{{ v.year }} {{ v.make }} {{ v.model }}"
+                                loading="lazy"
+                                referrerpolicy="no-referrer"
+                            >
 
                             {% else %}
 
-                                <div class="vehicle-no-image">
-                                    <span>&#128663;</span>
-                                    Photo Coming Soon
-                                </div>
+                            <div class="vehicle-no-image">
+                                <span>&#128663;</span>
+                                Photo Coming Soon
+                            </div>
 
                             {% endif %}
 
@@ -1058,44 +1125,58 @@ document.addEventListener('DOMContentLoaded', function () {
     function refreshButtons() {
         const saved = getSavedCars();
 
-        document.querySelectorAll('.vehicle-save').forEach(function (button) {
+        document.querySelectorAll('.vehicle-save').forEach(
+            function (button) {
 
-            const id = button.dataset.vehicleId;
-            const isSaved = saved.includes(id);
+                const id = button.dataset.vehicleId;
+                const isSaved = saved.includes(id);
 
-            button.classList.toggle('is-saved', isSaved);
-            button.setAttribute('aria-pressed', String(isSaved));
-            button.setAttribute(
-                'aria-label',
-                isSaved ? 'Remove saved vehicle' : 'Save vehicle'
-            );
+                button.classList.toggle('is-saved', isSaved);
 
-            button.innerHTML = isSaved ? '&#9829;' : '&#9825;';
+                button.setAttribute(
+                    'aria-pressed',
+                    String(isSaved)
+                );
 
-        });
+                button.setAttribute(
+                    'aria-label',
+                    isSaved
+                        ? 'Remove saved vehicle'
+                        : 'Save vehicle'
+                );
+
+                button.innerHTML = isSaved
+                    ? '&#9829;'
+                    : '&#9825;';
+            }
+        );
     }
 
-    document.querySelectorAll('.vehicle-save').forEach(function (button) {
+    document.querySelectorAll('.vehicle-save').forEach(
+        function (button) {
 
-        button.addEventListener('click', function () {
+            button.addEventListener('click', function () {
 
-            const id = button.dataset.vehicleId;
-            let saved = getSavedCars();
+                const id = button.dataset.vehicleId;
+                let saved = getSavedCars();
 
-            if (saved.includes(id)) {
-                saved = saved.filter(function (item) {
-                    return item !== id;
-                });
-            } else {
-                saved.push(id);
-            }
+                if (saved.includes(id)) {
 
-            saveCars(saved);
-            refreshButtons();
+                    saved = saved.filter(function (item) {
+                        return item !== id;
+                    });
 
-        });
+                } else {
+                    saved.push(id);
+                }
 
-    });
+                saveCars(saved);
+                refreshButtons();
+
+            });
+
+        }
+    );
 
     refreshButtons();
 
