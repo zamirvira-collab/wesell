@@ -827,10 +827,10 @@ def login():
 
 def send_password_reset_email(recipient, reset_url):
     """Send through configured SMTP provider; never log reset URLs."""
-    host = os.environ.get("SMTP_HOST", "").strip()
+    host = os.environ.get("SMTP_HOST", "").strip() or "smtp.gmail.com"
     username = os.environ.get("SMTP_USER", "").strip()
     password = os.environ.get("SMTP_PASSWORD", "")
-    sender = os.environ.get("SMTP_FROM", "").strip()
+    sender = os.environ.get("SMTP_FROM", "").strip() or username
     if not all((host, username, password, sender)):
         app.logger.error("Password reset email is not configured")
         return False
@@ -853,7 +853,9 @@ def send_password_reset_email(recipient, reset_url):
                 smtp.send_message(msg)
         else:
             with smtplib.SMTP(host, port, timeout=15) as smtp:
+                smtp.ehlo()
                 smtp.starttls(context=ssl.create_default_context())
+                smtp.ehlo()
                 smtp.login(username, password)
                 smtp.send_message(msg)
         return True
@@ -867,7 +869,7 @@ def forgot_password():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()[:254]
         # Always give the same response, whether or not the account exists.
-        user = db().execute("SELECT id, email FROM users WHERE email=?", (email,)).fetchone()
+        user = db().execute("SELECT id, email FROM users WHERE email=? COLLATE NOCASE", (email,)).fetchone()
         if user:
             now = datetime.now(timezone.utc)
             last = db().execute(
@@ -891,7 +893,11 @@ def forgot_password():
                 )
                 db().commit()
                 reset_url = url_for("reset_password", token=token, _external=True)
-                send_password_reset_email(user["email"], reset_url)
+                if not send_password_reset_email(user["email"], reset_url):
+                    db().execute("DELETE FROM password_reset_tokens WHERE token_hash=?", (token_hash,))
+                    db().commit()
+                else:
+                    app.logger.info("Password reset email accepted by SMTP server")
         flash("If that email has an account, a password reset link will be sent shortly.", "success")
         return redirect(url_for("forgot_password"))
     return render_template("password_recovery.html", mode="forgot")
