@@ -1,6 +1,5 @@
 
 import os
-import sqlite3
 import psycopg2
 from contextlib import contextmanager, closing
 import logging
@@ -88,15 +87,9 @@ def init_social_auth(app):
 # ============================================
 
 def dealer_db():
-    path = os.environ.get(
-        "WESELL_DB",
-        os.path.join(current_app.root_path, "wesell.db"),
-    )
-
-    conn = sqlite3.connect(path, timeout=15)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
+    # Use the same PostgreSQL connection adapter as app.py.
+    from app import connect_main_db
+    return connect_main_db()
 
 
 @contextmanager
@@ -128,7 +121,7 @@ def ensure_identity_table(conn, portal, provider):
         f"""
         CREATE TABLE IF NOT EXISTS {table} (
             {identity_field} TEXT PRIMARY KEY,
-            {account_field} INTEGER NOT NULL UNIQUE
+            {account_field} INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE
         )
         """
     )
@@ -645,7 +638,7 @@ def complete_social_login(provider):
 
     except psycopg2.IntegrityError:
         return "This social account is already linked to another business.", 409
-    except (sqlite3.Error, psycopg2.Error, RuntimeError, TypeError):
+    except (psycopg2.Error, RuntimeError, TypeError):
         logger.exception("Social login database error")
         return (
             "Social Login is temporarily unavailable.",
@@ -726,9 +719,9 @@ def confirm_social_link():
                 ensure_identity_table(conn, portal, provider)
                 return link_social_identity(conn, provider, portal,
                                             pending["provider_id"], pending["account_id"])
-        except (sqlite3.IntegrityError, psycopg2.IntegrityError):
+        except psycopg2.IntegrityError:
             return "This social account is already connected.", 409
-        except (sqlite3.Error, psycopg2.Error, RuntimeError, TypeError):
+        except (psycopg2.Error, RuntimeError, TypeError):
             logger.exception("Social account connection failed")
             return "Account connection temporarily unavailable.", 503
     response = current_app.make_response(render_template_string("""
