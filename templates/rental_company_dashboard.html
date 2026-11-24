@@ -125,6 +125,55 @@ a {
   color: var(--navy);
 }
 
+/* SOCIAL ACCOUNT CONNECTIONS */
+
+.social-heading {
+  color: #a9bfd5;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 20px 14px 12px;
+  margin-top: 15px;
+  border-top: 1px solid #29415d;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  margin-bottom: 10px;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #10233e;
+  font-size: 13px;
+  font-weight: 700;
+  transition: .2s;
+}
+
+.social-link:hover {
+  background: #e8f0fa;
+  transform: translateY(-1px);
+}
+
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.google-icon {
+  color: #4285f4;
+}
+
+.facebook-icon {
+  color: #1877f2;
+}
+
 /* SIGN OUT BUTTON */
 
 .logout-form {
@@ -376,6 +425,32 @@ td {
   font-size: 14px;
 }
 
+/* NOTIFICATIONS */
+
+.flash-message {
+  padding: 15px 18px;
+  margin-bottom: 20px;
+  border-radius: 9px;
+  background: #e8f3ff;
+  color: #10375e;
+  border: 1px solid #b9d5f0;
+  font-size: 14px;
+}
+
+.flash-message.success {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.flash-message.error {
+  background: #fff1f2;
+  color: #9f1239;
+  border-color: #fecdd3;
+}
+
+/* RESPONSIVE DESIGN */
+
 @media (max-width: 1100px) {
   .stats {
     grid-template-columns: repeat(2, 1fr);
@@ -482,6 +557,34 @@ td {
       Rental Marketplace
     </a>
 
+    <!-- SOCIAL ACCOUNT CONNECTIONS -->
+
+    <div class="social-heading">
+      CONNECT SOCIAL ACCOUNTS
+    </div>
+
+    <a class="social-link"
+       href="{{ url_for('social_auth.start_social_link', provider='google', portal='rental') }}">
+
+      <span class="social-icon google-icon">
+        G
+      </span>
+
+      Connect Google Account
+
+    </a>
+
+    <a class="social-link"
+       href="{{ url_for('social_auth.start_social_link', provider='facebook', portal='rental') }}">
+
+      <span class="social-icon facebook-icon">
+        f
+      </span>
+
+      Connect Facebook Account
+
+    </a>
+
     <!-- SIGN OUT -->
 
     <form class="logout-form"
@@ -503,9 +606,11 @@ td {
              stroke="currentColor"
              stroke-width="2"
              aria-hidden="true">
+
           <path stroke-linecap="round"
                 stroke-linejoin="round"
                 d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+
         </svg>
 
         Sign Out
@@ -518,9 +623,33 @@ td {
 
   <main class="main">
 
+    <!-- NOTIFICATIONS -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+      {% if messages %}
+
+        {% for category, message in messages %}
+
+          <div class="flash-message {{ category }}"
+               role="status">
+
+            {{ message }}
+
+          </div>
+
+        {% endfor %}
+
+      {% endif %}
+
+    {% endwith %}
+
+    <!-- DASHBOARD HEADER -->
+
     <div class="heading">
 
       <div>
+
         <h1>Rental Company Dashboard</h1>
 
         <p>
@@ -529,76 +658,131 @@ td {
           Manage your rental vehicles and grow
           your business with WE-SELL.
         </p>
+
       </div>
 
       <div class="company-badge">
+
         <strong>{{ company.company_name }}</strong>
 
         {% if company.approved %}
-          <span class="approved">✓ Approved</span>
+
+          <span class="approved">
+            ✓ Approved
+          </span>
+
         {% else %}
-          <span class="pending">● Pending Approval</span>
+
+          <span class="pending">
+            ● Pending Approval
+          </span>
+
         {% endif %}
+
       </div>
 
     </div>
 
     {% if not company.approved %}
+
     <div class="notice">
+
       Your rental company is awaiting WE-SELL approval.
       You can prepare your vehicle inventory, but public
       listings require approval.
+
     </div>
+
     {% endif %}
+
+    <!-- STATISTICS -->
 
     <section class="stats">
 
       <div class="stat">
-        <div class="number">{{ total_vehicles }}</div>
-        <div class="label">Total Rental Vehicles</div>
-      </div>
 
-      <div class="stat">
-        <div class="number">{{ active_vehicles }}</div>
-        <div class="label">Active Vehicles</div>
-      </div>
-
-      <div class="stat">
-        <div class="number">{{ inactive_vehicles }}</div>
-        <div class="label">Inactive Vehicles</div>
-      </div>
-
-      <div class="stat">
         <div class="number">
+          {{ total_vehicles }}
+        </div>
+
+        <div class="label">
+          Total Rental Vehicles
+        </div>
+
+      </div>
+
+      <div class="stat">
+
+        <div class="number">
+          {{ active_vehicles }}
+        </div>
+
+        <div class="label">
+          Active Vehicles
+        </div>
+
+      </div>
+
+      <div class="stat">
+
+        <div class="number">
+          {{ inactive_vehicles }}
+        </div>
+
+        <div class="label">
+          Inactive Vehicles
+        </div>
+
+      </div>
+
+      <div class="stat">
+
+        <div class="number">
+
           {% if company.approved %}
             Approved
           {% else %}
             Pending
           {% endif %}
+
         </div>
-        <div class="label">Company Status</div>
+
+        <div class="label">
+          Company Status
+        </div>
+
       </div>
 
     </section>
+
+    <!-- QUICK ACTIONS -->
 
     <section class="actions">
 
       <a class="action primary"
          href="/rental-company/vehicles/new">
+
         ＋ Add New Rental Vehicle
+
       </a>
 
       <a class="action"
          href="/rental-sync/dashboard">
+
         ↻ Sync Inventory (API)
+
       </a>
 
       <a class="action"
          href="/rentals">
+
         View Rental Marketplace
+
       </a>
 
     </section>
+
+    <!-- RENTAL FLEET -->
 
     <section class="panel" id="fleet">
 
@@ -626,6 +810,7 @@ td {
         <table id="vehicleTable">
 
           <thead>
+
             <tr>
               <th>Vehicle</th>
               <th>Category</th>
@@ -633,6 +818,7 @@ td {
               <th>Pickup City</th>
               <th>Status</th>
             </tr>
+
           </thead>
 
           <tbody>
@@ -642,30 +828,46 @@ td {
             <tr>
 
               <td>
+
                 <div class="vehicle-name">
+
                   {{ vehicle.year }}
                   {{ vehicle.make }}
                   {{ vehicle.model }}
+
                 </div>
 
                 <div class="vehicle-meta">
+
                   Vehicle ID: {{ vehicle.id }}
+
                 </div>
+
               </td>
-
-              <td>{{ vehicle.category or "—" }}</td>
-
-              <td class="rate">
-                ${{ "%.2f"|format(vehicle.daily_rate_cents / 100) }}
-                / day
-              </td>
-
-              <td>{{ vehicle.pickup_city or "—" }}</td>
 
               <td>
+                {{ vehicle.category or "—" }}
+              </td>
+
+              <td class="rate">
+
+                ${{ "%.2f"|format(vehicle.daily_rate_cents / 100) }}
+                / day
+
+              </td>
+
+              <td>
+                {{ vehicle.pickup_city or "—" }}
+              </td>
+
+              <td>
+
                 <span class="status {% if vehicle.status not in ['active', 'available'] %}inactive{% endif %}">
+
                   {{ vehicle.status|title }}
+
                 </span>
+
               </td>
 
             </tr>
@@ -673,6 +875,7 @@ td {
           {% endfor %}
 
           </tbody>
+
         </table>
 
       </div>
@@ -691,7 +894,9 @@ td {
         <a class="action primary"
            style="display:inline-block;margin-top:16px"
            href="/rental-company/vehicles/new">
+
           Add Your First Vehicle
+
         </a>
 
       </div>
@@ -705,20 +910,29 @@ td {
 </div>
 
 <script>
+
 function filterVehicles() {
+
   const input = document.getElementById("vehicleSearch");
+
   const table = document.getElementById("vehicleTable");
 
-  if (!table) return;
+  if (!table || !input) return;
 
   const query = input.value.toLowerCase();
+
   const rows = table.querySelectorAll("tbody tr");
 
   rows.forEach(function(row) {
+
     const text = row.textContent.toLowerCase();
+
     row.style.display = text.includes(query) ? "" : "none";
+
   });
+
 }
+
 </script>
 
 </body>
