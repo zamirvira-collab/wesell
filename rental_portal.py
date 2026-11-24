@@ -119,6 +119,8 @@ def init_rental_portal():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_rental_company ON rental_vehicles(company_id)")
         conn.execute("ALTER TABLE rental_companies ADD COLUMN IF NOT EXISTS google_sub TEXT")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_rental_google_sub ON rental_companies(google_sub)")
+        conn.execute("ALTER TABLE rental_companies ADD COLUMN IF NOT EXISTS facebook_id TEXT")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_rental_facebook_id ON rental_companies(facebook_id)")
 
 
 # ==========================================
@@ -1068,18 +1070,12 @@ def login():
                     </a>
 
                     <!-- FACEBOOK -->
-
-                    <button
-                        type="button"
-                        class="rental-social-option"
-                        disabled
-                        title="Facebook sign-in coming soon"
-                    >
-                        <span class="rental-social-icon rental-facebook">
-                            f
-                        </span>
+                    <a class="rental-social-option"
+                       href="{{ facebook_login_url }}"
+                       title="Sign in with a linked Facebook account">
+                        <span class="rental-social-icon rental-facebook">f</span>
                         Facebook
-                    </button>
+                    </a>
 
                     <!-- LINKEDIN -->
 
@@ -1112,7 +1108,7 @@ def login():
                 </div>
 
                 <p class="rental-social-status">
-                    Google works after you link it from your rental dashboard. Other providers coming soon.
+                    Google and Facebook work after you link them from your rental dashboard. LinkedIn and Apple coming soon.
                 </p>
 
                 <div class="rental-register-link">
@@ -1137,7 +1133,8 @@ def login():
             "rental_portal.register"
         ),
         forgot_url=url_for("rental_portal.forgot_password"),
-        google_login_url=url_for("social_auth.start_login", provider="google", portal="rental")
+        google_login_url=url_for("social_auth.start_login", provider="google", portal="rental"),
+        facebook_login_url=url_for("social_auth.start_login", provider="facebook", portal="rental")
     )
 
 # ==========================================
@@ -1551,6 +1548,6 @@ def connect_google():
         <div class="home-return"><a href="{{ dashboard_url }}">← Back to dashboard</a></div>
         </div>""",
         company_name=company["company_name"],
-        link_url=url_for("social_auth.link_google", portal="rental"),
+        link_url=url_for("social_auth.start_social_link", provider="google", portal="rental"),
         dashboard_url=url_for("rental_portal.dashboard"),
     )
