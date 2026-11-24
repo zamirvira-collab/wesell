@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 
 {% block title %}
@@ -325,6 +326,8 @@ body:has(.ws-dealer-page) .navbar {
     background: #e1e8f0;
 }
 
+/* SOCIAL LOGIN */
+
 .ws-dealer-social {
     display: grid;
     grid-template-columns: repeat(2,minmax(0,1fr));
@@ -365,12 +368,15 @@ body:has(.ws-dealer-page) .navbar {
     color: #1877f2;
 }
 
-.ws-dealer-social .linkedin {
-    color: #0a66c2;
-}
-
 .ws-dealer-social .apple {
     color: #111827;
+}
+
+/* FULL WIDTH APPLE BUTTON */
+
+.ws-dealer-social .ws-apple-button {
+    grid-column: 1 / -1;
+    width: 100%;
 }
 
 .ws-dealer-social-note {
@@ -407,6 +413,8 @@ body:has(.ws-dealer-page) .navbar {
     font-size: 12px;
     font-weight: 700;
 }
+
+/* RESPONSIVE DESIGN */
 
 @media (max-width: 850px) {
     .ws-dealer-shell {
@@ -468,7 +476,9 @@ body:has(.ws-dealer-page) .navbar {
 </style>
 
 <div class="ws-dealer-topbar">
+
     <div class="ws-dealer-topbar-brand">
+
         <span class="ws-dealer-topbar-logo">
             WE-SELL
         </span>
@@ -476,6 +486,7 @@ body:has(.ws-dealer-page) .navbar {
         <span class="ws-dealer-topbar-name">
             Dealership Portal
         </span>
+
     </div>
 
     <a
@@ -483,26 +494,38 @@ body:has(.ws-dealer-page) .navbar {
         href="{{ url_for('home') }}">
         ← Main Website
     </a>
+
 </div>
 
 <section class="ws-dealer-page">
+
     <div class="ws-dealer-shell">
+
+        <!-- LEFT SIDE -->
 
         <aside class="ws-dealer-left">
 
             <div class="ws-dealer-brand">
+
                 WE-SELL
-                <small>DEALERSHIP BUSINESS PORTAL</small>
+
+                <small>
+                    DEALERSHIP BUSINESS PORTAL
+                </small>
+
             </div>
 
             <div>
+
                 <div class="ws-dealer-eyebrow">
                     BUILT FOR AUTO DEALERSHIPS
                 </div>
 
                 <h1>
                     Grow Your Dealership.<br>
-                    <span>Connect With More Buyers.</span>
+                    <span>
+                        Connect With More Buyers.
+                    </span>
                 </h1>
 
                 <p class="ws-dealer-description">
@@ -535,6 +558,7 @@ body:has(.ws-dealer-page) .navbar {
                     </div>
 
                 </div>
+
             </div>
 
             <div class="ws-dealer-bottom">
@@ -542,6 +566,8 @@ body:has(.ws-dealer-page) .navbar {
             </div>
 
         </aside>
+
+        <!-- RIGHT SIDE -->
 
         <div class="ws-dealer-right">
 
@@ -585,6 +611,7 @@ body:has(.ws-dealer-page) .navbar {
                 {% if mode == 'register' %}
 
                 <div class="ws-dealer-field">
+
                     <label for="ws-name">
                         Dealer / Contact Name
                     </label>
@@ -597,9 +624,11 @@ body:has(.ws-dealer-page) .navbar {
                         autocomplete="name"
                         maxlength="100"
                         required>
+
                 </div>
 
                 <div class="ws-dealer-field">
+
                     <label for="ws-phone">
                         Business Phone Number
                     </label>
@@ -611,11 +640,13 @@ body:has(.ws-dealer-page) .navbar {
                         placeholder="Enter your phone number"
                         autocomplete="tel"
                         maxlength="30">
+
                 </div>
 
                 {% endif %}
 
                 <div class="ws-dealer-field">
+
                     <label for="ws-email">
                         Business Email Address
                     </label>
@@ -628,9 +659,11 @@ body:has(.ws-dealer-page) .navbar {
                         autocomplete="email"
                         maxlength="254"
                         required>
+
                 </div>
 
                 <div class="ws-dealer-field">
+
                     <label for="ws-password">
                         {{ 'Create Password' if mode == 'register' else 'Password' }}
                     </label>
@@ -656,28 +689,35 @@ body:has(.ws-dealer-page) .navbar {
                         </button>
 
                     </div>
+
                 </div>
 
-                <!-- FORGOT PASSWORD LINK -->
+                <!-- FORGOT PASSWORD -->
+
                 {% if mode != 'register' %}
 
                 <div class="ws-dealer-forgot">
+
                     <a href="{{ url_for('forgot_password') }}">
                         Forgot Password?
                     </a>
+
                 </div>
 
                 {% endif %}
-                <!-- END FORGOT PASSWORD LINK -->
 
                 <button
                     type="submit"
                     class="ws-dealer-submit">
 
                     {% if mode == 'register' %}
+
                         Create Dealership Account →
+
                     {% else %}
+
                         Sign In to Dealer Portal →
+
                     {% endif %}
 
                 </button>
@@ -688,7 +728,11 @@ body:has(.ws-dealer-page) .navbar {
                 Or continue with
             </div>
 
+            <!-- SOCIAL LOGIN OPTIONS -->
+
             <div class="ws-dealer-social">
+
+                <!-- GOOGLE -->
 
                 {% if mode == 'login' %}
 
@@ -697,6 +741,7 @@ body:has(.ws-dealer-page) .navbar {
                     aria-label="Continue with Google">
 
                     <strong class="google">G</strong>
+
                     Continue with Google
 
                 </a>
@@ -708,11 +753,14 @@ body:has(.ws-dealer-page) .navbar {
                     title="Create an account first, then connect Google">
 
                     <strong class="google">G</strong>
+
                     Google (after signup)
 
                 </a>
 
                 {% endif %}
+
+                <!-- FACEBOOK -->
 
                 <button
                     type="button"
@@ -720,26 +768,21 @@ body:has(.ws-dealer-page) .navbar {
                     title="Facebook sign-in coming soon">
 
                     <strong class="facebook">f</strong>
+
                     Facebook
 
                 </button>
 
-                <button
-                    type="button"
-                    disabled
-                    title="LinkedIn sign-in coming soon">
-
-                    <strong class="linkedin">in</strong>
-                    LinkedIn
-
-                </button>
+                <!-- APPLE -->
 
                 <button
                     type="button"
+                    class="ws-apple-button"
                     disabled
                     title="Apple sign-in coming soon">
 
                     <strong class="apple">&#63743;</strong>
+
                     Apple
 
                 </button>
@@ -748,8 +791,8 @@ body:has(.ws-dealer-page) .navbar {
 
             <p class="ws-dealer-social-note">
                 Google Sign-In requires a dealership account
-                already linked to Google. Facebook, LinkedIn,
-                and Apple are coming later.
+                already linked to Google.
+                Facebook and Apple are coming soon.
             </p>
 
             <div class="ws-dealer-switch">
@@ -783,11 +826,14 @@ body:has(.ws-dealer-page) .navbar {
             </div>
 
         </div>
+
     </div>
+
 </section>
 
 <script>
 function toggleDealerPassword() {
+
     const password = document.getElementById('ws-password');
     const button = document.querySelector('.ws-dealer-toggle');
 
@@ -796,11 +842,15 @@ function toggleDealerPassword() {
     }
 
     if (password.type === 'password') {
+
         password.type = 'text';
         button.textContent = 'Hide';
+
     } else {
+
         password.type = 'password';
         button.textContent = 'Show';
+
     }
 }
 </script>
