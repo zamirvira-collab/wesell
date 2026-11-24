@@ -1,5 +1,6 @@
 
 import os
+import click
 import psycopg2
 from psycopg2.extras import DictCursor
 import secrets
@@ -698,6 +699,40 @@ def register():
     )
 
 
+# Owner-only provisioning through the authenticated deployment shell.
+@app.cli.command("create-dealer")
+@click.option("--email", prompt=True)
+@click.option("--name", prompt="Contact name")
+@click.option("--dealership", prompt="Dealership name")
+@click.option("--city", prompt=True)
+@click.password_option()
+def create_dealer(email, name, dealership, city, password):
+    """Create a new, owner-authorized dealership; never modify an existing account."""
+    email = email.strip().lower()
+    name, dealership, city = name.strip(), dealership.strip(), city.strip()
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email) or len(email) > 254:
+        raise click.ClickException("Invalid email address.")
+    if not all((name, dealership, city)) or not 10 <= len(password) <= 128:
+        raise click.ClickException("Names and city are required; password must be 10–128 characters.")
+    conn = db()
+    try:
+        if conn.execute("SELECT id FROM users WHERE LOWER(email)=?", (email,)).fetchone():
+            raise click.ClickException("Account already exists. No changes made.")
+        dealer_id = conn.execute(
+            "INSERT INTO dealers(name,city,email,approved) VALUES(?,?,?,1) RETURNING id",
+            (dealership, city, email)
+        ).fetchone()["id"]
+        conn.execute(
+            "INSERT INTO users(email,password_hash,name,role,dealer_id) VALUES(?,?,?,?,?)",
+            (email, generate_password_hash(password), name, "dealer", dealer_id)
+        )
+        conn.commit()
+    except psycopg2.IntegrityError:
+        conn.rollback()
+        raise click.ClickException("Account could not be created; no changes saved.")
+    click.echo("Dealership account created.")
+
+
 # ==========================================
 # LOGIN
 # ==========================================
@@ -790,7 +825,10 @@ def forgot_password():
         email = request.form.get("email", "").strip().lower()[:254]
         # Always give the same response, whether or not the account exists.
         user = db().execute("SELECT id, email FROM users WHERE LOWER(email)=LOWER(?)", (email,)).fetchone()
+        if not user:
+            app.logger.warning("Password recovery: no matching main account")
         if user:
+            app.logger.info("Password recovery: matching main account found")
             now = datetime.now(timezone.utc)
             last = db().execute(
                 "SELECT created_at FROM password_reset_tokens "
@@ -800,8 +838,11 @@ def forgot_password():
             if last:
                 try:
                     allowed = now - datetime.fromisoformat(last["created_at"]) >= timedelta(seconds=60)
-                except ValueError:
-                    allowed = False
+                except (ValueError, TypeError):
+                    app.logger.warning("Password recovery: invalid previous timestamp")
+                    allowed = True
+            if not allowed:
+                app.logger.info("Password recovery: request rate limited")
             if allowed:
                 token = secrets.token_urlsafe(32)
                 token_hash = hashlib.sha256(token.encode()).hexdigest()
@@ -812,7 +853,7 @@ def forgot_password():
                     (user["id"], token_hash, expires, now.isoformat())
                 )
                 db().commit()
-                reset_url = url_for("reset_password", token=token, _external=True)
+                reset_url = "https://www.gowesell.com" + url_for("reset_password", token=token)
                 if not send_password_reset_email(user["email"], reset_url):
                     db().execute("DELETE FROM password_reset_tokens WHERE token_hash=?", (token_hash,))
                     db().commit()
@@ -1672,7 +1713,7 @@ def admin_dashboard():
             ("dealers", "dealers"),
             (
                 "buyers",
-                'users WHERE role="buyer"'
+                "users WHERE role='buyer'"
             ),
             ("leads", "leads")
         ]
