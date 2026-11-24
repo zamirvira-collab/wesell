@@ -350,11 +350,18 @@ def load_user():
         and not (request.endpoint or "").startswith("owner_portal.")
     ):
         token = request.form.get("csrf", "")
-        saved_token = session.get("csrf", "")
+        # Social account linking uses a separate, short-lived CSRF token.
+        # The confirmation route also checks expiry and account ownership.
+        if request.endpoint == "social_auth.confirm_social_link":
+            pending = session.get("pending_social_link")
+            saved_token = pending.get("csrf", "") if isinstance(pending, dict) else ""
+        else:
+            saved_token = session.get("csrf", "")
 
         if (
-            not saved_token
-            or not secrets.compare_digest(token, saved_token)
+            not isinstance(saved_token, str)
+            or not saved_token
+            or not secrets.compare_digest(token.encode("utf-8"), saved_token.encode("utf-8"))
         ):
             abort(
                 400,
