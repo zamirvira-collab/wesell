@@ -869,9 +869,8 @@ def login():
             color: #1877f2;
         }
 
-        .rental-linkedin {
-            color: #0a66c2;
-            font-size: 18px;
+        .rental-apple-option {
+            grid-column: 1 / -1;
         }
 
         .rental-apple {
@@ -1052,9 +1051,7 @@ def login():
                 </div>
 
                 <!-- SOCIAL SIGN-IN OPTIONS -->
-                <!-- Buttons remain disabled until
-                     secure OAuth account linking
-                     has been implemented. -->
+                <!-- Apple remains disabled until OAuth is configured. -->
 
                 <div class="rental-social-grid">
 
@@ -1077,25 +1074,11 @@ def login():
                         Facebook
                     </a>
 
-                    <!-- LINKEDIN -->
-
-                    <button
-                        type="button"
-                        class="rental-social-option"
-                        disabled
-                        title="LinkedIn sign-in coming soon"
-                    >
-                        <span class="rental-social-icon rental-linkedin">
-                            in
-                        </span>
-                        LinkedIn
-                    </button>
-
                     <!-- APPLE -->
 
                     <button
                         type="button"
-                        class="rental-social-option"
+                        class="rental-social-option rental-apple-option"
                         disabled
                         title="Apple sign-in coming soon"
                     >
@@ -1108,7 +1091,7 @@ def login():
                 </div>
 
                 <p class="rental-social-status">
-                    Google and Facebook work after you link them from your rental dashboard. LinkedIn and Apple coming soon.
+                    Google and Facebook work after you link them from your rental dashboard. Apple coming soon.
                 </p>
 
                 <div class="rental-register-link">
