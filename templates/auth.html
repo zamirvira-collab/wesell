@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 
 {% block title %}
@@ -349,6 +348,13 @@ body:has(.ws-dealer-page) .navbar {
     gap: 10px;
     text-decoration: none;
     cursor: pointer;
+    transition: background .2s ease,
+                border-color .2s ease;
+}
+
+.ws-dealer-social a:hover {
+    background: #edf4fc;
+    border-color: #9cb9dc;
 }
 
 .ws-dealer-social button:disabled {
@@ -762,16 +768,31 @@ body:has(.ws-dealer-page) .navbar {
 
                 <!-- FACEBOOK -->
 
-                <button
-                    type="button"
-                    disabled
-                    title="Facebook sign-in coming soon">
+                {% if mode == 'login' %}
+
+                <a
+                    href="{{ url_for('social_auth.start_login', provider='facebook', portal='dealer') }}"
+                    aria-label="Continue with Facebook">
 
                     <strong class="facebook">f</strong>
 
                     Facebook
 
-                </button>
+                </a>
+
+                {% else %}
+
+                <a
+                    href="{{ url_for('login') }}"
+                    title="Create an account first, then connect Facebook">
+
+                    <strong class="facebook">f</strong>
+
+                    Facebook (after signup)
+
+                </a>
+
+                {% endif %}
 
                 <!-- APPLE -->
 
@@ -790,9 +811,11 @@ body:has(.ws-dealer-page) .navbar {
             </div>
 
             <p class="ws-dealer-social-note">
-                Google Sign-In requires a dealership account
-                already linked to Google.
-                Facebook and Apple are coming soon.
+                Google and Facebook sign-in require an existing
+                dealership account linked to the selected provider.
+                Connect your social accounts from your dealership
+                dashboard after signing in.
+                Apple sign-in is coming soon.
             </p>
 
             <div class="ws-dealer-switch">
@@ -854,5 +877,10 @@ function toggleDealerPassword() {
     }
 }
 </script>
+
+{# Facebook authentication requires a live deployment test.
+   Public access remains subject to Meta app permissions.
+   The existing registration backend is unchanged and must
+   be updated separately to support dealership registration. #}
 
 {% endblock %}
