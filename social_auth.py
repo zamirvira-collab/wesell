@@ -4,6 +4,8 @@ import sqlite3
 import psycopg2
 from contextlib import contextmanager, closing
 import logging
+import time
+import hmac
 
 from flask import (
     Blueprint,
@@ -13,6 +15,8 @@ from flask import (
     flash,
     session,
     g,
+    request,
+    render_template_string,
 )
 
 from authlib.integrations.flask_client import OAuth
@@ -275,6 +279,7 @@ def begin_social(provider, portal, intent):
         account_id = None
 
     clear_oauth_session()
+    session.pop("pending_social_link", None)
 
     session["social_provider"] = provider
     session["social_portal"] = portal
@@ -288,6 +293,7 @@ def begin_social(provider, portal, intent):
             return client.authorize_redirect(
                 callback_url(provider),
                 nonce=generate_token(32),
+                prompt="select_account consent" if intent == "link" else "select_account",
             )
 
         return client.authorize_redirect(
@@ -349,7 +355,7 @@ def get_google_identity(client):
     ):
         raise ValueError("Google identity not verified")
 
-    return str(sub)
+    return str(sub), userinfo.get("email", "")
 
 
 # ============================================
@@ -376,7 +382,7 @@ def get_facebook_identity(client):
     if not facebook_id:
         raise ValueError("Facebook identity unavailable")
 
-    return str(facebook_id)
+    return str(facebook_id), profile.get("email", "")
 
 
 # ============================================
@@ -492,13 +498,21 @@ def link_social_identity(
 
     conn.execute(
         f"""
-        INSERT OR IGNORE INTO {table}
+        INSERT INTO {table}
         ({identity_field}, {account_field})
         VALUES (?, ?)
+        ON CONFLICT({identity_field}) DO NOTHING
         """,
         (provider_id, account_id),
     )
 
+    linked = conn.execute(
+        f"SELECT {account_field} FROM {table} WHERE {identity_field} = ?",
+        (provider_id,),
+    ).fetchone()
+    if not linked or linked[account_field] != account_id:
+        conn.rollback()
+        return "This social account is already connected.", 409
     conn.commit()
 
     flash(
@@ -580,9 +594,9 @@ def complete_social_login(provider):
 
     try:
         if provider == "google":
-            provider_id = get_google_identity(client)
+            provider_id, email = get_google_identity(client)
         else:
-            provider_id = get_facebook_identity(client)
+            provider_id, email = get_facebook_identity(client)
 
     except Exception:
         logger.exception("%s callback failed", provider)
@@ -613,13 +627,13 @@ def complete_social_login(provider):
                         403,
                     )
 
-                return link_social_identity(
-                    conn,
-                    provider,
-                    portal,
-                    provider_id,
-                    linking_id,
-                )
+                session["pending_social_link"] = {
+                    "provider": provider, "portal": portal,
+                    "provider_id": provider_id, "account_id": linking_id,
+                    "email": email, "expires": time.time() + 300,
+                    "csrf": generate_token(48),
+                }
+                return redirect(url_for("social_auth.confirm_social_link"))
 
             account_id = find_social_account(
                 conn,
@@ -684,3 +698,55 @@ def google_callback():
 @social_auth.get("/auth/facebook/callback")
 def facebook_callback():
     return complete_social_login("facebook")
+
+
+@social_auth.route("/auth/confirm-link", methods=["GET", "POST"])
+def confirm_social_link():
+    pending = session.get("pending_social_link")
+    if not pending:
+        return "No pending account connection.", 400
+    portal = pending["portal"]
+    provider = pending["provider"]
+    if (time.time() > pending["expires"] or
+            not verify_link_session(portal, pending["account_id"])):
+        session.pop("pending_social_link", None)
+        return "Connection expired. Please sign in and try again.", 403
+    if request.method == "POST":
+        if not hmac.compare_digest(request.form.get("csrf", ""), pending["csrf"]):
+            return "Invalid confirmation request.", 403
+        action = request.form.get("action")
+        if action not in ("allow", "cancel"):
+            return "Invalid action.", 400
+        session.pop("pending_social_link", None)
+        if action == "cancel":
+            flash("Social account connection canceled.", "info")
+            return redirect(portal_dashboard_url(portal))
+        try:
+            with (closing(dealer_db()) if portal == "dealer" else rental_db()) as conn:
+                ensure_identity_table(conn, portal, provider)
+                return link_social_identity(conn, provider, portal,
+                                            pending["provider_id"], pending["account_id"])
+        except (sqlite3.IntegrityError, psycopg2.IntegrityError):
+            return "This social account is already connected.", 409
+        except (sqlite3.Error, psycopg2.Error, RuntimeError, TypeError):
+            logger.exception("Social account connection failed")
+            return "Account connection temporarily unavailable.", 503
+    response = current_app.make_response(render_template_string("""
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect your account | WE-SELL</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f1f4f8;color:#09243e;font:16px Arial,sans-serif;display:grid;place-items:center;min-height:100vh;padding:20px}main{background:white;max-width:480px;width:100%;padding:32px;border-radius:18px;box-shadow:0 12px 40px #09243e18}header{background:#09243e;color:#ffc400;padding:18px;border-radius:10px;font-size:26px;font-weight:bold}p{line-height:1.6;overflow-wrap:anywhere}.notice{background:#eef4fa;padding:15px;border-radius:10px}form{display:flex;gap:12px;margin-top:24px}button{flex:1;padding:14px;border:1px solid #ccd6e0;border-radius:8px;font-weight:bold;cursor:pointer;background:white;color:#09243e}button[value=allow]{background:#ffc400;border-color:#ffc400}
+</style></head><body><main><header>WE-SELL</header>
+<h1>Connect your {{ provider }} account</h1>
+{% if email %}<p>Selected account: <strong>{{ email }}</strong></p>{% endif %}
+<p>Allow this social account to sign in to your existing WE-SELL business account?</p>
+<p class="notice">WE-SELL does not receive your social account password. Connecting this account allows future sign-ins using {{ provider }}.</p>
+<form method="post"><input type="hidden" name="csrf" value="{{ csrf }}">
+<button name="action" value="cancel">Cancel</button>
+<button name="action" value="allow">Allow &amp; Continue</button></form>
+</main></body></html>
+""", provider=provider.title(), email=pending["email"], csrf=pending["csrf"]))
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
