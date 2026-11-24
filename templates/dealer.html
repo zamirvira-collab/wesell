@@ -39,10 +39,148 @@
         outline-offset: 3px;
     }
 
+    /* SOCIAL ACCOUNT CONNECTIONS */
+
+    .ws-social-panel {
+        background: #ffffff;
+        border: 1px solid #dce5ee;
+        border-radius: 15px;
+        padding: 25px;
+        margin: 24px 0;
+    }
+
+    .ws-social-panel h2 {
+        color: #041b34;
+        font-size: 21px;
+        font-weight: 800;
+        margin: 0 0 10px;
+    }
+
+    .ws-social-description {
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.7;
+        margin-bottom: 20px;
+    }
+
+    .ws-social-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 15px;
+    }
+
+    .ws-social-account {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 18px;
+        border: 1px solid #dce5ee;
+        border-radius: 12px;
+        background: #f8fafc;
+        flex-wrap: wrap;
+    }
+
+    .ws-social-icon {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        font-size: 26px;
+        font-weight: 900;
+        border: 1px solid #e2e8f0;
+    }
+
+    .ws-google-icon {
+        color: #4285f4;
+    }
+
+    .ws-facebook-icon {
+        color: #1877f2;
+    }
+
+    .ws-social-info {
+        flex: 1;
+        min-width: 130px;
+    }
+
+    .ws-social-info strong {
+        display: block;
+        color: #041b34;
+        font-size: 15px;
+        margin-bottom: 5px;
+    }
+
+    .ws-social-info span {
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .ws-social-connect {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+        transition: background .2s ease;
+    }
+
+    .ws-google-connect {
+        background: #ffffff;
+        color: #1e293b !important;
+        border: 1px solid #cbd5e1;
+    }
+
+    .ws-google-connect:hover {
+        background: #eaf1ff;
+    }
+
+    .ws-facebook-connect {
+        background: #1877f2;
+        color: #ffffff !important;
+        border: 1px solid #1877f2;
+    }
+
+    .ws-facebook-connect:hover {
+        background: #125fc7;
+    }
+
+    .ws-social-security {
+        margin-top: 18px;
+        padding: 13px 16px;
+        border-radius: 9px;
+        background: #eef7f6;
+        border: 1px solid #d3eae6;
+        color: #27665f;
+        font-size: 12px;
+        line-height: 1.7;
+    }
+
+    @media (max-width: 850px) {
+        .ws-social-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     @media (max-width: 600px) {
         .ws-dealer-actions {
             width: 100%;
             justify-content: flex-start;
+        }
+
+        .ws-social-panel {
+            padding: 18px;
+        }
+
+        .ws-social-connect {
+            width: 100%;
         }
     }
 </style>
@@ -110,6 +248,77 @@
 
     </div>
 
+    <!-- SOCIAL ACCOUNT CONNECTIONS -->
+
+    <div class="ws-social-panel">
+
+        <h2>Social Account Connections</h2>
+
+        <p class="ws-social-description">
+            Connect your Google or Facebook account to securely
+            sign in to your existing WE-SELL dealership account.
+        </p>
+
+        <div class="ws-social-grid">
+
+            <!-- GOOGLE CONNECTION -->
+
+            <div class="ws-social-account">
+
+                <div class="ws-social-icon ws-google-icon">
+                    G
+                </div>
+
+                <div class="ws-social-info">
+                    <strong>Google / Gmail</strong>
+                    <span>
+                        Connect your Google account
+                    </span>
+                </div>
+
+                <a class="ws-social-connect ws-google-connect"
+                   href="{{ url_for('social_auth.start_social_link', provider='google', portal='dealer') }}">
+                    Connect Google
+                </a>
+
+            </div>
+
+            <!-- FACEBOOK CONNECTION -->
+
+            <div class="ws-social-account">
+
+                <div class="ws-social-icon ws-facebook-icon">
+                    f
+                </div>
+
+                <div class="ws-social-info">
+                    <strong>Facebook</strong>
+                    <span>
+                        Connect your Facebook account
+                    </span>
+                </div>
+
+                <a class="ws-social-connect ws-facebook-connect"
+                   href="{{ url_for('social_auth.start_social_link', provider='facebook', portal='dealer') }}">
+                    Connect Facebook
+                </a>
+
+            </div>
+
+        </div>
+
+        <div class="ws-social-security">
+            <strong>Account Security:</strong>
+            Connecting a social account does not create a new
+            dealership account or change your dealership permissions.
+            You must authorize the connection before using social
+            sign-in. Your existing email and password remain available.
+        </div>
+
+    </div>
+
+    <!-- BUYER INQUIRIES -->
+
     <div class="panel">
 
         <h2>Buyer inquiries</h2>
@@ -175,6 +384,8 @@
         </div>
 
     </div>
+
+    <!-- DEALERSHIP INVENTORY -->
 
     <div class="panel">
 
