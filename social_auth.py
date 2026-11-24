@@ -1,6 +1,8 @@
 
 import os
 import sqlite3
+import psycopg2
+from contextlib import contextmanager, closing
 import logging
 
 from flask import (
@@ -93,25 +95,11 @@ def dealer_db():
     return conn
 
 
+@contextmanager
 def rental_db():
-    """
-    Uses the rental portal's existing database
-    connection function instead of importing DB.
-    """
     from rental_portal import db
-
-    conn = db()
-
-    if not isinstance(conn, sqlite3.Connection):
-        raise RuntimeError(
-            "rental_portal.db() must return "
-            "a SQLite connection"
-        )
-
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys=ON")
-
-    return conn
+    with db() as conn:
+        yield conn
 
 
 # ============================================
@@ -124,6 +112,9 @@ def ensure_identity_table(conn, portal, provider):
 
     if provider not in PROVIDERS:
         raise ValueError("Invalid provider")
+
+    if portal == "rental":
+        return
 
     table = identity_table(portal, provider)
     identity_field = identity_column(provider)
@@ -449,6 +440,20 @@ def link_social_identity(
             403,
         )
 
+    if portal == "rental":
+        field = identity_column(provider)
+        try:
+            result = conn.execute(
+                f"UPDATE rental_companies SET {field}=? WHERE id=? AND ({field} IS NULL OR {field}=?)",
+                (provider_id, account_id, provider_id),
+            )
+        except psycopg2.IntegrityError:
+            raise
+        if result.rowcount != 1:
+            return "This business already has another social account connected.", 409
+        flash(f"{provider.title()} account connected.", "success")
+        return redirect(portal_dashboard_url(portal))
+
     table = identity_table(portal, provider)
     identity_field = identity_column(provider)
     account_field = account_column(portal)
@@ -514,6 +519,13 @@ def find_social_account(
     portal,
     provider_id,
 ):
+    if portal == "rental":
+        field = identity_column(provider)
+        row = conn.execute(
+            f"SELECT id FROM rental_companies WHERE {field}=?", (provider_id,)
+        ).fetchone()
+        return row["id"] if row else None
+
     table = identity_table(portal, provider)
     identity_field = identity_column(provider)
     account_field = account_column(portal)
@@ -583,13 +595,7 @@ def complete_social_login(provider):
         return redirect(portal_login_url(portal))
 
     try:
-        conn = (
-            dealer_db()
-            if portal == "dealer"
-            else rental_db()
-        )
-
-        try:
+        with (closing(dealer_db()) if portal == "dealer" else rental_db()) as conn:
             ensure_identity_table(
                 conn,
                 portal,
@@ -622,10 +628,10 @@ def complete_social_login(provider):
                 provider_id,
             )
 
-        finally:
-            conn.close()
 
-    except (sqlite3.Error, RuntimeError, TypeError):
+    except psycopg2.IntegrityError:
+        return "This social account is already linked to another business.", 409
+    except (sqlite3.Error, psycopg2.Error, RuntimeError, TypeError):
         logger.exception("Social login database error")
         return (
             "Social Login is temporarily unavailable.",
