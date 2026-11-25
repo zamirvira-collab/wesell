@@ -243,11 +243,21 @@ def login():
                             Password
                         </label>
 
-                        <input id="password"
-                               type="password"
-                               name="password"
-                               required
-                               autocomplete="current-password">
+                        <div style="position:relative;">
+                            <input id="password"
+                                   type="password"
+                                   name="password"
+                                   required
+                                   autocomplete="current-password"
+                                   style="padding-right:85px;">
+                            <button type="button"
+                                    aria-controls="password"
+                                    aria-label="Show password"
+                                    style="position:absolute;right:8px;top:12px;background:transparent;color:#102945;"
+                                    onclick="const p=document.getElementById('password');const show=p.type==='password';p.type=show?'text':'password';this.textContent=show?'Hide':'Show';this.setAttribute('aria-label',show?'Hide password':'Show password');">
+                                Show
+                            </button>
+                        </div>
 
                         <button style="width:100%">
                             Sign In to Owner Portal
